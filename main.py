@@ -105,13 +105,14 @@ def train():
             sigma_random = np.expand_dims(np.around(np.random.uniform(low = 0.0, high = 2.0, size = batch_size), 2), 1)
             images_blur = tl.prepro.threading_data(
                 [_ for _ in zip(train_blur_imgs[idx : idx + batch_size], train_mask_imgs[idx : idx + batch_size], train_edge_imgs[idx : idx + batch_size], sigma_random)], fn=blur_crop_edge_sub_imgs_fn)
-
+            
             '''
             images_blur, images_sharp, images_edge = images_blur.transpose((1, 0, 2, 3, 4))
             for i in np.arange(len(images_blur)):
-                scipy.misc.imsave(save_dir_sample+"/sample_{}_blur.png".format(i), images_blur[i])
-                scipy.misc.imsave(save_dir_sample+"/sample_{}_sharp.png".format(i), images_sharp[i])
-                scipy.misc.imsave(save_dir_sample+"/sample_{}_edge.png".format(i), np.squeeze(images_edge[i]))
+                scipy.misc.imsave(save_dir_sample+"/sample_{}_2_blur.png".format(i), images_blur[i])
+                scipy.misc.imsave(save_dir_sample+"/sample_{}_1_sharp.png".format(i), images_sharp[i])
+                scipy.misc.imsave(save_dir_sample+"/sample_{}_4_sub.png".format(i), images_blur[i] - images_sharp[i])
+                scipy.misc.imsave(save_dir_sample+"/sample_{}_3_edge.png".format(i), np.squeeze(images_edge[i, :, :, 0].astype(np.float)))
 
             return
             '''

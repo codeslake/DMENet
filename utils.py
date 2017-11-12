@@ -59,7 +59,7 @@ def blur_crop_edge_sub_imgs_fn(data):
 
     cropped_image = image[center_y - r : center_y + r + 1, center_x - r : center_x + r + 1]
 
-    image_blur = cropped_image
+    image_blur = np.copy(cropped_image)
     for i in np.arange(3):
         image_blur[:, :, i] = gaussian_filter(image_blur[:, :, i], sigma[0])
 
@@ -68,7 +68,6 @@ def blur_crop_edge_sub_imgs_fn(data):
     cropped_edge = np.concatenate((cropped_edge, cropped_edge, cropped_edge), axis = 2)
     return image_blur, cropped_image, cropped_edge
     '''
-
     return image_blur / (255. / 2.) - 1.
 
 def downsample_fn(x):

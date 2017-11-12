@@ -16,9 +16,9 @@ config.TRAIN.n_epoch_init = 1000
 # config.TRAIN.decay_every_init = int(config.TRAIN.n_epoch_init / 2)
 
 ## adversarial learning (SRGAN)
-config.TRAIN.n_epoch = 3000
-config.TRAIN.lr_decay = 0.5
-config.TRAIN.decay_every = 300
+config.TRAIN.n_epoch = 10000
+config.TRAIN.lr_decay = 0.8
+config.TRAIN.decay_every = 500
 
 ## train set location
 config.TRAIN.blur_img_path = '/data1/BlurDetection/train/image/'
