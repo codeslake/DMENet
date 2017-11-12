@@ -4,7 +4,6 @@ import math
 from config import config, log_config
 from utils import *
 from model import *
-from scipy.ndimage.filters import gaussian_filter
 
 batch_size = config.TRAIN.batch_size
 lr_init = config.TRAIN.lr_init
@@ -34,32 +33,34 @@ def read_all_imgs(img_list, path='', n_threads=32, mode = 'RGB'):
     return imgs
 
 def train():
-    checkpoint_dir = "/data2/junyonglee/dme/checkpoint/{}".format(tl.global_flag['mode'])  # checkpoint_resize_conv
-    tl.files.exists_or_mkdir(checkpoint_dir)
-    checkpoint_dir_init = "/data2/junyonglee/dme/checkpoint/{}/init".format(tl.global_flag['mode'])  # checkpoint_resize_conv
-    tl.files.exists_or_mkdir(checkpoint_dir_init)
-    checkpoint_dir_ft = "/data2/junyonglee/dme/checkpoint/{}/ft".format(tl.global_flag['mode'])  # checkpoint_resize_conv
-    tl.files.exists_or_mkdir(checkpoint_dir_ft)
-    save_dir_sample_init = "sample/{}/init".format(tl.global_flag['mode'])
-    tl.files.exists_or_mkdir(save_dir_sample_init)
-
-def train():
     checkpoint_dir = "/data2/junyonglee/sharpness_assessment/checkpoint/{}".format(tl.global_flag['mode'])  # checkpoint_resize_conv
     tl.files.exists_or_mkdir(checkpoint_dir)
-    save_dir_gan = "samples/{}".format(tl.global_flag['mode'])
-    tl.files.exists_or_mkdir(save_dir_gan)
+    log_config(checkpoint_dir + '/config', config)
 
     train_blur_img_list = sorted(tl.files.load_file_list(path=config.TRAIN.blur_img_path, regx='(out_of_focus).*.(jpg|JPG)', printable=False))
     train_mask_img_list = sorted(tl.files.load_file_list(path=config.TRAIN.mask_img_path, regx='(out_of_focus).*.(jpg|JPG|png|PNG)', printable=False))
-    train_blur_imgs = read_all_imgs(train_blur_img_list, path=config.TRAIN.blur_img_path, n_threads=32, mode = 'RGB')
-    train_mask_imgs = read_all_imgs(train_mask_img_list, path=config.TRAIN.mask_img_path, n_threads=32, mode = 'GRAY')
+    train_edge_img_list = sorted(tl.files.load_file_list(path=config.TRAIN.edge_img_path, regx='(out_of_focus).*.(jpg|JPG|png|PNG)', printable=False))
+    train_blur_imgs = read_all_imgs(train_blur_img_list, path=config.TRAIN.blur_img_path, n_threads=batch_size, mode = 'RGB')
+    train_mask_imgs = read_all_imgs(train_mask_img_list, path=config.TRAIN.mask_img_path, n_threads=batch_size, mode = 'GRAY')
+    train_edge_imgs = read_all_imgs(train_edge_img_list, path=config.TRAIN.edge_img_path, n_threads=batch_size, mode = 'GRAY')
+
+    '''
+    for i in np.arange(len(train_blur_imgs)):
+        image = train_blur_imgs[i]
+        mask = train_mask_imgs[i]
+        mask = np.ones_like(mask) - mask
+        sharp_image = np.multiply(image, mask)
+        edge_image = feature.canny(color.rgb2gray(sharp_image))
+        scipy.misc.imsave('/data1/BlurDetection/train/edge/{}'.format(train_blur_img_list[i]), edge_image)
+        print 'saving {}'.format(train_blur_img_list[i])
+    '''
 
     ### DEFINE MODEL ###
     patches_blurred = tf.placeholder('float32', [batch_size, h, w, 3], name = 'input_patches')
     labels_sigma = tf.placeholder('float32', [batch_size, 1], name = 'lables')
 
     with tf.variable_scope('resNet') as scope:
-        net_regression = resNet(patches_blurred, reuse = False, scope = scope)
+        net_regression, _ = resNet(patches_blurred, reuse = False, scope = scope)
 
     ### DEFINE LOSS ###
     loss = tl.cost.mean_squared_error(net_regression.outputs + 1., labels_sigma, is_mean = True)
@@ -98,16 +99,9 @@ def train():
         for idx in range(0, len(train_blur_imgs), batch_size):
             step_time = time.time()
 
-            images_crop = tl.prepro.threading_data(
-                [_ for _ in zip(train_blur_imgs[idx : idx + batch_size], train_mask_imgs[idx : idx + batch_size])], fn=crop_edge_sub_imgs_fn)
-
-            print np.asarray(images_crop).shape
-
             sigma_random = np.expand_dims(np.around(np.random.uniform(low = 0.0, high = 2.0, size = batch_size), 2), 1)
-            images_blur = []
-            for i in range(0, len(images_crop)):
-                image_blur = gaussian_filter(images_crop[i], sigma_random[i][0])
-                images_blur.append(image_blur)
+            images_blur = tl.prepro.threading_data(
+                [_ for _ in zip(train_blur_imgs[idx : idx + batch_size], train_mask_imgs[idx : idx + batch_size], train_edge_imgs[idx : idx + batch_size], sigma_random)], fn=blur_crop_edge_sub_imgs_fn)
 
             err, _ = sess.run([loss, optim], {patches_blurred: images_blur, labels_sigma: sigma_random})
             print("Epoch [%2d/%2d] %4d time: %4.4fs, err: %.6f" % (epoch, n_epoch, n_iter, time.time() - step_time, err))
@@ -125,6 +119,8 @@ def train():
 def evaluate():
     print "Evaluation Start"
     checkpoint_dir = "/data2/junyonglee/sharpness_assessment/checkpoint/{}".format(tl.global_flag['mode'])  # checkpoint_resize_conv
+    save_dir_sample = "samples/{}".format(tl.global_flag['mode'])
+    tl.files.exists_or_mkdir(save_dir_sample)
 
     # Input
     test_blur_img_list = sorted(tl.files.load_file_list(path=config.TEST.blur_img_path, regx='(out_of_focus).*.(jpg|JPG)', printable=False))
@@ -133,10 +129,10 @@ def evaluate():
     test_mask_imgs = read_all_imgs(test_mask_img_list, path=config.TEST.mask_img_path, n_threads=32, mode = 'GRAY')
 
     # Model
-    patches_blurred = tf.placeholder('float32', [len(test_blur_imgs), 224, 224, 3], name = 'input_patches')
+    patches_blurred = tf.placeholder('float32', [1, None, None, 3], name = 'input_patches')
     with tf.variable_scope('resNet') as scope:
-        net_regression = resNet(patches_blurred, reuse = False, scope = scope)
-        sigma_value = (net_regression.outputs) * 1.5 + 0.5
+        _, output = resNet_test(patches_blurred, reuse = False, scope = scope)
+        sigma_value = output.outputs
 
     t_vars = tl.layers.get_variables_with_name('resNet', True, True)
 
@@ -150,7 +146,9 @@ def evaluate():
         print "exist"
 
     # Evalute
-    images_crop = tl.prepro.threading_data(test_blur_imgs[0 : len(test_sharp_imgs)], fn = crop_sub_img_fn, is_random = True)
+    '''
+    # sigma regression
+    images_crop = tl.prepro.threading_data(test_blur_imgs[0 : len(test_blur_imgs)], fn = crop_sub_img_fn, is_random = True)
 
     sigma_random = np.expand_dims(np.around(np.random.uniform(low = 0.0, high = 2.0, size = len(test_blur_imgs)), 2), 1)
     images_blur = []
@@ -162,6 +160,19 @@ def evaluate():
 
     for i in np.arange(len(sigma_out)):
         print "sigma: {}, expected: {}".format(sigma_random[i], sigma_out[i])
+    '''
+    # Blur map
+    for i in np.arange(len(test_blur_imgs)):
+        print "processing {}".format(i)
+        blur_map = sess.run(sigma_value, {patches_blurred: np.expand_dims(test_blur_imgs[i], axis = 0)})
+        print np.asarray(blur_map).shape
+        #h, w = test_blur_imgs[i].shape[0:2]
+        #blur_map = np.reshape(blur_map, (h, w, 1))
+        blur_map = np.squeeze(blur_map)
+        print "processing {}... DONE".format(i)
+        scipy.misc.imsave(save_dir_sample + "/{}.png".format(i), blur_map)
+        scipy.misc.imsave(save_dir_sample + "/{}_gt.png".format(i), test_blur_imgs[i])
+
 
 
 

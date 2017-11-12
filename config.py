@@ -6,8 +6,8 @@ config.TRAIN = edict()
 config.TEST = edict()
 
 ## Adam
-config.TRAIN.batch_size = 80
-config.TRAIN.lr_init = 1e-4
+config.TRAIN.batch_size = 70
+config.TRAIN.lr_init = 1e-5
 config.TRAIN.beta1 = 0.9
 
 ## initialize G
@@ -18,18 +18,19 @@ config.TRAIN.n_epoch_init = 1000
 ## adversarial learning (SRGAN)
 config.TRAIN.n_epoch = 3000
 config.TRAIN.lr_decay = 0.5
-config.TRAIN.decay_every = 200
+config.TRAIN.decay_every = 300
 
 ## train set location
 config.TRAIN.blur_img_path = '/data1/BlurDetection/train/image/'
 config.TRAIN.mask_img_path = '/data1/BlurDetection/train/gt/'
+config.TRAIN.edge_img_path = '/data1/BlurDetection/train/edge/'
 config.TEST.blur_img_path = '/data1/BlurDetection/test/image/'
 config.TEST.mask_img_path = '/data1/BlurDetection/test/gt/'
 
 
 ## train image size
-config.TRAIN.height = 71
-config.TRAIN.width = 71
+config.TRAIN.height = 81
+config.TRAIN.width = 81
 
 def log_config(filename, cfg):
     with open(filename, 'w') as f:
