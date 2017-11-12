@@ -52,7 +52,6 @@ def blur_crop_edge_sub_imgs_fn(data):
     condition = np.concatenate((condition, condition), axis = 1)
 
     coordinates = np.reshape(np.extract(condition, coordinates), (-1, 2))
-    #print coordinate
 
     # 3. crop image with given random edge point at center
     random_index = np.random.randint(0, coordinates.shape[0])
@@ -64,7 +63,13 @@ def blur_crop_edge_sub_imgs_fn(data):
     for i in np.arange(3):
         image_blur[:, :, i] = gaussian_filter(image_blur[:, :, i], sigma[0])
 
-    return image_blur
+    '''
+    cropped_edge = edge[center_y - r : center_y + r + 1, center_x - r : center_x + r + 1]
+    cropped_edge = np.concatenate((cropped_edge, cropped_edge, cropped_edge), axis = 2)
+    return image_blur, cropped_image, cropped_edge
+    '''
+
+    return image_blur / (255. / 2.) - 1.
 
 def downsample_fn(x):
     # We obtained the LR images by downsampling the HR images using bicubic kernel with downsampling factor r = 4.

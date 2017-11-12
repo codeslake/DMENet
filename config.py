@@ -7,7 +7,7 @@ config.TEST = edict()
 
 ## Adam
 config.TRAIN.batch_size = 70
-config.TRAIN.lr_init = 1e-5
+config.TRAIN.lr_init = 1e-4
 config.TRAIN.beta1 = 0.9
 
 ## initialize G
@@ -29,8 +29,9 @@ config.TEST.mask_img_path = '/data1/BlurDetection/test/gt/'
 
 
 ## train image size
-config.TRAIN.height = 81
-config.TRAIN.width = 81
+config.TRAIN.height = 71
+config.TRAIN.width = 71
+
 
 def log_config(filename, cfg):
     with open(filename, 'w') as f:

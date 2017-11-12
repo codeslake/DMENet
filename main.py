@@ -37,6 +37,9 @@ def train():
     tl.files.exists_or_mkdir(checkpoint_dir)
     log_config(checkpoint_dir + '/config', config)
 
+    save_dir_sample = "samples/{}".format(tl.global_flag['mode'])
+    tl.files.exists_or_mkdir(save_dir_sample)
+
     train_blur_img_list = sorted(tl.files.load_file_list(path=config.TRAIN.blur_img_path, regx='(out_of_focus).*.(jpg|JPG)', printable=False))
     train_mask_img_list = sorted(tl.files.load_file_list(path=config.TRAIN.mask_img_path, regx='(out_of_focus).*.(jpg|JPG|png|PNG)', printable=False))
     train_edge_img_list = sorted(tl.files.load_file_list(path=config.TRAIN.edge_img_path, regx='(out_of_focus).*.(jpg|JPG|png|PNG)', printable=False))
@@ -102,6 +105,16 @@ def train():
             sigma_random = np.expand_dims(np.around(np.random.uniform(low = 0.0, high = 2.0, size = batch_size), 2), 1)
             images_blur = tl.prepro.threading_data(
                 [_ for _ in zip(train_blur_imgs[idx : idx + batch_size], train_mask_imgs[idx : idx + batch_size], train_edge_imgs[idx : idx + batch_size], sigma_random)], fn=blur_crop_edge_sub_imgs_fn)
+
+            '''
+            images_blur, images_sharp, images_edge = images_blur.transpose((1, 0, 2, 3, 4))
+            for i in np.arange(len(images_blur)):
+                scipy.misc.imsave(save_dir_sample+"/sample_{}_blur.png".format(i), images_blur[i])
+                scipy.misc.imsave(save_dir_sample+"/sample_{}_sharp.png".format(i), images_sharp[i])
+                scipy.misc.imsave(save_dir_sample+"/sample_{}_edge.png".format(i), np.squeeze(images_edge[i]))
+
+            return
+            '''
 
             err, _ = sess.run([loss, optim], {patches_blurred: images_blur, labels_sigma: sigma_random})
             print("Epoch [%2d/%2d] %4d time: %4.4fs, err: %.6f" % (epoch, n_epoch, n_iter, time.time() - step_time, err))
