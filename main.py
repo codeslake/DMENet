@@ -48,7 +48,7 @@ def train():
         net_regression = resNet(patches_blurred, is_train = True, reuse = False, scope = scope)
 
     ### DEFINE LOSS ###
-    mse_loss = tl.cost.mean_squared_error(net_regression.outputs * 1.5 + 0.5, labels_sigma, is_mean = True)
+    mse_loss = tl.cost.mean_squared_error(net_regression.outputs * 2., labels_sigma, is_mean = True)
 
     with tf.variable_scope('learning_rate'):
         lr_v = tf.Variable(lr_init, trainable = False)
@@ -85,7 +85,7 @@ def train():
 
             images_crop = tl.prepro.threading_data(train_sharp_imgs[idx : idx + batch_size], fn = crop_sub_img_fn, is_random = True)
 
-            sigma_random = np.expand_dims(np.around(np.random.uniform(low = 0.5, high = 2.0, size = batch_size), 2), 1)
+            sigma_random = np.expand_dims(np.around(np.random.uniform(low = 0.0, high = 2.0, size = batch_size), 2), 1)
             images_blur = []
             for i in range(0, len(images_crop)):
                 image_blur = gaussian_filter(images_crop[i], sigma_random[i][0])
@@ -103,6 +103,47 @@ def train():
         ## save model
         if epoch % 100 == 0:
             tl.files.save_ckpt(sess=sess, mode_name='SA_net_{}_init.ckpt'.format(tl.global_flag['mode']), save_dir = checkpoint_dir, var_list = t_vars, global_step = global_step, printable = False)
+
+def evaluate():
+    print "Evaluation Start"
+    checkpoint_dir = "/data2/junyonglee/sharpness_assessment/checkpoint/{}".format(tl.global_flag['mode'])  # checkpoint_resize_conv
+
+    # Input
+    test_sharp_img_list = sorted(tl.files.load_file_list(path = config.TEST.sharp_img_path, regx = '.*.png', printable = False))
+    test_sharp_imgs = read_all_imgs(test_sharp_img_list, path = config.TEST.sharp_img_path, n_threads = 32)
+
+    # Model
+    patches_blurred = tf.placeholder('float32', [len(test_sharp_imgs), 224, 224, 3], name = 'input_patches')
+    with tf.variable_scope('resNet') as scope:
+        net_regression = resNet(patches_blurred, is_train = True, reuse = False, scope = scope)
+        sigma_value = (net_regression.outputs) * 1.5 + 0.5
+
+    t_vars = tl.layers.get_variables_with_name('resNet', True, True)
+
+    # Initi Session
+    sess = tf.Session(config=tf.ConfigProto(allow_soft_placement = True, log_device_placement = False))
+    tl.layers.initialize_global_variables(sess)
+
+    # Load checkpoint
+    tl.files.load_ckpt(sess=sess, mode_name='SA_net_{}_init.ckpt'.format(tl.global_flag['mode']), save_dir=checkpoint_dir, var_list=t_vars)
+    if tl.files.file_exists(checkpoint_dir + '/checkpoint'):
+        print "exist"
+
+    # Evalute
+    images_crop = tl.prepro.threading_data(test_sharp_imgs[0 : len(test_sharp_imgs)], fn = crop_sub_img_fn, is_random = True)
+
+    sigma_random = np.expand_dims(np.around(np.random.uniform(low = 0.0, high = 2.0, size = len(test_sharp_imgs)), 2), 1)
+    images_blur = []
+    for i in range(0, len(images_crop)):
+        image_blur = gaussian_filter(images_crop[i], sigma_random[i][0])
+        images_blur.append(image_blur)
+
+    sigma_out = sess.run(sigma_value, {patches_blurred: images_blur})
+
+    for i in np.arange(len(sigma_out)):
+        print "sigma: {}, expected: {}".format(sigma_random[i], sigma_out[i])
+
+
 
 if __name__ == '__main__':
     import argparse

@@ -17,7 +17,7 @@ config.TRAIN.n_epoch_init = 1000
 
 ## adversarial learning (SRGAN)
 config.TRAIN.n_epoch = 2000
-config.TRAIN.lr_decay = 0.1
+config.TRAIN.lr_decay = 0.8
 config.TRAIN.decay_every = 100
 
 ## train set location
