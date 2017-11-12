@@ -16,13 +16,20 @@ config.TRAIN.n_epoch_init = 1000
 # config.TRAIN.decay_every_init = int(config.TRAIN.n_epoch_init / 2)
 
 ## adversarial learning (SRGAN)
-config.TRAIN.n_epoch = 2000
-config.TRAIN.lr_decay = 0.8
-config.TRAIN.decay_every = 100
+config.TRAIN.n_epoch = 3000
+config.TRAIN.lr_decay = 0.5
+config.TRAIN.decay_every = 200
 
 ## train set location
-config.TRAIN.sharp_img_path = '/data1/super_resolution/DIV2K/DIV2K_train_HR/'
-config.TEST.sharp_img_path = '/data1/super_resolution/DIV2K/DIV2K_valid_HR/'
+config.TRAIN.blur_img_path = '/data1/BlurDetection/train/image/'
+config.TRAIN.mask_img_path = '/data1/BlurDetection/train/gt/'
+config.TEST.blur_img_path = '/data1/BlurDetection/test/image/'
+config.TEST.mask_img_path = '/data1/BlurDetection/test/gt/'
+
+
+## train image size
+config.TRAIN.height = 71
+config.TRAIN.width = 71
 
 def log_config(filename, cfg):
     with open(filename, 'w') as f:
