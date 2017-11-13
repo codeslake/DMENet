@@ -177,18 +177,24 @@ def evaluate():
     '''
     # Blur map
     for i in np.arange(len(test_blur_imgs)):
-        print "processing {}".format(i)
-        blur_map = sess.run(sigma_value, {patches_blurred: np.expand_dims(test_blur_imgs[i], axis = 0)})
-        print np.asarray(blur_map).shape
-        #h, w = test_blur_imgs[i].shape[0:2]
-        #blur_map = np.reshape(blur_map, (h, w, 1))
-        blur_map = np.squeeze(blur_map)
+        print "processing {}".format(test_blur_img_list[i])
+        # blur_map
+        blur_map = sess.run(sigma_value, {patches_blurred: np.expand_dims(np.pad((test_blur_imgs[i] / (255. /2.) - 1.), ((35, 35), (35, 35), (0, 0)), 'reflect'), axis = 0)})
+        blur_map = np.squeeze((blur_map + 1.) / 2.)
+        print blur_map
+        blur_map = 1. - blur_map
+        print blur_map
+        #blur_map = blur_map / np.max(blur_map, axis = 0)
+        # edge_image
+        edge_image = feature.canny(color.rgb2gray(test_blur_imgs[i]))
+        blur_map_edge = np.multiply(edge_image, blur_map)
+        blur_map_edge_color = activation_map(blur_map_edge)
         print "processing {}... DONE".format(i)
-        scipy.misc.imsave(save_dir_sample + "/{}.png".format(i), blur_map)
+        #scipy.misc.imsave(save_dir_sample + "/{}.png".format(i), blur_map)
+        scipy.misc.toimage(blur_map, cmin=0., cmax=1.).save(save_dir_sample + "/{}_blur.png".format(i))
+        scipy.misc.toimage(blur_map_edge, cmin=0., cmax=1.).save(save_dir_sample + "/{}_edge.png".format(i))
+        scipy.misc.toimage(blur_map_edge_color, cmin=0., cmax=255.).save(save_dir_sample + "/{}_edge_color.png".format(i))
         scipy.misc.imsave(save_dir_sample + "/{}_gt.png".format(i), test_blur_imgs[i])
-
-
-
 
 if __name__ == '__main__':
     import argparse

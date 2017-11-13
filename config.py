@@ -6,7 +6,7 @@ config.TRAIN = edict()
 config.TEST = edict()
 
 ## Adam
-config.TRAIN.batch_size = 70
+config.TRAIN.batch_size = 35
 config.TRAIN.lr_init = 1e-4
 config.TRAIN.beta1 = 0.9
 

@@ -85,3 +85,28 @@ def t_or_f(arg):
        return False
     else:
        pass 
+
+def activation_map(gray):
+    red = np.expand_dims(np.ones_like(gray), axis = 2)
+    green = np.expand_dims(np.ones_like(gray), axis = 2)
+    blue = np.expand_dims(np.ones_like(gray), axis = 2)
+    gray = np.expand_dims(gray, axis = 2)
+
+    red[(gray == 0.)] = 0.
+    red[(gray <= 1./3)&(gray > 0.)] = 1.
+    red[(gray > 1./3)&(gray <= 2./3)] = 1. - gray[(gray > 1./3)&(gray <= 2./3)]
+    red[(gray > 2./3)] = 0.
+
+    green[(gray == 0.)] = 0.
+    green[(gray <= 1./3)&(gray > 0.)] = gray[(gray <= 1./3)&(gray > 0.)]
+    green[(gray > 1./3)&(gray <= 2./3)] = 1.
+    green[(gray > 2./3)] = 1. - gray[(gray > 2./3)]
+
+    blue[(gray == 0.)] = 0.
+    blue[(gray <= 1./3)&(gray > 0.)] = 0.
+    blue[(gray > 1./3)&(gray <= 2./3)] = gray[(gray > 1./3)&(gray <= 2./3)]
+    blue[(gray > 2./3)] = 1.
+
+    return np.concatenate((red, green, blue), axis = 2) * 255.
+
+
