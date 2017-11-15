@@ -4,6 +4,8 @@ import math
 from config import config, log_config
 from utils import *
 from model import *
+import matplotlib
+import datetime
 
 batch_size = config.TRAIN.batch_size
 lr_init = config.TRAIN.lr_init
@@ -50,14 +52,17 @@ def train():
     '''
     for i in np.arange(len(train_blur_imgs)):
         image = train_blur_imgs[i]
+        image = matplotlib.colors.rgb_to_hsv(image)
+        image = image[:, :, 2]
+        image = np.expand_dims(image, axis = 2)
         mask = train_mask_imgs[i]
         mask = np.ones_like(mask) - mask
         sharp_image = np.multiply(image, mask)
-        edge_image = feature.canny(color.rgb2gray(sharp_image))
+        edge_image = feature.canny(np.squeeze(sharp_image), sigma = 1)
         scipy.misc.imsave('/data1/BlurDetection/train/edge/{}'.format(train_blur_img_list[i]), edge_image)
         print 'saving {}'.format(train_blur_img_list[i])
+    return
     '''
-
     ### DEFINE MODEL ###
     patches_blurred = tf.placeholder('float32', [batch_size, h, w, 3], name = 'input_patches')
     labels_sigma = tf.placeholder('float32', [batch_size, 1], name = 'lables')
@@ -66,7 +71,7 @@ def train():
         net_regression, _ = resNet(patches_blurred, reuse = False, scope = scope)
 
     ### DEFINE LOSS ###
-    loss = tl.cost.mean_squared_error(net_regression.outputs + 1., labels_sigma, is_mean = True)
+    loss = tl.cost.mean_squared_error((net_regression.outputs + 1.0) * 7.5, labels_sigma, is_mean = True)
     #loss = tf.reduce_mean(tf.abs((net_regression.outputs + 1) - labels_sigma))
 
     with tf.variable_scope('learning_rate'):
@@ -102,7 +107,7 @@ def train():
         for idx in range(0, len(train_blur_imgs), batch_size):
             step_time = time.time()
 
-            sigma_random = np.expand_dims(np.around(np.random.uniform(low = 0.0, high = 2.0, size = batch_size), 2), 1)
+            sigma_random = np.expand_dims(np.around(np.random.uniform(low = 0.0, high = 15.0, size = batch_size), 2), 1)
             images_blur = tl.prepro.threading_data(
                 [_ for _ in zip(train_blur_imgs[idx : idx + batch_size], train_mask_imgs[idx : idx + batch_size], train_edge_imgs[idx : idx + batch_size], sigma_random)], fn=blur_crop_edge_sub_imgs_fn)
             
@@ -133,7 +138,9 @@ def train():
 def evaluate():
     print "Evaluation Start"
     checkpoint_dir = "/data2/junyonglee/sharpness_assessment/checkpoint/{}".format(tl.global_flag['mode'])  # checkpoint_resize_conv
-    save_dir_sample = "samples/{}".format(tl.global_flag['mode'])
+    date = datetime.datetime.now().strftime("%y.%m.%d")
+    time = datetime.datetime.now().strftime("%H%M")
+    save_dir_sample = "samples/{}/{}/{}".format(tl.global_flag['mode'], date, time)
     tl.files.exists_or_mkdir(save_dir_sample)
 
     # Input
@@ -177,24 +184,33 @@ def evaluate():
     '''
     # Blur map
     for i in np.arange(len(test_blur_imgs)):
-        print "processing {}".format(test_blur_img_list[i])
+        print "processing {} ...".format(test_blur_img_list[i])
         # blur_map
         blur_map = sess.run(sigma_value, {patches_blurred: np.expand_dims(np.pad((test_blur_imgs[i] / (255. /2.) - 1.), ((35, 35), (35, 35), (0, 0)), 'reflect'), axis = 0)})
         blur_map = np.squeeze((blur_map + 1.) / 2.)
-        print blur_map
         blur_map = 1. - blur_map
-        print blur_map
-        #blur_map = blur_map / np.max(blur_map, axis = 0)
+        blur_map_norm = (blur_map - blur_map.min(axis = None))
+        blur_map_norm = blur_map_norm / blur_map_norm.max(axis = None)
         # edge_image
-        edge_image = feature.canny(color.rgb2gray(test_blur_imgs[i]))
+        gt_active = np.multiply(test_blur_imgs[i], np.concatenate((np.expand_dims(blur_map_norm, 2), np.expand_dims(blur_map_norm, 2), np.expand_dims(blur_map_norm, 2)), axis = 2))
+        edge_image = feature.canny(color.rgb2gray(test_blur_imgs[i]), sigma = 1)
         blur_map_edge = np.multiply(edge_image, blur_map)
+        blur_map_edge_norm = np.multiply(edge_image, blur_map_norm)
+        #blur_map_edge_norm = np.copy(blur_map_edge)
+        #blur_map_edge_norm[edge_image] = blur_map_edge_norm[edge_image] - blur_map_edge_norm[edge_image].min()
+        #blur_map_edge_norm[edge_image] = blur_map_edge_norm[edge_image] / blur_map_edge_norm[edge_image].max()
         blur_map_edge_color = activation_map(blur_map_edge)
-        print "processing {}... DONE".format(i)
+        blur_map_edge_color_norm = activation_map(blur_map_edge_norm)
+        print "processing {} ... Done".format(test_blur_img_list[i])
         #scipy.misc.imsave(save_dir_sample + "/{}.png".format(i), blur_map)
-        scipy.misc.toimage(blur_map, cmin=0., cmax=1.).save(save_dir_sample + "/{}_blur.png".format(i))
-        scipy.misc.toimage(blur_map_edge, cmin=0., cmax=1.).save(save_dir_sample + "/{}_edge.png".format(i))
-        scipy.misc.toimage(blur_map_edge_color, cmin=0., cmax=255.).save(save_dir_sample + "/{}_edge_color.png".format(i))
-        scipy.misc.imsave(save_dir_sample + "/{}_gt.png".format(i), test_blur_imgs[i])
+        scipy.misc.imsave(save_dir_sample + "/{}_1_gt.png".format(i), test_blur_imgs[i])
+        scipy.misc.imsave(save_dir_sample + "/{}_1_gt_active.png".format(i), gt_active)
+        scipy.misc.toimage(blur_map, cmin=0., cmax=1.).save(save_dir_sample + "/{}_2_blur.png".format(i))
+        scipy.misc.toimage(blur_map_norm, cmin=0., cmax=1.).save(save_dir_sample + "/{}_2_blur_norm.png".format(i))
+        scipy.misc.toimage(blur_map_edge_color, cmin=0., cmax=255.).save(save_dir_sample + "/{}_5_edge_color.png".format(i))
+        scipy.misc.toimage(blur_map_edge_color_norm, cmin=0., cmax=255.).save(save_dir_sample + "/{}_5_edge_color_norm.png".format(i))
+        scipy.misc.toimage(blur_map_edge, cmin=0, cmax=1).save(save_dir_sample + "/{}_4_edge.png".format(i))
+        scipy.misc.toimage(blur_map_edge_norm, cmin=0, cmax=1).save(save_dir_sample + "/{}_4_edge_norm.png".format(i))
 
 if __name__ == '__main__':
     import argparse

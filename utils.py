@@ -59,9 +59,10 @@ def blur_crop_edge_sub_imgs_fn(data):
 
     cropped_image = image[center_y - r : center_y + r + 1, center_x - r : center_x + r + 1]
 
-    image_blur = np.copy(cropped_image)
-    for i in np.arange(3):
-        image_blur[:, :, i] = gaussian_filter(image_blur[:, :, i], sigma[0])
+    # 4. Gaussian Blur
+    image_blur = gaussian_filter(cropped_image, (sigma[0], sigma[0], 0))
+    image_blur = image_blur + (np.mean(cropped_image) - np.mean(image_blur))
+    image_blur[image_blur > 255.] = 255.
 
     '''
     cropped_edge = edge[center_y - r : center_y + r + 1, center_x - r : center_x + r + 1]
@@ -93,19 +94,20 @@ def activation_map(gray):
     gray = np.expand_dims(gray, axis = 2)
 
     red[(gray == 0.)] = 0.
-    red[(gray <= 1./3)&(gray > 0.)] = 1.
-    red[(gray > 1./3)&(gray <= 2./3)] = 1. - gray[(gray > 1./3)&(gray <= 2./3)]
-    red[(gray > 2./3)] = 0.
-
     green[(gray == 0.)] = 0.
-    green[(gray <= 1./3)&(gray > 0.)] = gray[(gray <= 1./3)&(gray > 0.)]
-    green[(gray > 1./3)&(gray <= 2./3)] = 1.
-    green[(gray > 2./3)] = 1. - gray[(gray > 2./3)]
-
     blue[(gray == 0.)] = 0.
+
+    red[(gray <= 1./3)&(gray > 0.)] = 1.
+    green[(gray <= 1./3)&(gray > 0.)] = 3. * gray[(gray <= 1./3.)&(gray > 0.)]
     blue[(gray <= 1./3)&(gray > 0.)] = 0.
-    blue[(gray > 1./3)&(gray <= 2./3)] = gray[(gray > 1./3)&(gray <= 2./3)]
-    blue[(gray > 2./3)] = 1.
+
+    red[(gray > 1./3)&(gray <= 2./3)] = -3. * (gray[(gray > 1./3)&(gray <= 2./3)] - 1./3.) + 1.
+    green[(gray > 1./3)&(gray <= 2./3)] = 1.
+    blue[(gray > 1./3)&(gray <= 2./3)] = 0.
+
+    red[(gray > 2./3)] = 0.
+    green[(gray > 2./3)] = -3. * (gray[(gray > 2./3)] - 2./3.) + 1.
+    blue[(gray > 2./3)] = 3. * (gray[(gray > 2./3)] - 2./3.)
 
     return np.concatenate((red, green, blue), axis = 2) * 255.
 

@@ -16,20 +16,20 @@ def resNet(t_image, reuse=False, scope = "resNet"):
     with tf.variable_scope(scope, reuse=reuse):
         tl.layers.set_name_reuse(reuse)
         n = InputLayer(t_image, name='in')
-        n = Conv2d(n, 64, (7, 7), (1, 1), act=tf.nn.relu, padding='SAME', W_init=w_init, name='n64s1/c')
-        #n = MaxPool2d(n, filter_size=(2, 2), strides=(2, 2), padding='SAME', name='pool1')
+        n = Conv2d(n, 64, (7, 7), (1, 1), act=tf.nn.relu, padding='VALID', W_init=w_init, name='n64s1/c')
+        #n = MaxPool2d(n, filter_size=(2, 2), strides=(2, 2), padding='VALID', name='pool1')
 
         for i in range(4):
             for j in range(num_res_block[i]):
-                nn = Conv2d(n, filter_out[i], (3, 3), (1, 1), act=tf.nn.relu, padding='SAME', W_init=w_init, b_init=b_init, name='n64s1/c1/%s/%s' % (i, j))
-                nn = Conv2d(nn, filter_out[i], (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init, b_init=b_init, name='n64s1/c2/%s/%s' % (i, j))
+                nn = Conv2d(n, filter_out[i], (3, 3), (1, 1), act=tf.nn.relu, padding='VALID', W_init=w_init, b_init=b_init, name='n64s1/c1/%s/%s' % (i, j))
+                nn = Conv2d(nn, filter_out[i], (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init, b_init=b_init, name='n64s1/c2/%s/%s' % (i, j))
                 if i != 0 and j != 0:
-                    n = Conv2d(n, filter_out[i], (5, 5), (1, 1), act=tf.nn.relu, padding='SAME', W_init=w_init, b_init=b_init, name='res_n64s1/c2/%s/%s' % (i, j))
+                    n = Conv2d(n, filter_out[i], (5, 5), (1, 1), act=tf.nn.relu, padding='VALID', W_init=w_init, b_init=b_init, name='res_n64s1/c2/%s/%s' % (i, j))
                     nn = ElementwiseLayer([n, nn], tf.add, 'b_residual_add/%s/%s' % (i, j))
                 nn = InputLayer(tf.nn.relu(nn.outputs), name = 'relu/%s/%s' % (i, j))
                 n = nn
 
-            #n = MaxPool2d(n, filter_size=(2, 2), strides=(2, 2), padding='SAME', name='pool/%s' % i)
+            #n = MaxPool2d(n, filter_size=(2, 2), strides=(2, 2), padding='VALID', name='pool/%s' % i)
 
         '''
         n = FlattenLayer(n, name='flatten')
@@ -39,7 +39,7 @@ def resNet(t_image, reuse=False, scope = "resNet"):
         '''
         h, w = n.outputs.get_shape().as_list()[1:3]
         n = Conv2d(n, 512, (h, w), act=tf.nn.relu, padding='VALID', W_init=w_init, b_init=b_init, name='fcn1')
-        n = Conv2d(n, 512, (1, 1), act=tf.nn.relu, padding='VALID', W_init=w_init, b_init=b_init, name='fcn2')
+        n = Conv2d(n, 256, (1, 1), act=tf.nn.relu, padding='VALID', W_init=w_init, b_init=b_init, name='fcn2')
         output = Conv2d(n, 1, (1, 1), act=tf.nn.tanh, padding='VALID', W_init=w_init, b_init=b_init, name='fcn3')
         n = ReshapeLayer(output, [-1, 1], name='flatten')
 
@@ -77,8 +77,15 @@ def resNet_test(t_image, reuse=False, scope = "resNet_test"):
         n = DenseLayer(n, n_units=1, W_init = w_init, b_init = None, act=tf.nn.tanh, name='fc3')
         '''
         #h, w = n.outputs.get_shape().as_list()[1:3]
-        n = Conv2d(n, 1000, (1, 1), act=tf.nn.relu, padding='VALID', W_init=w_init, b_init=b_init, name='fcn1')
-        n = Conv2d(n, 512, (1, 1), act=tf.nn.relu, padding='VALID', W_init=w_init, b_init=b_init, name='fcn2')
+        # strong_edge
+        '''
+        n = Conv2d(n, 512, (1, 1), act=tf.nn.relu, padding='VALID', W_init=w_init, b_init=b_init, name='fcn1')
+        n = Conv2d(n, 256, (1, 1), act=tf.nn.relu, padding='VALID', W_init=w_init, b_init=b_init, name='fcn2')
+        '''
+        #weak_edge 
+        n = Conv2d(n, 512, (1, 1), act=tf.nn.relu, padding='VALID', W_init=w_init, b_init=b_init, name='fcn1')
+        n = Conv2d(n, 256, (1, 1), act=tf.nn.relu, padding='VALID', W_init=w_init, b_init=b_init, name='fcn2')
+
         output = Conv2d(n, 1, (1, 1), act=tf.nn.tanh, padding='VALID', W_init=w_init, b_init=b_init, name='fcn3')
         n = ReshapeLayer(output, [-1, 1], name='flatten')
 
