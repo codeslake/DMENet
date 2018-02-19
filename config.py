@@ -6,7 +6,7 @@ config.TRAIN = edict()
 config.TEST = edict()
 
 ## Adam
-config.TRAIN.batch_size = 70
+config.TRAIN.batch_size = 40
 config.TRAIN.lr_init = 1e-4
 config.TRAIN.beta1 = 0.9
 
@@ -21,16 +21,16 @@ config.TRAIN.lr_decay = 0.8
 config.TRAIN.decay_every = 500
 
 ## train set location
-config.TRAIN.blur_img_path = '/data1/BlurDetection/train/image/'
-config.TRAIN.mask_img_path = '/data1/BlurDetection/train/gt/'
-config.TRAIN.edge_img_path = '/data1/BlurDetection/train/edge/'
-config.TEST.blur_img_path = '/data1/BlurDetection/test/image/'
-config.TEST.mask_img_path = '/data1/BlurDetection/test/gt/'
+config.TRAIN.sharp_img_path = '/data1/SharpImages/train/'
+#config.TRAIN.mask_img_path = '/data1/BlurDetection/train/gt/'
+#config.TRAIN.edge_img_path = '/data1/BlurDetection/train/edge/'
+config.TEST.blur_img_path = "/data1/SharpImages/test/"
+#config.TEST.mask_img_path = '/data1/BlurDetection/test/gt/'
 
 
 ## train image size
-config.TRAIN.height = 71
-config.TRAIN.width = 71
+config.TRAIN.height = 512
+config.TRAIN.width = 512
 
 
 def log_config(filename, cfg):

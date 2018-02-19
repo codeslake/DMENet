@@ -31,11 +31,12 @@ def blur_crop_edge_sub_imgs_fn(data):
     w = config.TRAIN.width
     r = (int)(h/2.) # 35
 
-    image, mask, edge, sigma = data
+    image, sigma = data
     #mask = np.ones_like(mask) - mask
 
     image_h, image_w = np.asarray(image).shape[0:2]
 
+    '''
     # 1. get edge image in "sharp region"
     # 1-1. elementary wise application between image and mask
     #sharp_image = np.multiply(image, mask)
@@ -64,11 +65,20 @@ def blur_crop_edge_sub_imgs_fn(data):
     image_blur = image_blur + (np.mean(cropped_image) - np.mean(image_blur))
     image_blur[image_blur > 255.] = 255.
 
-    '''
+    ###
     cropped_edge = edge[center_y - r : center_y + r + 1, center_x - r : center_x + r + 1]
     cropped_edge = np.concatenate((cropped_edge, cropped_edge, cropped_edge), axis = 2)
     return image_blur, cropped_image, cropped_edge
+    ###
     '''
+    cropped_image = tl.prepro.crop(image, wrg=h, hrg=w, is_random=True)
+    image_blur = gaussian_filter(cropped_image, (sigma[0], sigma[0], 0))
+    image_blur = image_blur + (np.mean(cropped_image) - np.mean(image_blur))
+    image_blur[image_blur > 255.] = 255.
+
+    scipy.misc.imsave("/sharp_crop.png", cropped_image)
+    scipy.misc.imsave("/blur_crop.png", image_blur)
+
     return image_blur / (255. / 2.) - 1.
 
 def downsample_fn(x):
