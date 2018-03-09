@@ -19,3 +19,6 @@ __pycache__/
 Session.vim
 .netrwhist
 *~
+
+### pycharm ###
+.idea

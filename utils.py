@@ -16,9 +16,8 @@ def get_imgs_RGB_fn(file_name, path):
 
 def get_imgs_GRAY_fn(file_name, path):
     """ Input an image path and name, return an image array """
-    # return scipy.misc.imread(path + file_name).astype(np.float)
-    image = scipy.misc.imread(path + file_name, mode='P')/255
-    return np.expand_dims(np.asarray(image), 3)
+    image = scipy.misc.imread(path + file_name, mode='P')/255.
+    return np.expand_dims(image, axis = 2)
 
 def blur_crop_edge_sub_imgs_fn(data):
     '''
@@ -76,9 +75,6 @@ def blur_crop_edge_sub_imgs_fn(data):
     image_blur = image_blur + (np.mean(cropped_image) - np.mean(image_blur))
     image_blur[image_blur > 255.] = 255.
 
-    scipy.misc.imsave("/sharp_crop.png", cropped_image)
-    scipy.misc.imsave("/blur_crop.png", image_blur)
-
     return image_blur / (255. / 2.) - 1.
 
 def downsample_fn(x):
@@ -120,5 +116,50 @@ def activation_map(gray):
     blue[(gray > 2./3)] = 3. * (gray[(gray > 2./3)] - 2./3.)
 
     return np.concatenate((red, green, blue), axis = 2) * 255.
+
+def _tf_fspecial_gauss(size, sigma):
+    """Function to mimic the 'fspecial' gaussian MATLAB function
+    """
+    x_data, y_data = np.mgrid[-size//2 + 1:size//2 + 1, -size//2 + 1:size//2 + 1]
+
+    x_data = np.expand_dims(x_data, axis=-1)
+    x_data = np.expand_dims(x_data, axis=-1)
+
+    y_data = np.expand_dims(y_data, axis=-1)
+    y_data = np.expand_dims(y_data, axis=-1)
+
+    x = tf.constant(x_data, dtype=tf.float32)
+    y = tf.constant(y_data, dtype=tf.float32)
+
+    g = tf.exp(-((x**2 + y**2)/(2.0*sigma**2)))
+    return g / tf.reduce_sum(g)
+
+def tf_ssim(img1, img2, mean_metric = True, cs_map=False, size=11, sigma=1.5):
+    window = _tf_fspecial_gauss(size, sigma) # window shape [size, size]
+    K1 = 0.01
+    K2 = 0.03
+    L = 1  # depth of image (255 in case the image has a differnt scale)
+    C1 = (K1*L)**2
+    C2 = (K2*L)**2
+    mu1 = tf.nn.conv2d(img1, window, strides=[1,1,1,1], padding='VALID')
+    mu2 = tf.nn.conv2d(img2, window, strides=[1,1,1,1],padding='VALID')
+    mu1_sq = mu1*mu1
+    mu2_sq = mu2*mu2
+    mu1_mu2 = mu1*mu2
+    sigma1_sq = tf.nn.conv2d(img1*img1, window, strides=[1,1,1,1],padding='VALID') - mu1_sq
+    sigma2_sq = tf.nn.conv2d(img2*img2, window, strides=[1,1,1,1],padding='VALID') - mu2_sq
+    sigma12 = tf.nn.conv2d(img1*img2, window, strides=[1,1,1,1],padding='VALID') - mu1_mu2
+    if cs_map:
+        value = (((2*mu1_mu2 + C1)*(2*sigma12 + C2))/((mu1_sq + mu2_sq + C1)*
+                    (sigma1_sq + sigma2_sq + C2)),
+                (2.0*sigma12 + C2)/(sigma1_sq + sigma2_sq + C2))
+    else:
+        value = ((2*mu1_mu2 + C1)*(2*sigma12 + C2))/((mu1_sq + mu2_sq + C1)*
+                    (sigma1_sq + sigma2_sq + C2))
+
+    if mean_metric:
+        value = tf.reduce_mean(value)
+
+    return value
 
 

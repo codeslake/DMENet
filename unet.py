@@ -191,5 +191,5 @@ def UNet(t_image, is_train=False, reuse=False, scope = "UNet"):
         #n = InstanceNormLayer(n, act=tf.nn.relu, epsilon=1e-5, name='u1/b1')
         n = Conv2d(n, 1, (3, 3), (1, 1), act=tf.nn.sigmoid, padding='SAME', W_init=w_init1, name='u1/c2')
 
-        return n.outputs
+        return n, n.outputs
 
