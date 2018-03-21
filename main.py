@@ -110,7 +110,6 @@ def train():
         if epoch !=0 and (epoch % decay_every == 0):
             new_lr_decay = lr_decay ** (epoch // decay_every)
             sess.run(tf.assign(lr_v, lr_init * new_lr_decay))
-            hi
             log = " ** new learning rate: %f" % (lr_init * new_lr_decay)
             print(log)
         elif epoch == 0:
