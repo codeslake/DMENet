@@ -134,13 +134,14 @@ def _tf_fspecial_gauss(size, sigma):
     g = tf.exp(-((x**2 + y**2)/(2.0*sigma**2)))
     return g / tf.reduce_sum(g)
 
-def tf_ssim(img1, img2, mean_metric = True, cs_map=False, size=11, sigma=1.5):
+def tf_ssim(img1, img2, mean_metric = True, cs_map=False, size=9, sigma=0.5):
     window = _tf_fspecial_gauss(size, sigma) # window shape [size, size]
     K1 = 0.01
     K2 = 0.03
     L = 1  # depth of image (255 in case the image has a differnt scale)
     C1 = (K1*L)**2
     C2 = (K2*L)**2
+    C3 = C2/2.
     mu1 = tf.nn.conv2d(img1, window, strides=[1,1,1,1], padding='VALID')
     mu2 = tf.nn.conv2d(img2, window, strides=[1,1,1,1],padding='VALID')
     mu1_sq = mu1*mu1
@@ -149,17 +150,102 @@ def tf_ssim(img1, img2, mean_metric = True, cs_map=False, size=11, sigma=1.5):
     sigma1_sq = tf.nn.conv2d(img1*img1, window, strides=[1,1,1,1],padding='VALID') - mu1_sq
     sigma2_sq = tf.nn.conv2d(img2*img2, window, strides=[1,1,1,1],padding='VALID') - mu2_sq
     sigma12 = tf.nn.conv2d(img1*img2, window, strides=[1,1,1,1],padding='VALID') - mu1_mu2
+
+    l = (2 * mu1 * mu2 + C1)/(mu1_sq + mu2_sq + C1)
+    c = (2 * tf.sqrt(sigma1_sq) * tf.sqrt(sigma2_sq) + C2) / (sigma1_sq + sigma2_sq + C2)
+    #s = (sigma12 + C3)/(tf.sqrt(sigma1_sq) * tf.sqrt(sigma2_sq) + C3)
+    s = (sigma12**2 + C3)/(sigma1_sq * sigma2_sq + C3)
     if cs_map:
-        value = (((2*mu1_mu2 + C1)*(2*sigma12 + C2))/((mu1_sq + mu2_sq + C1)*
-                    (sigma1_sq + sigma2_sq + C2)),
-                (2.0*sigma12 + C2)/(sigma1_sq + sigma2_sq + C2))
+        value = ( l ** 0, (c ** 0) * s)
     else:
+        '''
         value = ((2*mu1_mu2 + C1)*(2*sigma12 + C2))/((mu1_sq + mu2_sq + C1)*
                     (sigma1_sq + sigma2_sq + C2))
+        '''
+        value = s
 
     if mean_metric:
         value = tf.reduce_mean(value)
 
     return value
 
+def tf_ms_ssim(img1, img2, batch_size, mean_metric=True, level=5):
+    #weight = [0.0448, 0.2856, 0.3001, 0.2363, 0.1333]
+    weight = [1., 1., 1., 1., 1.]
 
+    ml = []
+    mcs = []
+    image1 = img1
+    image2 = img2
+    for l in range(level):
+        l_map, cs_map = tf_ssim(image1, image2, cs_map=True, mean_metric=False)
+
+        l_map_mean = tf.reduce_mean(tf.reshape(l_map, [batch_size, -1]), axis=1)
+        cs_map_mean = tf.reduce_mean(tf.reshape(cs_map, [batch_size, -1]), axis=1)
+
+        #l_map_mean = tf.Print(l_map_mean, [l_map_mean], message = 'l_map_{}'.format(l), summarize = 10)
+        #cs_map_mean = tf.Print(cs_map_mean, [cs_map_mean], message = 'cs_map_{}'.format(l), summarize = 10)
+
+        ml.append(l_map_mean)
+        mcs.append(cs_map_mean)
+
+        image1 = tf.nn.avg_pool(image1, [1,2,2,1], [1,2,2,1], padding='SAME')
+        image2 = tf.nn.avg_pool(image2, [1,2,2,1], [1,2,2,1], padding='SAME')
+
+    # list to tensor of dim D+1
+    ml = tf.stack(ml, axis=0)
+    mcs = tf.stack(mcs, axis=0)
+
+    mat = np.copy(weight)
+    for i in np.arange(batch_size - 1):
+        mat = np.concatenate((mat, weight))
+    mat = np.reshape(mat, [batch_size, level])
+    mat = np.transpose(mat)
+
+    weight_mat = tf.constant(mat, shape=[level, batch_size], dtype=tf.float32)
+    #weight_mat = tf.Print(weight_mat, [weight_mat], message = 'w_mat', summarize = 50)
+
+    value = (ml[level-1]**tf.constant(weight[level-1], shape=[batch_size])) * tf.reduce_prod(mcs[0:level]**weight_mat)
+
+    if mean_metric:
+        value = tf.reduce_mean(value)
+    return value
+
+
+def refine_image(img):
+    image = img
+    while True:
+        shape = image.shape
+        if shape[0] % 2 is not 0:
+            image = image[:-1, :, :]
+            continue
+        elif (shape[0] / 2) % 2 is not 0:
+            image = image[:-1, :, :]
+            continue
+        elif (shape[0] / 2 / 2) % 2 is not 0:
+            image = image[:-1, :, :]
+            continue
+        elif (shape[0] / 2 / 2 / 2) % 2 is not 0:
+            image = image[:-1, :, :]
+            continue
+        else:
+            break;
+    
+    while True:
+        shape = image.shape
+        if shape[1] % 2 is not 0:
+            image = image[:, :-1, :]
+            continue
+        elif (shape[1] / 2) % 2 is not 0:
+            image = image[:, :-1, :]
+            continue
+        elif (shape[1] / 2 / 2) % 2 is not 0:
+            image = image[:, :-1, :]
+            continue
+        elif (shape[1] / 2 / 2/ 2) % 2 is not 0:
+            image = image[:, :-1, :]
+            continue
+        else:
+            break;
+    
+    return image

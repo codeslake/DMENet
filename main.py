@@ -7,6 +7,7 @@ from unet import *
 from random import shuffle
 import matplotlib
 import datetime
+import time
 
 batch_size = config.TRAIN.batch_size
 lr_init = config.TRAIN.lr_init
@@ -82,8 +83,8 @@ def train():
 
     ### DEFINE LOSS ###
     loss_synthetic = tl.cost.mean_squared_error(output_synthetic, labels_synthetic, is_mean = True)
-    #loss_real = tl.cost.mean_squared_error(output_real, labels_sigma, is_mean = True)
-    loss_real = (1. - tf_ssim(output_real, labels_real, size = 32))/2.
+    loss_real = 1. - tf_ssim(output_real, labels_real)
+    #loss_real = 1. - tf_ms_ssim(output_real, labels_real, batch_size)
     loss = (loss_synthetic + loss_real) / 2.
 
     with tf.variable_scope('learning_rate'):
@@ -131,7 +132,7 @@ def train():
             defocus_maps = np.expand_dims(images[:, :, :, 3], axis = 3)
 
             # read real data #
-            b_idx = (idx % itr + np.arange(batch_size)) % len(train_real_img_list)
+            b_idx = (idx % len(train_real_img_list) + np.arange(batch_size)) % len(train_real_img_list)
             real_images_blur = read_all_imgs(train_real_img_list[b_idx], path=config.TRAIN.real_img_path, n_threads=batch_size, mode = 'RGB')
             binary_maps = read_all_imgs(train_binary_map_list[b_idx], path=config.TRAIN.binary_map_path, n_threads=batch_size, mode = 'GRAY')
             
@@ -177,47 +178,17 @@ def evaluate():
 
     # Input
     test_blur_img_list = sorted(tl.files.load_file_list(path=config.TEST.blur_img_path, regx='.*', printable=False))
+    test_gt_list = sorted(tl.files.load_file_list(path=config.TEST.binary_map_path, regx='.*', printable=False))
+    
     test_blur_imgs = read_all_imgs(test_blur_img_list, path=config.TEST.blur_img_path, n_threads=len(test_blur_img_list), mode = 'RGB')
-
+    test_gt_imgs = read_all_imgs(test_gt_list, path=config.TEST.binary_map_path, n_threads=len(test_gt_list), mode = 'GRAY')
+    
     reuse = False
     for i in np.arange(len(test_blur_imgs)):
         # Model
 
-        shape = test_blur_imgs[i].shape
         test_blur_img = np.copy(test_blur_imgs[i])
-        while True:
-            shape = test_blur_img.shape
-            if shape[0] % 2 is not 0:
-                test_blur_img = test_blur_img[:-1, :, :]
-                continue
-            elif (shape[0] / 2) % 2 is not 0:
-                test_blur_img = test_blur_img[:-1, :, :]
-                continue
-            elif (shape[0] / 2 /2) % 2 is not 0:
-                test_blur_img = test_blur_img[:-1, :, :]
-                continue
-            elif (shape[0] / 2 /2/2) % 2 is not 0:
-                test_blur_img = test_blur_img[:-1, :, :]
-                continue
-            else:
-                break;
-
-        while True:
-            shape = test_blur_img.shape
-            if shape[1] % 2 is not 0:
-                test_blur_img = test_blur_img[:, :-1, :]
-                continue
-            elif (shape[1] / 2) % 2 is not 0:
-                test_blur_img = test_blur_img[:, :-1, :]
-                continue
-            elif (shape[1] / 2 /2) % 2 is not 0:
-                test_blur_img = test_blur_img[:, :-1, :]
-                continue
-            elif (shape[1] / 2 /2/2) % 2 is not 0:
-                test_blur_img = test_blur_img[:, :-1, :]
-                continue
-            else:
-                break;
+        test_blur_img = refine_image(test_blur_img)
         shape = test_blur_img.shape
 
         patches_blurred = tf.placeholder('float32', [1, shape[0], shape[1], 3], name = 'input_patches')
@@ -243,8 +214,9 @@ def evaluate():
         print "processing {} ... Done".format(test_blur_img_list[i])
         
         tl.files.exists_or_mkdir(save_dir_sample)
-        scipy.misc.toimage(blur_map, cmin=0., cmax=1.).save(save_dir_sample + "/{}_3_blur.png".format(i))
-        scipy.misc.imsave(save_dir_sample + "/{}_1_gt.png".format(i), test_blur_img)
+        scipy.misc.imsave(save_dir_sample + "/{}_1_input.png".format(i), test_blur_img)
+        scipy.misc.toimage(blur_map, cmin=0., cmax=1.).save(save_dir_sample + "/{}_2_blur.png".format(i))
+        scipy.misc.toimage(np.squeeze(test_gt_imgs[i]), cmin=0., cmax=1.).save(save_dir_sample + "/{}_3_blur_gt.png".format(i))
 
         sess.close()
         reuse = True
