@@ -19,11 +19,8 @@ config.TRAIN.decay_every = 100
 config.TRAIN.n_epoch_init = 1000
 
 ## train set location
-config.TRAIN.synthetic_img_path = '/data1/stereo/image/'
-config.TRAIN.defocus_map_path = '/data1/stereo/defocus_map/'
-
-config.TRAIN.real_img_path = '/data1/BlurDetection/train/image/'
-config.TRAIN.binary_map_path = '/data1/BlurDetection/train/gt/'
+config.TRAIN.synthetic_img_path = '/data1/blur_sharp_only/image_dof/'
+config.TRAIN.defocus_map_path = '/data1/blur_sharp_only/defocus_map/'
 
 config.TEST.blur_img_path = "/data1/BlurDetection/test/image/"
 config.TEST.binary_map_path= "/data1/BlurDetection/test/gt/"

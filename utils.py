@@ -211,41 +211,7 @@ def tf_ms_ssim(img1, img2, batch_size, mean_metric=True, level=5):
         value = tf.reduce_mean(value)
     return value
 
-
 def refine_image(img):
-    image = img
-    while True:
-        shape = image.shape
-        if shape[0] % 2 is not 0:
-            image = image[:-1, :, :]
-            continue
-        elif (shape[0] / 2) % 2 is not 0:
-            image = image[:-1, :, :]
-            continue
-        elif (shape[0] / 2 / 2) % 2 is not 0:
-            image = image[:-1, :, :]
-            continue
-        elif (shape[0] / 2 / 2 / 2) % 2 is not 0:
-            image = image[:-1, :, :]
-            continue
-        else:
-            break;
+    h, w = img.shape[:2]
     
-    while True:
-        shape = image.shape
-        if shape[1] % 2 is not 0:
-            image = image[:, :-1, :]
-            continue
-        elif (shape[1] / 2) % 2 is not 0:
-            image = image[:, :-1, :]
-            continue
-        elif (shape[1] / 2 / 2) % 2 is not 0:
-            image = image[:, :-1, :]
-            continue
-        elif (shape[1] / 2 / 2/ 2) % 2 is not 0:
-            image = image[:, :-1, :]
-            continue
-        else:
-            break;
-    
-    return image
+    return img[0 : h - h % 8, 0 : w - w % 8]

@@ -46,7 +46,7 @@ def read_all_imgs(img_list, path='', n_threads=32, mode = 'RGB'):
         #print('read %d from %s' % (len(b_imgs), path))
         
     return b_imgs
-
+   
 def train():
     ## LOG
     checkpoint_dir = "/data2/junyonglee/sharpness_assessment/checkpoint/{}".format(tl.global_flag['mode'])  # checkpoint_resize_conv
@@ -61,9 +61,6 @@ def train():
     train_synthetic_img_list = np.array(sorted(tl.files.load_file_list(path=config.TRAIN.synthetic_img_path, regx='.*', printable=False)))
     train_defocus_map_list = np.array(sorted(tl.files.load_file_list(path=config.TRAIN.defocus_map_path, regx='.*', printable=False)))
     
-    train_real_img_list = np.array(sorted(tl.files.load_file_list(path=config.TRAIN.real_img_path, regx='.*', printable=False)))
-    train_binary_map_list = np.array(sorted(tl.files.load_file_list(path=config.TRAIN.binary_map_path, regx='.*', printable=False)))
-    
     shuffle_index = np.arange(len(train_synthetic_img_list))
     np.random.shuffle(shuffle_index)
 
@@ -74,18 +71,12 @@ def train():
     patches_synthetic = tf.placeholder('float32', [batch_size, h, w, 3], name = 'input_synthetic')
     labels_synthetic = tf.placeholder('float32', [batch_size, h, w, 1], name = 'lables_synthetic')
     
-    patches_real = tf.placeholder('float32', [batch_size, h, w, 3], name = 'input_real')
-    labels_real = tf.placeholder('float32', [batch_size, h, w, 1], name = 'lables_real')
-
     with tf.variable_scope('unet') as scope:
         _, output_synthetic = UNet(patches_synthetic, is_train=True, reuse = False, scope = scope)
-        _, output_real = UNet(patches_real, is_train=True, reuse = True, scope = scope)
 
     ### DEFINE LOSS ###
     loss_synthetic = tl.cost.mean_squared_error(output_synthetic, labels_synthetic, is_mean = True)
-    loss_real = 1. - tf_ssim(output_real, labels_real)
-    #loss_real = 1. - tf_ms_ssim(output_real, labels_real, batch_size)
-    loss = (loss_synthetic + loss_real) / 2.
+    loss = loss_synthetic
 
     with tf.variable_scope('learning_rate'):
         lr_v = tf.Variable(lr_init, trainable = False)
@@ -131,43 +122,24 @@ def train():
             synthetic_images_blur = (images[:, :, :, 0:3] / 127.5) - 1.
             defocus_maps = np.expand_dims(images[:, :, :, 3], axis = 3)
 
-            # read real data #
-            b_idx = (idx % len(train_real_img_list) + np.arange(batch_size)) % len(train_real_img_list)
-            real_images_blur = read_all_imgs(train_real_img_list[b_idx], path=config.TRAIN.real_img_path, n_threads=batch_size, mode = 'RGB')
-            binary_maps = read_all_imgs(train_binary_map_list[b_idx], path=config.TRAIN.binary_map_path, n_threads=batch_size, mode = 'GRAY')
-            
-            real_image_blur_list = None
-            binary_map_list = None
-            for i in np.arange(len(real_images_blur)):
-                concatenated_images = np.concatenate((real_images_blur[i], binary_maps[i]), axis = 2)
-                images = tl.prepro.crop(concatenated_images, wrg=h, hrg=w, is_random=True)
-                real_image_blur = np.expand_dims((images[:, :, 0:3] / 127.5 - 1.), axis=0)
-                binary_map = np.expand_dims(np.expand_dims(images[:, :, 3], axis=3), axis=0)
-                
-                real_image_blur_list = np.copy(real_image_blur) if i == 0 else np.concatenate((real_image_blur_list, real_image_blur), axis = 0)
-                binary_map_list = np.copy(binary_map) if i == 0 else np.concatenate((binary_map_list, binary_map), axis = 0)
-            ###################
-                    
-            defocus_map_output, binary_map_output, err_synthetic, err_real, _, lr = sess.run([output_synthetic, output_real, loss_synthetic, loss_real, optim, lr_v], {
-                patches_synthetic: synthetic_images_blur, labels_synthetic: defocus_maps, patches_real: real_image_blur_list, labels_real: binary_map_list})
+            defocus_map_output, err, _, lr = sess.run([output_synthetic, loss, optim, lr_v], {
+                patches_synthetic: synthetic_images_blur, labels_synthetic: defocus_maps})
 
-            print("Epoch [%2d/%2d] %4d/%4d time: %4.4fs, err_synthetic: %.6f, err_real: %.6f, lr: %.8f" % (epoch, n_epoch, n_iter, len(train_synthetic_img_list)/batch_size, time.time() - step_time, err_synthetic, err_real, lr))
-            total_loss += (err_synthetic + err_real) / 2.
+            print("Epoch [%2d/%2d] %4d/%4d time: %4.4fs, err: %.6f, lr: %.8f" % (epoch, n_epoch, n_iter, len(train_synthetic_img_list)/batch_size, time.time() - step_time, err, lr))
+            total_loss += err
             n_iter += 1
             global_step += 1
+            
+            ## save model
+            if epoch % 1 == 0:
+                tl.files.save_ckpt(sess=sess, mode_name='SA_net_{}_init.ckpt'.format(tl.global_flag['mode']), save_dir = checkpoint_dir, var_list = a_vars, global_step = global_step, printable = False)
+                tl.visualize.save_images((synthetic_images_blur[:9]) * 255, [3, 3], save_dir_training_output + '/{}_1_synthetic_image.png'.format(epoch))
+                tl.visualize.save_images(defocus_map_output[:9], [3, 3], save_dir_training_output + '/{}_2_disp_out.png'.format(epoch))
+                tl.visualize.save_images(defocus_maps[:9], [3, 3], save_dir_training_output + '/{}_3_disp_gt.png'.format(epoch))
             
         log = "[*] Epoch: [%2d/%2d] time: %4.4fs, total_err: %.8f" % (epoch, n_epoch, time.time() - epoch_time, total_loss/n_iter)
         print(log)
 
-        ## save model
-        if epoch % 1 == 0:
-            tl.files.save_ckpt(sess=sess, mode_name='SA_net_{}_init.ckpt'.format(tl.global_flag['mode']), save_dir = checkpoint_dir, var_list = a_vars, global_step = global_step, printable = False)
-            tl.visualize.save_images((synthetic_images_blur[:9]) * 255, [3, 3], save_dir_training_output + '/{}_1_synthetic_image.png'.format(epoch))
-            tl.visualize.save_images(defocus_map_output[:9], [3, 3], save_dir_training_output + '/{}_2_disp_out.png'.format(epoch))
-            tl.visualize.save_images(defocus_maps[:9], [3, 3], save_dir_training_output + '/{}_3_disp_gt.png'.format(epoch))
-            tl.visualize.save_images((real_image_blur_list[:9]) * 255, [3, 3], save_dir_training_output + '/{}_4_real_image.png'.format(epoch))
-            tl.visualize.save_images(binary_map_output[:9], [3, 3], save_dir_training_output + '/{}_5_binary_out.png'.format(epoch))
-            tl.visualize.save_images(binary_map_list[:9], [3, 3], save_dir_training_output + '/{}_6_binary_gt.png'.format(epoch))
             
 def evaluate():
     print "Evaluation Start"
