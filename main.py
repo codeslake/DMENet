@@ -162,10 +162,10 @@ def train():
         ## save model
         if epoch % 1 == 0:
             tl.files.save_ckpt(sess=sess, mode_name='SA_net_{}_init.ckpt'.format(tl.global_flag['mode']), save_dir = checkpoint_dir, var_list = a_vars, global_step = global_step, printable = False)
-            tl.visualize.save_images((synthetic_images_blur[:9] + 1) * 127.5, [3, 3], save_dir_training_output + '/{}_1_synthetic_image.png'.format(epoch))
+            tl.visualize.save_images((synthetic_images_blur[:9]) * 255, [3, 3], save_dir_training_output + '/{}_1_synthetic_image.png'.format(epoch))
             tl.visualize.save_images(defocus_map_output[:9], [3, 3], save_dir_training_output + '/{}_2_disp_out.png'.format(epoch))
             tl.visualize.save_images(defocus_maps[:9], [3, 3], save_dir_training_output + '/{}_3_disp_gt.png'.format(epoch))
-            tl.visualize.save_images((real_image_blur_list[:9] + 1) * 127.5, [3, 3], save_dir_training_output + '/{}_4_real_image.png'.format(epoch))
+            tl.visualize.save_images((real_image_blur_list[:9]) * 255, [3, 3], save_dir_training_output + '/{}_4_real_image.png'.format(epoch))
             tl.visualize.save_images(binary_map_output[:9], [3, 3], save_dir_training_output + '/{}_5_binary_out.png'.format(epoch))
             tl.visualize.save_images(binary_map_list[:9], [3, 3], save_dir_training_output + '/{}_6_binary_gt.png'.format(epoch))
             
