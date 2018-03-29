@@ -1,9 +1,12 @@
+from config import config, log_config
+from utils import *
+#from unet import *
+from model import *
+
+import tensorflow as tf
 import tensorlayer as tl
 import numpy as np
 import math
-from config import config, log_config
-from utils import *
-from unet import *
 from random import shuffle
 import matplotlib
 import datetime
@@ -19,8 +22,6 @@ decay_every = config.TRAIN.decay_every
 
 h = config.TRAIN.height
 w = config.TRAIN.width
-
-ni = int(math.ceil(np.sqrt(batch_size)))
 
 def read_all_imgs(img_list, path='', n_threads=32, mode = 'RGB'):
     """ Returns all images in array by given path and name of each image file. """
@@ -49,7 +50,7 @@ def read_all_imgs(img_list, path='', n_threads=32, mode = 'RGB'):
    
 def train():
     ## LOG
-    checkpoint_dir = "/data2/junyonglee/sharpness_assessment/{}/checkpoint".format(tl.global_flag['mode'])  # checkpoint_resize_conv
+    checkpoint_dir = "/data2/junyonglee/sharpness_assessment/{}/checkpoint".format(tl.global_flag['mode'])
     tl.files.exists_or_mkdir(checkpoint_dir)
     log_config(checkpoint_dir + '/config', config)
 
@@ -61,11 +62,12 @@ def train():
     train_synthetic_img_list = np.array(sorted(tl.files.load_file_list(path=config.TRAIN.synthetic_img_path, regx='.*', printable=False)))
     train_defocus_map_list = np.array(sorted(tl.files.load_file_list(path=config.TRAIN.defocus_map_path, regx='.*', printable=False)))
     
+    train_real_img_list = np.array(sorted(tl.files.load_file_list(path=config.TRAIN.real_img_path, regx='.*', printable=False)))
+    train_binary_map_list = np.array(sorted(tl.files.load_file_list(path=config.TRAIN.binary_map_path, regx='.*', printable=False)))
+    
     shuffle_index = np.arange(len(train_synthetic_img_list))
     np.random.shuffle(shuffle_index)
 
-    train_synthetic_img_list = train_synthetic_img_list[shuffle_index]
-    train_defocus_map_list = train_defocus_map_list[shuffle_index]
 
     ### DEFINE MODEL ###
     patches_synthetic = tf.placeholder('float32', [batch_size, h, w, 3], name = 'input_synthetic')
@@ -112,6 +114,11 @@ def train():
 
         for idx in range(0, len(train_synthetic_img_list), batch_size):
             step_time = time.time()
+            train_synthetic_img_list = train_synthetic_img_list[shuffle_index]
+            train_defocus_map_list = train_defocus_map_list[shuffle_index]
+            train_real_img_list = train_real_img_list[shuffle_index]
+            train_binary_map_list = train_binary_map_list[shuffle_index]
+
             # read synthetic data
             b_idx = (idx + np.arange(batch_size)) % len(train_synthetic_img_list)
             synthetic_images_blur = read_all_imgs(train_synthetic_img_list[b_idx], path=config.TRAIN.synthetic_img_path, n_threads=batch_size, mode = 'RGB')

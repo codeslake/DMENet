@@ -19,8 +19,11 @@ config.TRAIN.decay_every = 5000
 config.TRAIN.synthetic_img_path = '/data1/blur_sharp_only/image_dof/'
 config.TRAIN.defocus_map_path = '/data1/blur_sharp_only/defocus_map/'
 
+config.TRAIN.real_img_path = '/data1/BlurDetection/train/image/'
+config.TRAIN.binary_map_path = '/data1/BlurDetection/train/gt/'
+
 config.TEST.blur_img_path = "/data1/BlurDetection/test/image/"
-config.TEST.binary_map_path= "/data1/BlurDetection/test/gt/"
+config.TEST.binary_map_path = "/data1/BlurDetection/test/gt/"
 
 ## train image size
 config.TRAIN.height = 512
