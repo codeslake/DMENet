@@ -1,16 +1,16 @@
 from config import config, log_config
 from utils import *
-#from unet import *
 from model import *
 
 import tensorflow as tf
 import tensorlayer as tl
 import numpy as np
-import math
 from random import shuffle
 import matplotlib
 import datetime
 import time
+import shutil
+from flip_gradient import flip_gradient            
 
 batch_size = config.TRAIN.batch_size
 lr_init = config.TRAIN.lr_init
@@ -23,8 +23,9 @@ decay_every = config.TRAIN.decay_every
 h = config.TRAIN.height
 w = config.TRAIN.width
 
-def read_all_imgs(img_list, path='', n_threads=32, mode = 'RGB'):
-    """ Returns all images in array by given path and name of each image file. """
+ni = int(np.ceil(np.sqrt(batch_size)))
+
+def read_all_imgs(img_list, path = '', n_threads = 32, mode = 'RGB'):
     for idx in range(0, len(img_list), n_threads):
         if idx + n_threads > len(img_list):
             break;
@@ -32,171 +33,289 @@ def read_all_imgs(img_list, path='', n_threads=32, mode = 'RGB'):
         b_imgs_list = img_list[idx : idx + n_threads]
         if mode is 'RGB':
             if idx == 0:
-                b_imgs = tl.prepro.threading_data(b_imgs_list, fn=get_imgs_RGB_fn, path=path)
+                b_imgs = tl.prepro.threading_data(b_imgs_list, fn = get_imgs_RGB_fn, path = path)
             else:
-                imgs = tl.prepro.threading_data(b_imgs_list, fn=get_imgs_RGB_fn, path=path)
+                imgs = tl.prepro.threading_data(b_imgs_list, fn = get_imgs_RGB_fn, path = path)
                 b_imgs = np.concatenate((b_imgs, imgs), axis = 0)
                 
         elif mode is 'GRAY':
             if idx == 0:
-                b_imgs = tl.prepro.threading_data(b_imgs_list, fn=get_imgs_GRAY_fn, path=path)
+                b_imgs = tl.prepro.threading_data(b_imgs_list, fn = get_imgs_GRAY_fn, path = path)
             else:
-                imgs= tl.prepro.threading_data(b_imgs_list, fn=get_imgs_GRAY_fn, path=path)
+                imgs = tl.prepro.threading_data(b_imgs_list, fn = get_imgs_GRAY_fn, path = path)
                 b_imgs = np.concatenate((b_imgs, imgs), axis = 0)
-        
-        #print('read %d from %s' % (len(b_imgs), path))
         
     return b_imgs
    
 def train():
-    ## LOG
-    checkpoint_dir = "/data2/junyonglee/sharpness_assessment/{}/checkpoint".format(tl.global_flag['mode'])
-    tl.files.exists_or_mkdir(checkpoint_dir)
-    log_config(checkpoint_dir + '/config', config)
-
-    date = datetime.datetime.now().strftime("%y.%m.%d")
-    save_dir_training_output = "/data2/junyonglee/sharpness_assessment/{}/samples/{}/0_training".format(tl.global_flag['mode'], date)
-    tl.files.exists_or_mkdir(save_dir_training_output)
-
-    ## DATA
-    train_synthetic_img_list = np.array(sorted(tl.files.load_file_list(path=config.TRAIN.synthetic_img_path, regx='.*', printable=False)))
-    train_defocus_map_list = np.array(sorted(tl.files.load_file_list(path=config.TRAIN.defocus_map_path, regx='.*', printable=False)))
+    ## CREATE DIRECTORIES
+    mode_dir = config.TRAIN.root_dir + '{}'.format(tl.global_flag['mode'])
+    shutil.rmtree(mode_dir, ignore_errors = True)
     
-    train_real_img_list = np.array(sorted(tl.files.load_file_list(path=config.TRAIN.real_img_path, regx='.*', printable=False)))
-    train_binary_map_list = np.array(sorted(tl.files.load_file_list(path=config.TRAIN.binary_map_path, regx='.*', printable=False)))
+    ckpt_dir = mode_dir + '/checkpoint'
+    tl.files.exists_or_mkdir(ckpt_dir)
     
-    shuffle_index = np.arange(len(train_synthetic_img_list))
-    np.random.shuffle(shuffle_index)
+    log_dir = mode_dir + '/log'
+    tl.files.exists_or_mkdir(log_dir)
 
-
-    ### DEFINE MODEL ###
-    patches_synthetic = tf.placeholder('float32', [batch_size, h, w, 3], name = 'input_synthetic')
-    labels_synthetic = tf.placeholder('float32', [batch_size, h, w, 1], name = 'lables_synthetic')
+    sample_dir = mode_dir + '/samples/0_train'
+    tl.files.exists_or_mkdir(sample_dir)
     
-    with tf.variable_scope('unet') as scope:
-        _, output_synthetic = UNet(patches_synthetic, is_train=True, reuse = False, scope = scope)
+    config_dir = mode_dir + '/config'
+    tl.files.exists_or_mkdir(config_dir)
+    log_config(config_dir, config)
 
-    ### DEFINE LOSS ###
-    loss_synthetic = tl.cost.mean_squared_error(output_synthetic, labels_synthetic, is_mean = True)
-    loss = loss_synthetic
+    ## DEFINE SESSION
+    sess = tf.Session(config = tf.ConfigProto(allow_soft_placement = True, log_device_placement = False))
+    
+    ## READ DATASET LIST
+    train_synthetic_img_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.synthetic_img_path, regx = '.*', printable = False)))
+    train_defocus_map_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.defocus_map_path, regx = '.*', printable = False)))
+    
+    train_real_img_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.real_img_path, regx = '.*', printable = False)))
+    train_binary_map_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.binary_map_path, regx = '.*', printable = False)))
 
-    with tf.variable_scope('learning_rate'):
+    ## DEFINE MODEL
+    # input
+    with tf.variable_scope('input'):
+        patches_synthetic = tf.placeholder('float32', [batch_size, h, w, 3], name = 'input_synthetic')
+        labels_synthetic_defocus = tf.placeholder('float32', [batch_size, h, w, 1], name = 'labels_synthetic')
+        labels_synthetic_binary = tf.placeholder('float32', [batch_size, h, w, 1], name = 'labels_synthetic')
+
+        patches_real = tf.placeholder('float32', [batch_size, h, w, 3], name = 'input_real')
+        labels_real_binary = tf.placeholder('float32', [batch_size, h, w, 1], name = 'labels_real_binary')
+
+        domain_lambda = tf.placeholder('float32', [], name = 'domain_lambda')
+    
+    # model
+    with tf.variable_scope('defocus_net') as scope:
+        with tf.variable_scope('unet') as scope:
+            with tf.variable_scope('unet_down') as scope:
+                f0_synthetic, f1_2_synthetic, f2_3_synthetic, f3_4_synthetic, final_feature_synthetic = UNet_down(patches_synthetic, is_train = True, reuse = False, scope = scope)
+                flipped_final_feature_synthetic = flip_gradient(final_feature_synthetic, domain_lambda)
+                f0_real, f1_2_real, f2_3_real, f3_4_real, final_feature_real = UNet_down(patches_real, is_train = True, reuse = True, scope = scope)
+                flipped_final_feature_real= flip_gradient(final_feature_real, domain_lambda)
+
+        with tf.variable_scope('discriminator') as scope:
+            d_logits_synthetic = SRGAN_d(flipped_final_feature_synthetic, is_train = True, reuse = False, scope = scope)
+            d_logits_real = SRGAN_d(flipped_final_feature_real, is_train = True, reuse = True, scope = scope)
+
+        with tf.variable_scope('unet') as scope:
+            with tf.variable_scope('unet_up_defocus_map') as scope:
+                output_synthetic_defocus = UNet_up(f0_synthetic, f1_2_synthetic, f2_3_synthetic, f3_4_synthetic, final_feature_synthetic, h, w, is_train = True, reuse = False, scope = scope)
+                output_real_defocus = UNet_up(f0_real, f1_2_real, f2_3_real, f3_4_real, final_feature_real, h, w, is_train = True, reuse = True, scope = scope)
+                
+            with tf.variable_scope('unet_up_binary_map') as scope:
+                output_synthetic_binary = UNet_up(f0_synthetic, f1_2_synthetic, f2_3_synthetic, f3_4_synthetic, final_feature_synthetic, h, w, is_train = True, reuse = False, scope = scope)
+                output_real_binary = UNet_up(f0_real, f1_2_real, f2_3_real, f3_4_real, final_feature_real, h, w, is_train = True, reuse = True, scope = scope)
+
+    ## DEFINE LOSS
+    with tf.variable_scope('loss'):
+        with tf.variable_scope('domain'):
+            loss_synthetic_domain = tl.cost.sigmoid_cross_entropy(d_logits_synthetic, tf.zeros_like(d_logits_synthetic), name = 'synthetic')
+            loss_real_domain = tl.cost.sigmoid_cross_entropy(d_logits_real, tf.ones_like(d_logits_real), name = 'real')
+            loss_domain = tf.identity((loss_synthetic_domain + loss_real_domain)/2., name = 'total')
+        with tf.variable_scope('defocus'):
+            loss_defocus = tl.cost.mean_squared_error(output_synthetic_defocus, labels_synthetic_defocus, is_mean = True, name = 'synthetic')
+        with tf.variable_scope('binary'):
+            loss_synthetic_binary = tl.cost.sigmoid_cross_entropy(output_synthetic_binary, labels_synthetic_binary, name = 'synthetic')
+            loss_real_binary = tl.cost.sigmoid_cross_entropy(output_real_binary, labels_real_binary, name = 'real')
+            loss_binary = tf.identity((loss_synthetic_binary + loss_real_binary)/2., name = 'total')
+            
+        loss = tf.identity(loss_defocus + loss_binary + loss_domain, name = 'total')
+
+    ## DEFINE OPTIMIZER
+    # variables to save / train
+    t_vars = tl.layers.get_variables_with_name('defocus_net', True, False)
+    a_vars = tl.layers.get_variables_with_name('unet', False, False)
+
+    # define optimizer
+    with tf.variable_scope('Optimizer'):
         lr_v = tf.Variable(lr_init, trainable = False)
+        optim = tf.train.AdamOptimizer(lr_v, beta1 = beta1).minimize(loss, var_list = t_vars)
 
-    ### DEFINE OPTIMIZER ###
-    t_vars = tl.layers.get_variables_with_name('unet', True, True)
-    a_vars = tl.layers.get_variables_with_name('unet', False, True)
+    ## DEFINE SUMMARY
+    # writer
+    writer_scalar = tf.summary.FileWriter(log_dir, sess.graph, filename_suffix = '.loss_log')
+    writer_image = tf.summary.FileWriter(log_dir, sess.graph, filename_suffix = '.image_log')
+    # summaries
+    loss_sum_list = []
+    with tf.variable_scope('loss'):
+        loss_sum_list.append(tf.summary.scalar('1_total_loss', loss))
+        loss_sum_list.append(tf.summary.scalar('2_domain_loss', loss_domain))
+        loss_sum_list.append(tf.summary.scalar('3_defocus_loss', loss_defocus))
+        loss_sum_list.append(tf.summary.scalar('4_binary_loss', loss_binary))
+        loss_sum = tf.summary.merge(loss_sum_list)
 
-    optim = tf.train.AdamOptimizer(lr_v, beta1=beta1).minimize(loss, var_list = t_vars)
+    image_sum_list = []
+    with tf.variable_scope('synthetic'):
+        image_sum_list.append(tf.summary.image('1_synthetic_input', patches_synthetic))
+        image_sum_list.append(tf.summary.image('2_synthetic_defocus_out', output_synthetic_defocus))
+        image_sum_list.append(tf.summary.image('3_synthetic_defocus_gt', labels_synthetic_defocus))
+        image_sum_list.append(tf.summary.image('4_synthetic_binary_out', output_synthetic_binary))
+        image_sum_list.append(tf.summary.image('5_synthetic_binary_gt', labels_synthetic_binary))
+    with tf.variable_scope('real'):
+        image_sum_list.append(tf.summary.image('6_real_input', patches_real))
+        image_sum_list.append(tf.summary.image('7_real_defocus_out', output_real_defocus))
+        image_sum_list.append(tf.summary.image('8_real_binary_out', output_real_binary))
+        image_sum_list.append(tf.summary.image('9_real_binary_out', labels_real_binary))
+    image_sum = tf.summary.merge(image_sum_list)
 
-    sess = tf.Session(config=tf.ConfigProto(allow_soft_placement = True, log_device_placement = False))
-    print "initializing global variable..."
+    ## INITIALIZE SESSION
     tl.layers.initialize_global_variables(sess)
-    print "initializing global variable...DONE"
 
-    ### START TRAINING ###
-    sess.run(tf.assign(lr_v, lr_init))
+    ## START TRAINING
+    print '*****************************************'
+    print '             TRAINING START'
+    print '*****************************************'
     global_step = 0
     for epoch in range(0, n_epoch + 1):
         total_loss, n_iter = 0, 0
-        ## update learning rate
-        if epoch !=0 and (epoch % decay_every == 0):
+        # update learning rate
+        if epoch != 0 and (epoch % decay_every == 0):
             new_lr_decay = lr_decay ** (epoch // decay_every)
             sess.run(tf.assign(lr_v, lr_init * new_lr_decay))
-            log = " ** new learning rate: %f" % (lr_init * new_lr_decay)
-            print(log)
         elif epoch == 0:
             sess.run(tf.assign(lr_v, lr_init))
-            log = " ** init lr: %f  decay_every_init: %d, lr_decay: %f" % (lr_init, decay_every, lr_decay)
-            print(log)
 
         epoch_time = time.time()
-
         for idx in range(0, len(train_synthetic_img_list), batch_size):
             step_time = time.time()
+            
+            ## READ DATA
+            # shuffle datasets
+            shuffle_index = np.arange(len(train_synthetic_img_list))
+            np.random.shuffle(shuffle_index)
+
             train_synthetic_img_list = train_synthetic_img_list[shuffle_index]
             train_defocus_map_list = train_defocus_map_list[shuffle_index]
+            
+            shuffle_index = np.arange(len(train_real_img_list))
+            np.random.shuffle(shuffle_index)
             train_real_img_list = train_real_img_list[shuffle_index]
             train_binary_map_list = train_binary_map_list[shuffle_index]
 
             # read synthetic data
             b_idx = (idx + np.arange(batch_size)) % len(train_synthetic_img_list)
-            synthetic_images_blur = read_all_imgs(train_synthetic_img_list[b_idx], path=config.TRAIN.synthetic_img_path, n_threads=batch_size, mode = 'RGB')
-            defocus_maps = read_all_imgs(train_defocus_map_list[b_idx], path=config.TRAIN.defocus_map_path, n_threads=batch_size, mode = 'GRAY')
+            synthetic_images_blur = read_all_imgs(train_synthetic_img_list[b_idx], path = config.TRAIN.synthetic_img_path, n_threads = batch_size, mode = 'RGB')
+            defocus_maps = read_all_imgs(train_defocus_map_list[b_idx], path = config.TRAIN.defocus_map_path, n_threads = batch_size, mode = 'GRAY')
 
             concatenated_images = np.concatenate((synthetic_images_blur, defocus_maps), axis = 3)
-            images = tl.prepro.crop_multi(concatenated_images, wrg=h, hrg=w, is_random=True)
-            synthetic_images_blur = (images[:, :, :, 0:3] / 127.5) - 1.
-            defocus_maps = np.expand_dims(images[:, :, :, 3], axis = 3)
+            images = tl.prepro.crop_multi(concatenated_images, wrg = h, hrg = w, is_random = True)
+            synthetic_images_blur = images[:, :, :, 0:3]
+            synthetic_defocus_maps = np.expand_dims(images[:, :, :, 3], axis = 3)
+            synthetic_binary_maps = get_binary_maps(np.copy(synthetic_defocus_maps))
 
-            defocus_map_output, err, _, lr = sess.run([output_synthetic, loss, optim, lr_v], {
-                patches_synthetic: synthetic_images_blur, labels_synthetic: defocus_maps})
+            # read real data #
+            b_idx = (idx % len(train_real_img_list) + np.arange(batch_size)) % len(train_real_img_list)
+            images_blur = read_all_imgs(train_real_img_list[b_idx], path = config.TRAIN.real_img_path, n_threads = batch_size, mode = 'RGB')
+            binary_maps = read_all_imgs(train_binary_map_list[b_idx], path = config.TRAIN.binary_map_path, n_threads = batch_size, mode = 'GRAY')
+            real_images_blur, real_binary_maps = crop_pair_with_different_shape_images(images_blur, binary_maps, [h, w])
 
-            print("Epoch [%2d/%2d] %4d/%4d time: %4.4fs, err: %.6f, lr: %.8f" % (epoch, n_epoch, n_iter, len(train_synthetic_img_list)/batch_size, time.time() - step_time, err, lr))
+            # flipped gradient lambda
+            p = float(global_step) * config.TRAIN.labmda_numerator_coef / config.TRAIN.lambda_denominator
+            print p
+            l = 2. / (1. + np.exp(-10. * p)) - 1
+
+            ## RUN NETWORK
+            err, err_d, err_def, err_bin, synthetic_defocus_out, synthetic_binary_out, real_defocus_out, real_binary_out, lr, summary_loss, summary_image, _ = \
+            sess.run([loss, loss_domain, loss_defocus, loss_binary,output_synthetic_defocus, output_synthetic_binary, output_real_defocus, output_real_binary, lr_v, loss_sum, image_sum, optim], 
+                {patches_synthetic: synthetic_images_blur,
+                labels_synthetic_defocus: synthetic_defocus_maps,
+                labels_synthetic_binary: synthetic_binary_maps,
+                patches_real: real_images_blur,
+                labels_real_binary: real_binary_maps,
+                domain_lambda: l
+                })
+            
+            print('Epoch [%2d/%2d] %4d/%4d time: %4.2fs, total_err: %.3f, err_domain: %.3f, err_defocus: %.3f, err_binary: %.3f, lr: %.8f' % \
+                (epoch, n_epoch, n_iter, len(train_synthetic_img_list)/batch_size, time.time() - step_time, err, err_d, err_def, err_bin, lr))
+            
+            ## SAVE LOGS
+            # save loss & image log
+            if global_step % config.TRAIN.write_log_every == 0:
+                writer_scalar.add_summary(summary_loss, global_step)
+                writer_image.add_summary(summary_image, global_step)
+            # save checkpoint
+            if global_step % config.TRAIN.write_ckpt_every == 0:
+                tl.files.save_ckpt(sess = sess, mode_name = '{}.ckpt'.format(tl.global_flag['mode']), save_dir = ckpt_dir, var_list = a_vars, global_step = global_step, printable = False)
+            # save samples
+            if global_step % config.TRAIN.write_sample_every == 0:
+                tl.visualize.save_images(synthetic_images_blur, [ni, ni], sample_dir + '/{}_{}_1_synthetic_input.png'.format(epoch, global_step))
+                tl.visualize.save_images(synthetic_defocus_out, [ni, ni], sample_dir + '/{}_{}_2_synthetic_defocus_out.png'.format(epoch, global_step))
+                tl.visualize.save_images(synthetic_defocus_maps, [ni, ni], sample_dir + '/{}_{}_3_synthetic_defocus_gt.png'.format(epoch, global_step))
+                tl.visualize.save_images(synthetic_binary_out, [ni, ni], sample_dir + '/{}_{}_4_synthetic_binary_out.png'.format(epoch, global_step))
+                tl.visualize.save_images(synthetic_binary_maps, [ni, ni], sample_dir + '/{}_{}_5_synthetic_binary_gt.png'.format(epoch, global_step))
+                tl.visualize.save_images(real_images_blur, [ni, ni], sample_dir + '/{}_{}_6_real_input.png'.format(epoch, global_step))
+                tl.visualize.save_images(real_defocus_out, [ni, ni], sample_dir + '/{}_{}_7_real_defocus_out.png'.format(epoch, global_step))
+                tl.visualize.save_images(real_binary_out, [ni, ni], sample_dir + '/{}_{}_8_real_binary_out.png'.format(epoch, global_step))
+                tl.visualize.save_images(real_binary_maps, [ni, ni], sample_dir + '/{}_{}_9_real_binary_gt.png'.format(epoch, global_step))
+
             total_loss += err
             n_iter += 1
             global_step += 1
             
-            
-        log = "[*] Epoch: [%2d/%2d] time: %4.4fs, total_err: %.8f" % (epoch, n_epoch, time.time() - epoch_time, total_loss/n_iter)
-        print(log)
-        
-        ## save model
-        if epoch % 1 == 0:
-            tl.files.save_ckpt(sess=sess, mode_name='SA_net_{}_init.ckpt'.format(tl.global_flag['mode']), save_dir = checkpoint_dir, var_list = a_vars, global_step = global_step, printable = False)
-            tl.visualize.save_images((synthetic_images_blur[:9]) * 255, [3, 3], save_dir_training_output + '/{}_1_synthetic_image.png'.format(epoch))
-            tl.visualize.save_images(defocus_map_output[:9], [3, 3], save_dir_training_output + '/{}_2_disp_out.png'.format(epoch))
-            tl.visualize.save_images(defocus_maps[:9], [3, 3], save_dir_training_output + '/{}_3_disp_gt.png'.format(epoch))
+        print('[*] Epoch: [%2d/%2d] time: %4.4fs, total_err: %.8f' % (epoch, n_epoch, time.time() - epoch_time, total_loss/n_iter))
+        # reset image log
+        if epoch % config.TRAIN.refresh_image_log_every == 0:
+            writer_image.close()
+            remove_file_end_with(log_dir, '*.image_log')
+            writer_image.reopen()
 
-            
 def evaluate():
-    print "Evaluation Start"
-    checkpoint_dir = "/data2/junyonglee/sharpness_assessment/{}/checkpoint".format(tl.global_flag['mode'])  # checkpoint_resize_conv
-    date = datetime.datetime.now().strftime("%y.%m.%d")
-    time = datetime.datetime.now().strftime("%H%M")
-    save_dir_sample = "/data2/junyonglee/sharpness_assessment/{}/samples/{}/{}".format(tl.global_flag['mode'], date, time)
-
-    # Input
-    test_blur_img_list = sorted(tl.files.load_file_list(path=config.TEST.blur_img_path, regx='.*', printable=False))
-    test_gt_list = sorted(tl.files.load_file_list(path=config.TEST.binary_map_path, regx='.*', printable=False))
+    print 'Evaluation Start'
+    date = datetime.datetime.now().strftime('%Y_%m_%d/%H-%M')
+    # directories
+    mode_dir = config.TRAIN.root_dir + '{}'.format(tl.global_flag['mode'])
+    ckpt_dir = mode_dir + '/checkpoint'
+    sample_dir = mode_dir + '/samples/1_test/{}'.format(date)
     
-    test_blur_imgs = read_all_imgs(test_blur_img_list, path=config.TEST.blur_img_path, n_threads=len(test_blur_img_list), mode = 'RGB')
-    test_gt_imgs = read_all_imgs(test_gt_list, path=config.TEST.binary_map_path, n_threads=len(test_gt_list), mode = 'GRAY')
+    # input
+    test_blur_img_list = tl.files.load_file_list(path = config.TEST.real_img_path, regx = '.*', printable = False)
+    test_gt_list = tl.files.load_file_list(path = config.TEST.binary_map_path, regx = '.*', printable = False)
+    
+    test_blur_imgs = read_all_imgs(test_blur_img_list, path = config.TEST.real_img_path, n_threads = len(test_blur_img_list), mode = 'RGB')
+    test_gt_imgs = read_all_imgs(test_gt_list, path = config.TEST.binary_map_path, n_threads = len(test_gt_list), mode = 'GRAY')
     
     reuse = False
     for i in np.arange(len(test_blur_imgs)):
-        # Model
-
         test_blur_img = np.copy(test_blur_imgs[i])
         test_blur_img = refine_image(test_blur_img)
         shape = test_blur_img.shape
 
         patches_blurred = tf.placeholder('float32', [1, shape[0], shape[1], 3], name = 'input_patches')
-        with tf.variable_scope('unet') as scope:
-            _, sigma_value = UNet(patches_blurred, is_train=False, reuse = reuse, scope = scope)
-
+        # define model
+        with tf.variable_scope('defocus_net') as scope:
+            with tf.variable_scope('unet') as scope:
+                with tf.variable_scope('unet_down') as scope:
+                    f0, f1_2, f2_3, f3_4, final_feature = UNet_down(patches_blurred, is_train = False, reuse = reuse, scope = scope)
+                with tf.variable_scope('unet_up_defocus_map') as scope:
+                    output_defocus = UNet_up(f0, f1_2, f2_3, f3_4, final_feature, h, w, is_train = False, reuse = reuse, scope = scope)
+                with tf.variable_scope('unet_up_binary_map') as scope:
+                    output_binary = UNet_up(f0, f1_2, f2_3, f3_4, final_feature, h, w, is_train = False, reuse = reuse, scope = scope)
+                        
         a_vars = tl.layers.get_variables_with_name('unet', False, False)
 
-        # Init Session
-        sess = tf.Session(config=tf.ConfigProto(allow_soft_placement = True, log_device_placement = False))
+        # init session
+        sess = tf.Session(config = tf.ConfigProto(allow_soft_placement = True, log_device_placement = False))
         tl.layers.initialize_global_variables(sess)
 
-        # Load checkpoint
-        tl.files.load_ckpt(sess=sess, mode_name='SA_net_{}_init.ckpt'.format(tl.global_flag['mode']), save_dir=checkpoint_dir, var_list=a_vars)
-        if tl.files.file_exists(checkpoint_dir + '/checkpoint'):
-            print "****************"
-            print "checkpoint exist"
-            print "****************"
+        # load checkpoint
+        tl.files.load_ckpt(sess = sess, mode_name = '{}.ckpt'.format(tl.global_flag['mode']), save_dir = ckpt_dir, var_list = a_vars)
 
-        # Blur map
-        print "processing {} ...".format(test_blur_img_list[i])
-        blur_map = np.squeeze(sess.run(sigma_value, {patches_blurred: np.expand_dims((test_blur_img / 127.5) - 1, axis=0)}))
-        print "processing {} ... Done".format(test_blur_img_list[i])
+        # run network
+        print 'processing {} ...'.format(test_blur_img_list[i])
+        processing_time = time.time()
+        defocus_map, binary_map = sess.run([output_defocus, output_binary], {patches_blurred: np.expand_dims(test_blur_img, axis = 0)})
+        defocus_map = np.squeeze(defocus_map)
+        binary_map = np.squeeze(binary_map)
+        print 'processing {} ... Done [{:.3f}s]'.format(test_blur_img_list[i], time.time() - processing_time)
         
-        tl.files.exists_or_mkdir(save_dir_sample)
-        scipy.misc.imsave(save_dir_sample + "/{}_1_input.png".format(i), test_blur_img)
-        scipy.misc.toimage(blur_map, cmin=0., cmax=1.).save(save_dir_sample + "/{}_2_blur.png".format(i))
-        scipy.misc.toimage(np.squeeze(test_gt_imgs[i]), cmin=0., cmax=1.).save(save_dir_sample + "/{}_3_blur_gt.png".format(i))
+        tl.files.exists_or_mkdir(sample_dir, verbose = False)
+        scipy.misc.toimage(test_blur_img, cmin = 0., cmax = 1.).save(sample_dir + '/{}_1_input.png'.format(i))
+        scipy.misc.toimage(defocus_map, cmin = 0., cmax = 1.).save(sample_dir + '/{}_2_defocus_map_out.png'.format(i))
+        scipy.misc.toimage(binary_map, cmin = 0., cmax = 1.).save(sample_dir + '/{}_3_binary_map_out.png'.format(i))
+        scipy.misc.toimage(np.squeeze(test_gt_imgs[i]), cmin = 0., cmax = 1.).save(sample_dir + '/{}_4_binary_map_gt.png'.format(i))
 
         sess.close()
         reuse = True
@@ -205,13 +324,14 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--mode', type=str, default='sharp_ass', help='model name')
-    parser.add_argument('--is_train', type=str , default='true', help='whether train or not')
+    parser.add_argument('--mode', type = str, default = 'sharp_ass', help = 'model name')
+    parser.add_argument('--is_train', type = str , default = 'true', help = 'whether train or not')
 
     args = parser.parse_args()
 
     tl.global_flag['mode'] = args.mode
     tl.global_flag['is_train'] = t_or_f(args.is_train)
+    
 
     if tl.global_flag['is_train']:
         train()

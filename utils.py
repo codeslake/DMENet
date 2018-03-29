@@ -8,81 +8,21 @@ from scipy.ndimage.filters import gaussian_filter
 
 import scipy
 import numpy as np
+import cv2
+import math
+
+import os
+import fnmatch
 
 def get_imgs_RGB_fn(file_name, path):
     """ Input an image path and name, return an image array """
     # return scipy.misc.imread(path + file_name).astype(np.float)
-    return scipy.misc.imread(path + file_name, mode='RGB')
+    return scipy.misc.imread(path + file_name, mode='RGB')/255.
 
 def get_imgs_GRAY_fn(file_name, path):
     """ Input an image path and name, return an image array """
     image = scipy.misc.imread(path + file_name, mode='P')/255.
     return np.expand_dims(image, axis = 2)
-
-def blur_crop_edge_sub_imgs_fn(data):
-    '''
-    h = config.TRAIN.height
-    w = config.TRAIN.width
-    cropped_image = crop(image, wrg=w, hrg=h, is_random=is_random)
-    cropped_image = cropped_image / (255. / 2.) - 1
-    '''
-    h = config.TRAIN.height
-    w = config.TRAIN.width
-    r = (int)(h/2.) # 35
-
-    image, sigma = data
-    #mask = np.ones_like(mask) - mask
-
-    image_h, image_w = np.asarray(image).shape[0:2]
-
-    '''
-    # 1. get edge image in "sharp region"
-    # 1-1. elementary wise application between image and mask
-    #sharp_image = np.multiply(image, mask)
-    # 1-2. get edge image
-    #edge_image = feature.canny(color.rgb2gray(sharp_image))
-    edge_image = np.squeeze(edge)
-    # 2. get points in  edge image
-    coordinates = np.transpose(np.where(edge_image == 1), (1, 0))
-
-    condition_y = np.logical_and(coordinates[:, 0] >= r, coordinates[:, 0] < image_h - r)
-    condition_x = np.logical_and(coordinates[:, 1] >= r, coordinates[:, 1] < image_w - r)
-    condition = np.logical_and(condition_x, condition_y)
-    condition = np.transpose(np.expand_dims(condition, axis = 0), (1, 0))
-    condition = np.concatenate((condition, condition), axis = 1)
-
-    coordinates = np.reshape(np.extract(condition, coordinates), (-1, 2))
-
-    # 3. crop image with given random edge point at center
-    random_index = np.random.randint(0, coordinates.shape[0])
-    center_y, center_x = coordinates[random_index, 0:2]
-
-    cropped_image = image[center_y - r : center_y + r + 1, center_x - r : center_x + r + 1]
-
-    # 4. Gaussian Blur
-    image_blur = gaussian_filter(cropped_image, (sigma[0], sigma[0], 0))
-    image_blur = image_blur + (np.mean(cropped_image) - np.mean(image_blur))
-    image_blur[image_blur > 255.] = 255.
-
-    ###
-    cropped_edge = edge[center_y - r : center_y + r + 1, center_x - r : center_x + r + 1]
-    cropped_edge = np.concatenate((cropped_edge, cropped_edge, cropped_edge), axis = 2)
-    return image_blur, cropped_image, cropped_edge
-    ###
-    '''
-    cropped_image = tl.prepro.crop(image, wrg=h, hrg=w, is_random=True)
-    image_blur = gaussian_filter(cropped_image, (sigma[0], sigma[0], 0))
-    image_blur = image_blur + (np.mean(cropped_image) - np.mean(image_blur))
-    image_blur[image_blur > 255.] = 255.
-
-    return image_blur / (255. / 2.) - 1.
-
-def downsample_fn(x):
-    # We obtained the LR images by downsampling the HR images using bicubic kernel with downsampling factor r = 4.
-    x = imresize(x, size=[56, 56], interp='bicubic', mode=None)
-    x = x / (255. / 2.)
-    x = x - 1.
-    return x
 
 def t_or_f(arg):
     ua = str(arg).upper()
@@ -215,3 +155,56 @@ def refine_image(img):
     h, w = img.shape[:2]
     
     return img[0 : h - h % 16, 0 : w - w % 16]
+
+def crop_pair_with_different_shape_images(images, labels, resize_shape):
+    images_list = None
+    labels_list = None
+    h, w = resize_shape[:2]
+    
+    for i in np.arange(len(images)):
+        image = np.copy(images[i])
+        label = np.copy(labels[i])
+        shape = np.array(image.shape[:2])
+        
+        if shape.min() <= h:
+            ratio = resize_shape[shape.argmin()]/float(shape.min())
+            resize_w = int(math.floor(shape[1] * ratio)) + 1
+            resize_h = int(math.floor(shape[0] * ratio)) + 1
+            
+            image = cv2.resize(image, (resize_w, resize_h))
+            label = np.expand_dims(cv2.resize(label[:, :, 0], (resize_w, resize_h)), axis = 2)
+
+        concatenated_images = np.concatenate((image, label), axis = 2)
+        cropped_images = tl.prepro.crop(concatenated_images, wrg=h, hrg=w, is_random=True)
+        image = np.expand_dims(cropped_images[:, :, 0:3], axis=0)
+        label = np.expand_dims(np.expand_dims(cropped_images[:, :, 3], axis=3), axis=0)
+        
+        images_list = np.copy(image) if i == 0 else np.concatenate((images_list, image), axis = 0)
+        labels_list = np.copy(label) if i == 0 else np.concatenate((labels_list, label), axis = 0)
+
+    return images_list, labels_list
+
+def get_binary_maps(maps):
+    continuous_maps = maps
+    for i in np.arange(len(continuous_maps)):
+        continuous_map = continuous_maps[i]
+        continuous_map[np.where(continuous_map > continuous_map.min())] = 1
+        continuous_map[np.where(continuous_map == continuous_map.min())] = 0
+        continuous_maps[i] = continuous_map
+
+    return continuous_maps
+    
+def get_file_path(path, regex):
+    file_path = []
+    for root, dirnames, filenames in os.walk(path):
+        for i in np.arange(len(regex)):
+            for filename in fnmatch.filter(filenames, regex[i]):
+                file_path.append(os.path.join(root, filename))
+    
+    return file_path
+
+def remove_file_end_with(path, regex):
+    file_paths = get_file_path(path, [regex])
+
+    for i in np.arange(len(file_paths)):
+        os.remove(file_paths[i])
