@@ -227,7 +227,7 @@ def train():
                 domain_lambda: l
                 })
             
-            print('[%s] Epoch [%2d/%2d] %4d/%4d time: %4.2fs, total_err: %.3f, err_domain: %.3f, err_defocus: %.3f, err_binary: %.3f, lr: %.8f' % \
+            print('[%s] Ep [%2d/%2d] %4d/%4d time: %4.2fs, err_tot: %.3f, err_dom: %.3f, err_def: %.3f, err_bin: %.3f, lr: %.8f' % \
                 (tl.global_flag['mode'], epoch, n_epoch, n_iter, len(train_synthetic_img_list)/batch_size, time.time() - step_time, err, err_d, err_def, err_bin, lr))
             
             ## SAVE LOGS
