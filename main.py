@@ -84,14 +84,14 @@ def train():
 
         patches_real = tf.placeholder('float32', [batch_size, h, w, 3], name = 'input_real')
         labels_real_binary = tf.placeholder('float32', [batch_size, h, w, 1], name = 'labels_real_binary')
-
-        domain_lambda = tf.placeholder('float32', [], name = 'domain_lambda')
     
     # model
     with tf.variable_scope('defocus_net') as scope:
         with tf.variable_scope('unet') as scope:
             with tf.variable_scope('unet_down') as scope:
                 f0_synthetic, f1_2_synthetic, f2_3_synthetic, f3_4_synthetic, final_feature_synthetic = UNet_down(patches_synthetic, is_train = True, reuse = False, scope = scope)
+                domain_lambda = tf.get_variable('domain_lambda', [], initializer = tf.constant_initializer(0.0))
+                domain_lambda = tf.nn.relu(domain_lambda)
                 flipped_final_feature_synthetic = flip_gradient(final_feature_synthetic, domain_lambda)
                 f0_real, f1_2_real, f2_3_real, f3_4_real, final_feature_real = UNet_down(patches_real, is_train = True, reuse = True, scope = scope)
                 flipped_final_feature_real= flip_gradient(final_feature_real, domain_lambda)
@@ -212,10 +212,6 @@ def train():
             binary_maps = read_all_imgs(train_binary_map_list[b_idx], path = config.TRAIN.binary_map_path, n_threads = batch_size, mode = 'GRAY')
             real_images_blur, real_binary_maps = crop_pair_with_different_shape_images(images_blur, binary_maps, [h, w])
 
-            # flipped gradient lambda
-            p = float(global_step) * config.TRAIN.lambda_numerator_coef / config.TRAIN.lambda_denominator
-            l = 2. / (1. + np.exp(-10. * p)) - 1
-
             ## RUN NETWORK
             err, err_d, err_def, err_bin, synthetic_defocus_out, synthetic_binary_out, real_defocus_out, real_binary_out, lr, summary_loss, summary_image, _ = \
             sess.run([loss, loss_domain, loss_defocus, loss_binary,output_synthetic_defocus, output_synthetic_binary, output_real_defocus, output_real_binary, lr_v, loss_sum, image_sum, optim], 
@@ -224,7 +220,6 @@ def train():
                 labels_synthetic_binary: synthetic_binary_maps,
                 patches_real: real_images_blur,
                 labels_real_binary: real_binary_maps,
-                domain_lambda: l
                 })
             
             print('[%s] Ep [%2d/%2d] %4d/%4d time: %4.2fs, err_tot: %.3f, err_dom: %.3f, err_def: %.3f, err_bin: %.3f, lr: %.8f' % \

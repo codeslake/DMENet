@@ -41,11 +41,6 @@ config.TRAIN.refresh_image_log_every = 50
 # save dir
 config.TRAIN.root_dir = '/data2/junyonglee/sharpness_assessment/'
 
-# domain lambda
-config.TRAIN.lambda_denominator = 300.
-config.TRAIN.lambda_numerator_coef = 1.
-
-
 def log_config(path, cfg):
     with open(path + '/config.txt', 'w') as f:
         f.write('================================================\n')
