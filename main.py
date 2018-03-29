@@ -91,7 +91,7 @@ def train():
             with tf.variable_scope('unet_down') as scope:
                 f0_synthetic, f1_2_synthetic, f2_3_synthetic, f3_4_synthetic, final_feature_synthetic = UNet_down(patches_synthetic, is_train = True, reuse = False, scope = scope)
                 domain_lambda = tf.get_variable('domain_lambda', [], initializer = tf.constant_initializer(0.0))
-                domain_lambda = tf.nn.relu(domain_lambda)
+                domain_lambda = tf.nn.sigmoid(domain_lambda)
                 flipped_final_feature_synthetic = flip_gradient(final_feature_synthetic, domain_lambda)
                 f0_real, f1_2_real, f2_3_real, f3_4_real, final_feature_real = UNet_down(patches_real, is_train = True, reuse = True, scope = scope)
                 flipped_final_feature_real = flip_gradient(final_feature_real, domain_lambda)
