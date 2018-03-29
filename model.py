@@ -110,9 +110,11 @@ def UNet_up(f0_in, f1_2_in, f2_3_in, f3_4_in, last_in, hrg, wrg, is_train=False,
         n.outputs = tf.nn.relu(n.outputs, name = 'relu2')
         n = Conv2d(n, 15, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init1, name='u1/c1')
         n = BatchNormLayer(n, act=tf.nn.relu, is_train=is_train, gamma_init=g_init, name='u1/b1')
-        n = Conv2d(n, 1, (3, 3), (1, 1), act=tf.nn.sigmoid, padding='SAME', W_init=w_init1, name='u1/c2')
+        n = Conv2d(n, 1, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init1, name='u1/c2')
+        logits = n.outputs
+        n.outputs = tf.nn.sigmoid(n.outputs)
 
-        return n.outputs
+        return logits, n.outputs
 
 def SRGAN_d(input_images, is_train=True, reuse=False, scope = 'Discriminator'):
     w_init = tf.random_normal_initializer(stddev=0.02)

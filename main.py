@@ -94,7 +94,7 @@ def train():
                 domain_lambda = tf.nn.relu(domain_lambda)
                 flipped_final_feature_synthetic = flip_gradient(final_feature_synthetic, domain_lambda)
                 f0_real, f1_2_real, f2_3_real, f3_4_real, final_feature_real = UNet_down(patches_real, is_train = True, reuse = True, scope = scope)
-                flipped_final_feature_real= flip_gradient(final_feature_real, domain_lambda)
+                flipped_final_feature_real = flip_gradient(final_feature_real, domain_lambda)
 
         with tf.variable_scope('discriminator') as scope:
             d_logits_synthetic = SRGAN_d(flipped_final_feature_synthetic, is_train = True, reuse = False, scope = scope)
@@ -102,12 +102,12 @@ def train():
 
         with tf.variable_scope('unet') as scope:
             with tf.variable_scope('unet_up_defocus_map') as scope:
-                output_synthetic_defocus = UNet_up(f0_synthetic, f1_2_synthetic, f2_3_synthetic, f3_4_synthetic, final_feature_synthetic, h, w, is_train = True, reuse = False, scope = scope)
-                output_real_defocus = UNet_up(f0_real, f1_2_real, f2_3_real, f3_4_real, final_feature_real, h, w, is_train = True, reuse = True, scope = scope)
+                output_synthetic_defocus_logits, output_synthetic_defocus = UNet_up(f0_synthetic, f1_2_synthetic, f2_3_synthetic, f3_4_synthetic, final_feature_synthetic, h, w, is_train = True, reuse = False, scope = scope)
+                output_real_defocus_logits, output_real_defocus = UNet_up(f0_real, f1_2_real, f2_3_real, f3_4_real, final_feature_real, h, w, is_train = True, reuse = True, scope = scope)
                 
             with tf.variable_scope('unet_up_binary_map') as scope:
-                output_synthetic_binary = UNet_up(f0_synthetic, f1_2_synthetic, f2_3_synthetic, f3_4_synthetic, final_feature_synthetic, h, w, is_train = True, reuse = False, scope = scope)
-                output_real_binary = UNet_up(f0_real, f1_2_real, f2_3_real, f3_4_real, final_feature_real, h, w, is_train = True, reuse = True, scope = scope)
+                output_synthetic_binary_logits, output_synthetic_binary = UNet_up(f0_synthetic, f1_2_synthetic, f2_3_synthetic, f3_4_synthetic, final_feature_synthetic, h, w, is_train = True, reuse = False, scope = scope)
+                output_real_binary_logits, output_real_binary = UNet_up(f0_real, f1_2_real, f2_3_real, f3_4_real, final_feature_real, h, w, is_train = True, reuse = True, scope = scope)
 
     ## DEFINE LOSS
     with tf.variable_scope('loss'):
@@ -116,10 +116,10 @@ def train():
             loss_real_domain = tl.cost.sigmoid_cross_entropy(d_logits_real, tf.ones_like(d_logits_real), name = 'real')
             loss_domain = tf.identity((loss_synthetic_domain + loss_real_domain)/2., name = 'total')
         with tf.variable_scope('defocus'):
-            loss_defocus = tl.cost.mean_squared_error(output_synthetic_defocus, labels_synthetic_defocus, is_mean = True, name = 'synthetic')
+            loss_defocus = tl.cost.mean_squared_error(output_synthetic_defocus_logits, labels_synthetic_defocus, is_mean = True, name = 'synthetic')
         with tf.variable_scope('binary'):
-            loss_synthetic_binary = tl.cost.sigmoid_cross_entropy(output_synthetic_binary, labels_synthetic_binary, name = 'synthetic')
-            loss_real_binary = tl.cost.sigmoid_cross_entropy(output_real_binary, labels_real_binary, name = 'real')
+            loss_synthetic_binary = tl.cost.sigmoid_cross_entropy(output_synthetic_binary_logits, labels_synthetic_binary, name = 'synthetic')
+            loss_real_binary = tl.cost.sigmoid_cross_entropy(output_real_binary_logits, labels_real_binary, name = 'real')
             loss_binary = tf.identity((loss_synthetic_binary + loss_real_binary)/2., name = 'total')
             
         loss = tf.identity(loss_defocus + loss_binary + loss_domain, name = 'total')
