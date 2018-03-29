@@ -49,12 +49,12 @@ def read_all_imgs(img_list, path='', n_threads=32, mode = 'RGB'):
    
 def train():
     ## LOG
-    checkpoint_dir = "/data2/junyonglee/sharpness_assessment/checkpoint/{}".format(tl.global_flag['mode'])  # checkpoint_resize_conv
+    checkpoint_dir = "/data2/junyonglee/sharpness_assessment/{}/checkpoint".format(tl.global_flag['mode'])  # checkpoint_resize_conv
     tl.files.exists_or_mkdir(checkpoint_dir)
     log_config(checkpoint_dir + '/config', config)
 
     date = datetime.datetime.now().strftime("%y.%m.%d")
-    save_dir_training_output = "samples/{}/{}/0_training".format(tl.global_flag['mode'], date)
+    save_dir_training_output = "/data2/junyonglee/sharpness_assessment/{}/samples/{}/0_training".format(tl.global_flag['mode'], date)
     tl.files.exists_or_mkdir(save_dir_training_output)
 
     ## DATA
@@ -130,23 +130,24 @@ def train():
             n_iter += 1
             global_step += 1
             
-            ## save model
-            if epoch % 1 == 0:
-                tl.files.save_ckpt(sess=sess, mode_name='SA_net_{}_init.ckpt'.format(tl.global_flag['mode']), save_dir = checkpoint_dir, var_list = a_vars, global_step = global_step, printable = False)
-                tl.visualize.save_images((synthetic_images_blur[:9]) * 255, [3, 3], save_dir_training_output + '/{}_1_synthetic_image.png'.format(epoch))
-                tl.visualize.save_images(defocus_map_output[:9], [3, 3], save_dir_training_output + '/{}_2_disp_out.png'.format(epoch))
-                tl.visualize.save_images(defocus_maps[:9], [3, 3], save_dir_training_output + '/{}_3_disp_gt.png'.format(epoch))
             
         log = "[*] Epoch: [%2d/%2d] time: %4.4fs, total_err: %.8f" % (epoch, n_epoch, time.time() - epoch_time, total_loss/n_iter)
         print(log)
+        
+        ## save model
+        if epoch % 1 == 0:
+            tl.files.save_ckpt(sess=sess, mode_name='SA_net_{}_init.ckpt'.format(tl.global_flag['mode']), save_dir = checkpoint_dir, var_list = a_vars, global_step = global_step, printable = False)
+            tl.visualize.save_images((synthetic_images_blur[:9]) * 255, [3, 3], save_dir_training_output + '/{}_1_synthetic_image.png'.format(epoch))
+            tl.visualize.save_images(defocus_map_output[:9], [3, 3], save_dir_training_output + '/{}_2_disp_out.png'.format(epoch))
+            tl.visualize.save_images(defocus_maps[:9], [3, 3], save_dir_training_output + '/{}_3_disp_gt.png'.format(epoch))
 
             
 def evaluate():
     print "Evaluation Start"
-    checkpoint_dir = "/data2/junyonglee/sharpness_assessment/checkpoint/{}".format(tl.global_flag['mode'])  # checkpoint_resize_conv
+    checkpoint_dir = "/data2/junyonglee/sharpness_assessment/{}/checkpoint".format(tl.global_flag['mode'])  # checkpoint_resize_conv
     date = datetime.datetime.now().strftime("%y.%m.%d")
     time = datetime.datetime.now().strftime("%H%M")
-    save_dir_sample = "samples/{}/{}/{}".format(tl.global_flag['mode'], date, time)
+    save_dir_sample = "/data2/junyonglee/sharpness_assessment/{}/samples/{}/{}".format(tl.global_flag['mode'], date, time)
 
     # Input
     test_blur_img_list = sorted(tl.files.load_file_list(path=config.TEST.blur_img_path, regx='.*', printable=False))

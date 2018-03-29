@@ -214,4 +214,4 @@ def tf_ms_ssim(img1, img2, batch_size, mean_metric=True, level=5):
 def refine_image(img):
     h, w = img.shape[:2]
     
-    return img[0 : h - h % 8, 0 : w - w % 8]
+    return img[0 : h - h % 16, 0 : w - w % 16]

@@ -6,17 +6,14 @@ config.TRAIN = edict()
 config.TEST = edict()
 
 ## Adam
-config.TRAIN.batch_size = 10
+config.TRAIN.batch_size = 5
 config.TRAIN.lr_init = 1e-4
 config.TRAIN.beta1 = 0.9
 
 # learning rate
-config.TRAIN.n_epoch = 10000
+config.TRAIN.n_epoch = 100000
 config.TRAIN.lr_decay = 0.8
-config.TRAIN.decay_every = 100
-
-# pretrain
-config.TRAIN.n_epoch_init = 1000
+config.TRAIN.decay_every = 5000
 
 ## train set location
 config.TRAIN.synthetic_img_path = '/data1/blur_sharp_only/image_dof/'
