@@ -213,8 +213,7 @@ def train():
             real_images_blur, real_binary_maps = crop_pair_with_different_shape_images(images_blur, binary_maps, [h, w])
 
             # flipped gradient lambda
-            p = float(global_step) * config.TRAIN.labmda_numerator_coef / config.TRAIN.lambda_denominator
-            print p
+            p = float(global_step) * config.TRAIN.lambda_numerator_coef / config.TRAIN.lambda_denominator
             l = 2. / (1. + np.exp(-10. * p)) - 1
 
             ## RUN NETWORK
@@ -228,8 +227,8 @@ def train():
                 domain_lambda: l
                 })
             
-            print('Epoch [%2d/%2d] %4d/%4d time: %4.2fs, total_err: %.3f, err_domain: %.3f, err_defocus: %.3f, err_binary: %.3f, lr: %.8f' % \
-                (epoch, n_epoch, n_iter, len(train_synthetic_img_list)/batch_size, time.time() - step_time, err, err_d, err_def, err_bin, lr))
+            print('[%s] Epoch [%2d/%2d] %4d/%4d time: %4.2fs, total_err: %.3f, err_domain: %.3f, err_defocus: %.3f, err_binary: %.3f, lr: %.8f' % \
+                (tl.global_flag['mode'], epoch, n_epoch, n_iter, len(train_synthetic_img_list)/batch_size, time.time() - step_time, err, err_d, err_def, err_bin, lr))
             
             ## SAVE LOGS
             # save loss & image log
