@@ -52,6 +52,7 @@ def train():
     mode_dir = config.TRAIN.root_dir + '{}'.format(tl.global_flag['mode'])
 
     if tl.global_flag['delete_log']:
+        shutil.rmtree(mode_dir, ignore_errors = True)
     
     ckpt_dir = mode_dir + '/checkpoint'
     tl.files.exists_or_mkdir(ckpt_dir)
