@@ -50,7 +50,8 @@ def read_all_imgs(img_list, path = '', n_threads = 32, mode = 'RGB'):
 def train():
     ## CREATE DIRECTORIES
     mode_dir = config.TRAIN.root_dir + '{}'.format(tl.global_flag['mode'])
-    shutil.rmtree(mode_dir, ignore_errors = True)
+
+    if tl.global_flag['delete_log']:
     
     ckpt_dir = mode_dir + '/checkpoint'
     tl.files.exists_or_mkdir(ckpt_dir)
@@ -296,9 +297,9 @@ def evaluate():
                 with tf.variable_scope('unet_down') as scope:
                     f0, f1_2, f2_3, f3_4, final_feature = UNet_down(patches_blurred, is_train = False, reuse = reuse, scope = scope)
                 with tf.variable_scope('unet_up_defocus_map') as scope:
-                    output_defocus = UNet_up(f0, f1_2, f2_3, f3_4, final_feature, h, w, is_train = False, reuse = reuse, scope = scope)
+                    _, output_defocus = UNet_up(f0, f1_2, f2_3, f3_4, final_feature, h, w, is_train = False, reuse = reuse, scope = scope)
                 with tf.variable_scope('unet_up_binary_map') as scope:
-                    output_binary = UNet_up(f0, f1_2, f2_3, f3_4, final_feature, h, w, is_train = False, reuse = reuse, scope = scope)
+                    _, output_binary = UNet_up(f0, f1_2, f2_3, f3_4, final_feature, h, w, is_train = False, reuse = reuse, scope = scope)
                         
         a_vars = tl.layers.get_variables_with_name('unet', False, False)
 
@@ -332,13 +333,14 @@ if __name__ == '__main__':
 
     parser.add_argument('--mode', type = str, default = 'sharp_ass', help = 'model name')
     parser.add_argument('--is_train', type = str , default = 'true', help = 'whether train or not')
+    parser.add_argument('--delete_log', type = str , default = 'false', help = 'whether to delete log or not')
 
     args = parser.parse_args()
 
     tl.global_flag['mode'] = args.mode
+    tl.global_flag['delete_log'] = t_or_f(args.delete_log
     tl.global_flag['is_train'] = t_or_f(args.is_train)
     
-
     if tl.global_flag['is_train']:
         train()
     else:
