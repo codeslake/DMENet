@@ -235,15 +235,15 @@ def train():
                 tl.files.save_ckpt(sess = sess, mode_name = '{}.ckpt'.format(tl.global_flag['mode']), save_dir = ckpt_dir, var_list = a_vars, global_step = global_step, printable = False)
             # save samples
             if global_step % config.TRAIN.write_sample_every == 0:
-                tl.visualize.save_images(synthetic_images_blur, [ni, ni], sample_dir + '/{}_{}_1_synthetic_input.png'.format(epoch, global_step))
-                tl.visualize.save_images(synthetic_defocus_out, [ni, ni], sample_dir + '/{}_{}_2_synthetic_defocus_out.png'.format(epoch, global_step))
-                tl.visualize.save_images(synthetic_defocus_maps, [ni, ni], sample_dir + '/{}_{}_3_synthetic_defocus_gt.png'.format(epoch, global_step))
-                tl.visualize.save_images(synthetic_binary_out, [ni, ni], sample_dir + '/{}_{}_4_synthetic_binary_out.png'.format(epoch, global_step))
-                tl.visualize.save_images(synthetic_binary_maps, [ni, ni], sample_dir + '/{}_{}_5_synthetic_binary_gt.png'.format(epoch, global_step))
-                tl.visualize.save_images(real_images_blur, [ni, ni], sample_dir + '/{}_{}_6_real_input.png'.format(epoch, global_step))
-                tl.visualize.save_images(real_defocus_out, [ni, ni], sample_dir + '/{}_{}_7_real_defocus_out.png'.format(epoch, global_step))
-                tl.visualize.save_images(real_binary_out, [ni, ni], sample_dir + '/{}_{}_8_real_binary_out.png'.format(epoch, global_step))
-                tl.visualize.save_images(real_binary_maps, [ni, ni], sample_dir + '/{}_{}_9_real_binary_gt.png'.format(epoch, global_step))
+                save_images(synthetic_images_blur, [ni, ni], sample_dir + '/{}_{}_1_synthetic_input.png'.format(epoch, global_step))
+                save_images(synthetic_defocus_out, [ni, ni], sample_dir + '/{}_{}_2_synthetic_defocus_out.png'.format(epoch, global_step))
+                save_images(synthetic_defocus_maps, [ni, ni], sample_dir + '/{}_{}_3_synthetic_defocus_gt.png'.format(epoch, global_step))
+                save_images(synthetic_binary_out, [ni, ni], sample_dir + '/{}_{}_4_synthetic_binary_out.png'.format(epoch, global_step))
+                save_images(synthetic_binary_maps, [ni, ni], sample_dir + '/{}_{}_5_synthetic_binary_gt.png'.format(epoch, global_step))
+                save_images(real_images_blur, [ni, ni], sample_dir + '/{}_{}_6_real_input.png'.format(epoch, global_step))
+                save_images(real_defocus_out, [ni, ni], sample_dir + '/{}_{}_7_real_defocus_out.png'.format(epoch, global_step))
+                save_images(real_binary_out, [ni, ni], sample_dir + '/{}_{}_8_real_binary_out.png'.format(epoch, global_step))
+                save_images(real_binary_maps, [ni, ni], sample_dir + '/{}_{}_9_real_binary_gt.png'.format(epoch, global_step))
 
             total_loss += err
             n_iter += 1

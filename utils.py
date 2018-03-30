@@ -208,3 +208,23 @@ def remove_file_end_with(path, regex):
 
     for i in np.arange(len(file_paths)):
         os.remove(file_paths[i])
+        
+def save_images(images, size, image_path='_temp.png'):
+    if len(images.shape) == 3:  # Greyscale [batch, h, w] --> [batch, h, w, 1]
+        images = images[:, :, :, np.newaxis]
+
+    def merge(images, size):
+        h, w = images.shape[1], images.shape[2]
+        img = np.zeros((h * size[0], w * size[1], 3))
+        for idx, image in enumerate(images):
+            i = idx % size[1]
+            j = idx // size[1]
+            img[j * h:j * h + h, i * w:i * w + w, :] = image
+        return img
+
+    def imsave(images, size, path):
+        return scipy.misc.toimage(merge(images, size), cmin = 0., cmax = 1.).save(path)
+
+    assert len(images) <= size[0] * size[1], "number of images should be equal or less than size[0] * size[1] {}".format(len(images))
+
+    return imsave(images, size, image_path)
