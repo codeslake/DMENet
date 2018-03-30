@@ -6,7 +6,7 @@ config.TRAIN = edict()
 config.TEST = edict()
 
 ## Adam
-config.TRAIN.batch_size = 10
+config.TRAIN.batch_size = 12
 config.TRAIN.lr_init = 1e-4
 config.TRAIN.beta1 = 0.9
 
@@ -27,8 +27,8 @@ config.TEST.real_img_path = '/data1/junyonglee/BlurDetection/test/image/'
 config.TEST.binary_map_path = '/data1/junyonglee/BlurDetection/test/gt/'
 
 ## train image size
-config.TRAIN.height = 288
-config.TRAIN.width = 288
+config.TRAIN.height = 240
+config.TRAIN.width = 240
 
 ## log & checkpoint & samples
 # every global step

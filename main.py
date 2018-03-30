@@ -90,15 +90,27 @@ def train():
         with tf.variable_scope('unet') as scope:
             with tf.variable_scope('unet_down') as scope:
                 f0_synthetic, f1_2_synthetic, f2_3_synthetic, f3_4_synthetic, final_feature_synthetic = UNet_down(patches_synthetic, is_train = True, reuse = False, scope = scope)
-                domain_lambda = tf.get_variable('domain_lambda', [], initializer = tf.constant_initializer(0.0))
-                domain_lambda = tf.nn.sigmoid(domain_lambda)
-                flipped_final_feature_synthetic = flip_gradient(final_feature_synthetic, domain_lambda)
                 f0_real, f1_2_real, f2_3_real, f3_4_real, final_feature_real = UNet_down(patches_real, is_train = True, reuse = True, scope = scope)
-                flipped_final_feature_real = flip_gradient(final_feature_real, domain_lambda)
+                
+                with tf.variable_scope('lambda_predictor') as scope:
+                    domain_lambda_synthetic = domain_lambda_predictor(final_feature_synthetic, reuse = False, scope = scope)
+                    domain_lambda_real = domain_lambda_predictor(final_feature_real, reuse = True, scope = scope)
 
+                f_f0_synthetic = flip_gradient(f0_synthetic, domain_lambda_synthetic)
+                f_f1_2_synthetic = flip_gradient(f1_2_synthetic, domain_lambda_synthetic)
+                f_f2_3_synthetic = flip_gradient(f2_3_synthetic, domain_lambda_synthetic)
+                f_f3_4_synthetic = flip_gradient(f3_4_synthetic, domain_lambda_synthetic)
+                f_final_feature_synthetic = flip_gradient(final_feature_synthetic, domain_lambda_synthetic)
+                
+                f_f0_real = flip_gradient(f0_real, domain_lambda_real)
+                f_f1_2_real = flip_gradient(f1_2_real, domain_lambda_real)
+                f_f2_3_real = flip_gradient(f2_3_real, domain_lambda_real)
+                f_f3_4_real = flip_gradient(f3_4_real, domain_lambda_real)
+                f_final_feature_real = flip_gradient(final_feature_real, domain_lambda_real)
+                
         with tf.variable_scope('discriminator') as scope:
-            d_logits_synthetic = SRGAN_d(flipped_final_feature_synthetic, is_train = True, reuse = False, scope = scope)
-            d_logits_real = SRGAN_d(flipped_final_feature_real, is_train = True, reuse = True, scope = scope)
+            d_logits_synthetic = SRGAN_d(f_f0_synthetic, f_f1_2_synthetic, f_f2_3_synthetic, f_f3_4_synthetic, f_final_feature_synthetic, is_train = True, reuse = False, scope = scope)
+            d_logits_real = SRGAN_d(f_f0_real, f_f1_2_real, f_f2_3_real, f_f3_4_real, f_final_feature_real, is_train = True, reuse = True, scope = scope)
 
         with tf.variable_scope('unet') as scope:
             with tf.variable_scope('unet_up_defocus_map') as scope:
