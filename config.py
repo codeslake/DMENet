@@ -13,7 +13,7 @@ config.TRAIN.beta1 = 0.9
 # learning rate
 config.TRAIN.n_epoch = 1000
 config.TRAIN.lr_decay = 0.8
-config.TRAIN.decay_every = 2
+config.TRAIN.decay_every = 20
 
 ## train set location
 config.TRAIN.synthetic_img_path = '/data1/junyonglee/blur_sharp_only/image_dof/'
