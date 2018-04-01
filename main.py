@@ -316,12 +316,15 @@ def evaluate():
         processing_time = time.time()
         defocus_map, binary_map = sess.run([output_defocus, output_binary], {patches_blurred: np.expand_dims(test_blur_img, axis = 0)})
         defocus_map = np.squeeze(defocus_map)
+        defocus_map_norm = defocus_map - defocus_map.min()
+        defocus_map_norm = defocus_map_norm / defocus_map_norm.max()
         binary_map = np.squeeze(binary_map)
         print 'processing {} ... Done [{:.3f}s]'.format(test_blur_img_list[i], time.time() - processing_time)
         
         tl.files.exists_or_mkdir(sample_dir, verbose = False)
         scipy.misc.toimage(test_blur_img, cmin = 0., cmax = 1.).save(sample_dir + '/{}_1_input.png'.format(i))
         scipy.misc.toimage(defocus_map, cmin = 0., cmax = 1.).save(sample_dir + '/{}_2_defocus_map_out.png'.format(i))
+        scipy.misc.toimage(defocus_map_norm, cmin = 0., cmax = 1.).save(sample_dir + '/{}_2_1_defocus_map_norm_out.png'.format(i))
         scipy.misc.toimage(binary_map, cmin = 0., cmax = 1.).save(sample_dir + '/{}_3_binary_map_out.png'.format(i))
         scipy.misc.toimage(np.squeeze(test_gt_imgs[i]), cmin = 0., cmax = 1.).save(sample_dir + '/{}_4_binary_map_gt.png'.format(i))
 
@@ -339,8 +342,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     tl.global_flag['mode'] = args.mode
-    tl.global_flag['delete_log'] = t_or_f(args.delete_log
     tl.global_flag['is_train'] = t_or_f(args.is_train)
+    tl.global_flag['delete_log'] = t_or_f(args.delete_log)
     
     if tl.global_flag['is_train']:
         train()
