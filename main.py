@@ -50,7 +50,6 @@ def read_all_imgs(img_list, path = '', n_threads = 32, mode = 'RGB'):
 def train():
     ## CREATE DIRECTORIES
     mode_dir = config.TRAIN.root_dir + '{}'.format(tl.global_flag['mode'])
-
     if tl.global_flag['delete_log']:
         shutil.rmtree(mode_dir, ignore_errors = True)
     
