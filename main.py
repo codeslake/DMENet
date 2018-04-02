@@ -246,6 +246,7 @@ def train():
                 writer_image.add_summary(summary_image, global_step)
             # save checkpoint
             if global_step % config.TRAIN.write_ckpt_every == 0:
+                shutil.rmtree(ckpt_dir, ignore_errors = True)
                 tl.files.save_ckpt(sess = sess, mode_name = '{}.ckpt'.format(tl.global_flag['mode']), save_dir = ckpt_dir, var_list = a_vars, global_step = global_step, printable = False)
             # save samples
             if global_step % config.TRAIN.write_sample_every == 0:
