@@ -213,12 +213,13 @@ def train():
             b_idx = (idx + np.arange(batch_size)) % len(train_synthetic_img_list)
             synthetic_images_blur = read_all_imgs(train_synthetic_img_list[b_idx], path = config.TRAIN.synthetic_img_path, n_threads = batch_size, mode = 'RGB')
             defocus_maps = read_all_imgs(train_defocus_map_list[b_idx], path = config.TRAIN.defocus_map_path, n_threads = batch_size, mode = 'GRAY')
+            binary_maps = get_binary_maps(np.copy(defocus_maps))
 
-            concatenated_images = np.concatenate((synthetic_images_blur, defocus_maps), axis = 3)
+            concatenated_images = np.concatenate((synthetic_images_blur, defocus_maps, binary_maps), axis = 3)
             images = tl.prepro.crop_multi(concatenated_images, wrg = h, hrg = w, is_random = True)
             synthetic_images_blur = images[:, :, :, 0:3]
             synthetic_defocus_maps = np.expand_dims(images[:, :, :, 3], axis = 3)
-            synthetic_binary_maps = get_binary_maps(np.copy(synthetic_defocus_maps))
+            synthetic_binary_maps = np.expand_dims(images[:, :, :, 4], axis = 3)
 
             # read real data #
             b_idx = (idx % len(train_real_img_list) + np.arange(batch_size)) % len(train_real_img_list)
