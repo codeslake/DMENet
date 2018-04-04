@@ -175,7 +175,7 @@ def train():
     image_sum_list.append(tf.summary.image('6_real_input', patches_real))
     image_sum_list.append(tf.summary.image('7_real_defocus_out', output_real_defocus))
     image_sum_list.append(tf.summary.image('8_real_binary_out', output_real_binary))
-    image_sum_list.append(tf.summary.image('9_real_binary_out', labels_real_binary))
+    image_sum_list.append(tf.summary.image('9_real_binary_gt', labels_real_binary))
     image_sum = tf.summary.merge(image_sum_list)
 
     ## INITIALIZE SESSION
