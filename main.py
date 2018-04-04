@@ -115,11 +115,11 @@ def train():
             d_logits_real = SRGAN_d(f_f0_real, f_f1_2_real, f_f2_3_real, f_f3_4_real, f_final_feature_real, is_train = True, reuse = True, scope = scope)
 
         with tf.variable_scope('unet') as scope:
-            with tf.variable_scope('unet_up_defocus_map') as scope:
-                output_synthetic_defocus_logits, output_synthetic_defocus = UNet_up(f0_synthetic, f1_2_synthetic, f2_3_synthetic, f3_4_synthetic, final_feature_synthetic, h, w, is_train = True, reuse = False, scope = scope)
-                output_real_defocus_logits, output_real_defocus = UNet_up(f0_real, f1_2_real, f2_3_real, f3_4_real, final_feature_real, h, w, is_train = True, reuse = True, scope = scope)
-
             with tf.variable_scope('binary_net') as scope:
+                with tf.variable_scope('unet_up_defocus_map') as scope:
+                    output_synthetic_defocus_logits, output_synthetic_defocus = UNet_up(f0_synthetic, f1_2_synthetic, f2_3_synthetic, f3_4_synthetic, final_feature_synthetic, h, w, is_train = True, reuse = False, scope = scope)
+                    output_real_defocus_logits, output_real_defocus = UNet_up(f0_real, f1_2_real, f2_3_real, f3_4_real, final_feature_real, h, w, is_train = True, reuse = True, scope = scope)
+
                 output_synthetic_binary_logits, output_synthetic_binary = Binary_Net(output_synthetic_defocus, h, w, is_train = True, reuse = False, scope = scope)
                 output_real_binary_logits, output_real_binary = Binary_Net(output_real_defocus, h, w, is_train = True, reuse = True, scope = scope)
 
