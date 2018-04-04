@@ -141,7 +141,7 @@ def train():
             loss_real_binary = tl.cost.sigmoid_cross_entropy(output_real_binary_logits, labels_real_binary, name = 'real')
             loss_binary = tf.identity((loss_synthetic_binary + loss_real_binary)/2., name = 'total')
             
-        loss = tf.identity(loss_defocus + 0.5 * loss_binary + 0.5 * loss_domain, name = 'total')
+        loss = tf.identity(10 * loss_defocus + loss_binary + loss_domain, name = 'total')
 
     ## DEFINE OPTIMIZER
     # variables to save / train
