@@ -13,6 +13,7 @@ import shutil
 from flip_gradient import flip_gradient            
 
 batch_size = config.TRAIN.batch_size
+batch_size_init = config.TRAIN.batch_size_init
 lr_init = config.TRAIN.lr_init
 beta1 = config.TRAIN.beta1
 
@@ -50,19 +51,23 @@ def read_all_imgs(img_list, path = '', n_threads = 32, mode = 'RGB'):
 def train():
     ## CREATE DIRECTORIES
     mode_dir = config.TRAIN.root_dir + '{}'.format(tl.global_flag['mode'])
-    if tl.global_flag['delete_log']:
-        shutil.rmtree(mode_dir, ignore_errors = True)
-    
-    ckpt_dir = mode_dir + '/checkpoint'
-    tl.files.exists_or_mkdir(ckpt_dir)
-    
-    log_dir = mode_dir + '/log'
-    tl.files.exists_or_mkdir(log_dir)
 
+    ckpt_dir = mode_dir + '/checkpoint'
+    init_dir = mode_dir + '/init'
+    log_dir = mode_dir + '/log'
     sample_dir = mode_dir + '/samples/0_train'
-    tl.files.exists_or_mkdir(sample_dir)
-    
     config_dir = mode_dir + '/config'
+
+    if tl.global_flag['delete_log']:
+        shutil.rmtree(ckpt_dir, ignore_errors = True)
+        shutil.rmtree(log_dir, ignore_errors = True)
+        shutil.rmtree(sample_dir, ignore_errors = True)
+        shutil.rmtree(config_dir, ignore_errors = True)
+
+    tl.files.exists_or_mkdir(ckpt_dir)
+    tl.files.exists_or_mkdir(init_dir)
+    tl.files.exists_or_mkdir(log_dir)
+    tl.files.exists_or_mkdir(sample_dir)
     tl.files.exists_or_mkdir(config_dir)
     log_config(config_dir, config)
 
@@ -120,8 +125,8 @@ def train():
                     output_synthetic_defocus_logits, output_synthetic_defocus = UNet_up(f0_synthetic, f1_2_synthetic, f2_3_synthetic, f3_4_synthetic, final_feature_synthetic, h, w, is_train = True, reuse = False, scope = scope)
                     output_real_defocus_logits, output_real_defocus = UNet_up(f0_real, f1_2_real, f2_3_real, f3_4_real, final_feature_real, h, w, is_train = True, reuse = True, scope = scope)
 
-                output_synthetic_binary_logits, output_synthetic_binary = Binary_Net(output_synthetic_defocus, h, w, is_train = True, reuse = False, scope = scope)
-                output_real_binary_logits, output_real_binary = Binary_Net(output_real_defocus, h, w, is_train = True, reuse = True, scope = scope)
+                output_synthetic_binary_logits, output_synthetic_binary = Binary_Net(output_synthetic_defocus, is_train = True, reuse = False, scope = scope)
+                output_real_binary_logits, output_real_binary = Binary_Net(output_real_defocus, is_train = True, reuse = True, scope = scope)
 
     ## DEFINE LOSS
     with tf.variable_scope('loss'):
@@ -136,7 +141,7 @@ def train():
             loss_real_binary = tl.cost.sigmoid_cross_entropy(output_real_binary_logits, labels_real_binary, name = 'real')
             loss_binary = tf.identity((loss_synthetic_binary + loss_real_binary)/2., name = 'total')
             
-        loss = tf.identity(loss_defocus + loss_binary + loss_domain, name = 'total')
+        loss = tf.identity(loss_defocus + 0.5 * loss_binary + 0.5 * loss_domain, name = 'total')
 
     ## DEFINE OPTIMIZER
     # variables to save / train
