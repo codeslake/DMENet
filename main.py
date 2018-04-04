@@ -72,9 +72,10 @@ def train():
     ## READ DATASET LIST
     train_synthetic_img_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.synthetic_img_path, regx = '.*', printable = False)))
     train_defocus_map_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.defocus_map_path, regx = '.*', printable = False)))
+    train_synthetic_binary_map_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.synthetic_binary_map_path, regx = '.*', printable = False)))
     
     train_real_img_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.real_img_path, regx = '.*', printable = False)))
-    train_binary_map_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.binary_map_path, regx = '.*', printable = False)))
+    train_real_binary_map_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.real_binary_map_path, regx = '.*', printable = False)))
 
     ## DEFINE MODEL
     # input
@@ -184,6 +185,20 @@ def train():
     global_step = 0
     for epoch in range(0, n_epoch + 1):
         total_loss, n_iter = 0, 0
+
+        # shuffle datasets
+        shuffle_index = np.arange(len(train_synthetic_img_list))
+        np.random.shuffle(shuffle_index)
+
+        train_synthetic_img_list = train_synthetic_img_list[shuffle_index]
+        train_defocus_map_list = train_defocus_map_list[shuffle_index]
+        train_synthetic_binary_map_list = train_synthetic_binary_map_list[shuffle_index]
+        
+        shuffle_index = np.arange(len(train_real_img_list))
+        np.random.shuffle(shuffle_index)
+        train_real_img_list = train_real_img_list[shuffle_index]
+        train_real_binary_map_list = train_real_binary_map_list[shuffle_index]
+
         # update learning rate
         if epoch != 0 and (epoch % decay_every == 0):
             new_lr_decay = lr_decay ** (epoch // decay_every)
@@ -196,25 +211,13 @@ def train():
             step_time = time.time()
             
             ## READ DATA
-            # shuffle datasets
-            shuffle_index = np.arange(len(train_synthetic_img_list))
-            np.random.shuffle(shuffle_index)
-
-            train_synthetic_img_list = train_synthetic_img_list[shuffle_index]
-            train_defocus_map_list = train_defocus_map_list[shuffle_index]
-            
-            shuffle_index = np.arange(len(train_real_img_list))
-            np.random.shuffle(shuffle_index)
-            train_real_img_list = train_real_img_list[shuffle_index]
-            train_binary_map_list = train_binary_map_list[shuffle_index]
-
             # read synthetic data
             b_idx = (idx + np.arange(batch_size)) % len(train_synthetic_img_list)
             synthetic_images_blur = read_all_imgs(train_synthetic_img_list[b_idx], path = config.TRAIN.synthetic_img_path, n_threads = batch_size, mode = 'RGB')
             defocus_maps = read_all_imgs(train_defocus_map_list[b_idx], path = config.TRAIN.defocus_map_path, n_threads = batch_size, mode = 'GRAY')
-            binary_maps = get_binary_maps(np.copy(defocus_maps))
+            synthetic_binary_maps = read_all_imgs(train_synthetic_binary_map_list[b_idx], path = config.TRAIN.synthetic_binary_map_path, n_threads = batch_size, mode = 'GRAY')
 
-            concatenated_images = np.concatenate((synthetic_images_blur, defocus_maps, binary_maps), axis = 3)
+            concatenated_images = np.concatenate((synthetic_images_blur, defocus_maps, synthetic_binary_maps), axis = 3)
             images = tl.prepro.crop_multi(concatenated_images, wrg = h, hrg = w, is_random = True)
             synthetic_images_blur = images[:, :, :, 0:3]
             synthetic_defocus_maps = np.expand_dims(images[:, :, :, 3], axis = 3)
@@ -223,8 +226,8 @@ def train():
             # read real data #
             b_idx = (idx % len(train_real_img_list) + np.arange(batch_size)) % len(train_real_img_list)
             images_blur = read_all_imgs(train_real_img_list[b_idx], path = config.TRAIN.real_img_path, n_threads = batch_size, mode = 'RGB')
-            binary_maps = read_all_imgs(train_binary_map_list[b_idx], path = config.TRAIN.binary_map_path, n_threads = batch_size, mode = 'GRAY')
-            real_images_blur, real_binary_maps = crop_pair_with_different_shape_images(images_blur, binary_maps, [h, w])
+            real_binary_maps = read_all_imgs(train_real_binary_map_list[b_idx], path = config.TRAIN.binary_map_path, n_threads = batch_size, mode = 'GRAY')
+            real_images_blur, real_binary_maps = crop_pair_with_different_shape_images(images_blur, real_binary_maps, [h, w])
 
             ## RUN NETWORK
             err, err_d, err_def, err_bin, synthetic_defocus_out, synthetic_binary_out, real_defocus_out, real_binary_out, lr, summary_loss, summary_image, _ = \
