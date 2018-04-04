@@ -99,9 +99,9 @@ def train():
                 f0_synthetic, f1_2_synthetic, f2_3_synthetic, f3_4_synthetic, final_feature_synthetic = UNet_down(patches_synthetic, is_train = True, reuse = False, scope = scope)
                 f0_real, f1_2_real, f2_3_real, f3_4_real, final_feature_real = UNet_down(patches_real, is_train = True, reuse = True, scope = scope)
                 
-                with tf.variable_scope('lambda_predictor') as scope:
-                    domain_lambda_synthetic = domain_lambda_predictor(final_feature_synthetic, reuse = False, scope = scope)
-                    domain_lambda_real = domain_lambda_predictor(final_feature_real, reuse = True, scope = scope)
+        with tf.variable_scope('lambda_predictor') as scope:
+            domain_lambda_synthetic = domain_lambda_predictor(final_feature_synthetic, reuse = False, scope = scope)
+            domain_lambda_real = domain_lambda_predictor(final_feature_real, reuse = True, scope = scope)
 
                 f_f0_synthetic = flip_gradient(f0_synthetic, domain_lambda_synthetic)
                 f_f1_2_synthetic = flip_gradient(f1_2_synthetic, domain_lambda_synthetic)
@@ -180,6 +180,7 @@ def train():
 
     ## INITIALIZE SESSION
     tl.layers.initialize_global_variables(sess)
+    tl.files.load_and_assign_npz_dict(name = init_dir + '/init.npz', sess = sess)
 
     ## START TRAINING
     print '*****************************************'
