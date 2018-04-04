@@ -175,7 +175,6 @@ def SRGAN_d(f0_in, f1_2_in, f2_3_in, f3_4_in, last_in, is_train=True, reuse=Fals
         net_ho = FlattenLayer(net_h8, name='ho/flatten')
         net_ho = DenseLayer(net_ho, n_units=1, act=tf.identity, W_init = w_init, name='ho/dense')
         logits = net_ho.outputs
-        net_ho.outputs = tf.nn.sigmoid(net_ho.outputs)
 
     return logits
 

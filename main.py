@@ -280,8 +280,8 @@ def evaluate():
     sample_dir = mode_dir + '/samples/1_test/{}'.format(date)
     
     # input
-    test_blur_img_list = tl.files.load_file_list(path = config.TEST.real_img_path, regx = '.*', printable = False)
-    test_gt_list = tl.files.load_file_list(path = config.TEST.binary_map_path, regx = '.*', printable = False)
+    test_blur_img_list = np.array(sorted(tl.files.load_file_list(path = config.TEST.real_img_path, regx = '.*', printable = False)))
+    test_gt_list = np.array(sorted(tl.files.load_file_list(path = config.TEST.binary_map_path, regx = '.*', printable = False)))
     
     test_blur_imgs = read_all_imgs(test_blur_img_list, path = config.TEST.real_img_path, n_threads = len(test_blur_img_list), mode = 'RGB')
     test_gt_imgs = read_all_imgs(test_gt_list, path = config.TEST.binary_map_path, n_threads = len(test_gt_list), mode = 'GRAY')
@@ -317,15 +317,12 @@ def evaluate():
         processing_time = time.time()
         defocus_map, binary_map = sess.run([output_defocus, output_binary], {patches_blurred: np.expand_dims(test_blur_img, axis = 0)})
         defocus_map = np.squeeze(defocus_map)
-        defocus_map_norm = defocus_map - defocus_map.min()
-        defocus_map_norm = defocus_map_norm / defocus_map_norm.max()
         binary_map = np.squeeze(binary_map)
         print 'processing {} ... Done [{:.3f}s]'.format(test_blur_img_list[i], time.time() - processing_time)
         
         tl.files.exists_or_mkdir(sample_dir, verbose = False)
         scipy.misc.toimage(test_blur_img, cmin = 0., cmax = 1.).save(sample_dir + '/{}_1_input.png'.format(i))
         scipy.misc.toimage(defocus_map, cmin = 0., cmax = 1.).save(sample_dir + '/{}_2_defocus_map_out.png'.format(i))
-        scipy.misc.toimage(defocus_map_norm, cmin = 0., cmax = 1.).save(sample_dir + '/{}_2_1_defocus_map_norm_out.png'.format(i))
         scipy.misc.toimage(binary_map, cmin = 0., cmax = 1.).save(sample_dir + '/{}_3_binary_map_out.png'.format(i))
         scipy.misc.toimage(np.squeeze(test_gt_imgs[i]), cmin = 0., cmax = 1.).save(sample_dir + '/{}_4_binary_map_gt.png'.format(i))
 
