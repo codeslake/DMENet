@@ -226,7 +226,7 @@ def train():
             # read real data #
             b_idx = (idx % len(train_real_img_list) + np.arange(batch_size)) % len(train_real_img_list)
             images_blur = read_all_imgs(train_real_img_list[b_idx], path = config.TRAIN.real_img_path, n_threads = batch_size, mode = 'RGB')
-            real_binary_maps = read_all_imgs(train_real_binary_map_list[b_idx], path = config.TRAIN.binary_map_path, n_threads = batch_size, mode = 'GRAY')
+            real_binary_maps = read_all_imgs(train_real_binary_map_list[b_idx], path = config.TRAIN.real_binary_map_path, n_threads = batch_size, mode = 'GRAY')
             real_images_blur, real_binary_maps = crop_pair_with_different_shape_images(images_blur, real_binary_maps, [h, w])
 
             ## RUN NETWORK
