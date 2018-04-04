@@ -103,17 +103,17 @@ def train():
             domain_lambda_synthetic = domain_lambda_predictor(final_feature_synthetic, reuse = False, scope = scope)
             domain_lambda_real = domain_lambda_predictor(final_feature_real, reuse = True, scope = scope)
 
-                f_f0_synthetic = flip_gradient(f0_synthetic, domain_lambda_synthetic)
-                f_f1_2_synthetic = flip_gradient(f1_2_synthetic, domain_lambda_synthetic)
-                f_f2_3_synthetic = flip_gradient(f2_3_synthetic, domain_lambda_synthetic)
-                f_f3_4_synthetic = flip_gradient(f3_4_synthetic, domain_lambda_synthetic)
-                f_final_feature_synthetic = flip_gradient(final_feature_synthetic, domain_lambda_synthetic)
-                
-                f_f0_real = flip_gradient(f0_real, domain_lambda_real)
-                f_f1_2_real = flip_gradient(f1_2_real, domain_lambda_real)
-                f_f2_3_real = flip_gradient(f2_3_real, domain_lambda_real)
-                f_f3_4_real = flip_gradient(f3_4_real, domain_lambda_real)
-                f_final_feature_real = flip_gradient(final_feature_real, domain_lambda_real)
+            f_f0_synthetic = flip_gradient(f0_synthetic, domain_lambda_synthetic)
+            f_f1_2_synthetic = flip_gradient(f1_2_synthetic, domain_lambda_synthetic)
+            f_f2_3_synthetic = flip_gradient(f2_3_synthetic, domain_lambda_synthetic)
+            f_f3_4_synthetic = flip_gradient(f3_4_synthetic, domain_lambda_synthetic)
+            f_final_feature_synthetic = flip_gradient(final_feature_synthetic, domain_lambda_synthetic)
+            
+            f_f0_real = flip_gradient(f0_real, domain_lambda_real)
+            f_f1_2_real = flip_gradient(f1_2_real, domain_lambda_real)
+            f_f2_3_real = flip_gradient(f2_3_real, domain_lambda_real)
+            f_f3_4_real = flip_gradient(f3_4_real, domain_lambda_real)
+            f_final_feature_real = flip_gradient(final_feature_real, domain_lambda_real)
                 
         with tf.variable_scope('discriminator') as scope:
             d_logits_synthetic = SRGAN_d(f_f0_synthetic, f_f1_2_synthetic, f_f2_3_synthetic, f_f3_4_synthetic, f_final_feature_synthetic, is_train = True, reuse = False, scope = scope)
@@ -135,13 +135,13 @@ def train():
             loss_real_domain = tl.cost.sigmoid_cross_entropy(d_logits_real, tf.ones_like(d_logits_real), name = 'real')
             loss_domain = tf.identity((loss_synthetic_domain + loss_real_domain)/2., name = 'total')
         with tf.variable_scope('defocus'):
-            loss_defocus = tl.cost.mean_squared_error(output_synthetic_defocus, labels_synthetic_defocus, is_mean = True, name = 'synthetic')
+            loss_defocus = 10 * tl.cost.mean_squared_error(output_synthetic_defocus, labels_synthetic_defocus, is_mean = True, name = 'synthetic')
         with tf.variable_scope('binary'):
             loss_synthetic_binary = tl.cost.sigmoid_cross_entropy(output_synthetic_binary_logits, labels_synthetic_binary, name = 'synthetic')
             loss_real_binary = tl.cost.sigmoid_cross_entropy(output_real_binary_logits, labels_real_binary, name = 'real')
             loss_binary = tf.identity((loss_synthetic_binary + loss_real_binary)/2., name = 'total')
             
-        loss = tf.identity(10 * loss_defocus + loss_binary + loss_domain, name = 'total')
+        loss = tf.identity(loss_defocus + loss_binary + loss_domain, name = 'total')
 
     ## DEFINE OPTIMIZER
     # variables to save / train
