@@ -199,3 +199,40 @@ def domain_lambda_predictor(feature, is_train = True, reuse = False, scope = 'dl
         n = DenseLayer(n, n_units=1, act=tf.nn.sigmoid, W_init = w_init1, name='d2/dense')
 
     return tf.reduce_mean(n.outputs)
+    
+def Binary_Net(input_defocus, is_train=False, reuse=False, scope = 'Binary_Net'):
+    w_init1 = tf.random_normal_initializer(stddev=0.02)
+    w_init2 = tf.random_normal_initializer(stddev=0.01)
+    w_init3 = tf.random_normal_initializer(stddev=0.005)
+    w_init4 = tf.random_normal_initializer(stddev=0.002)
+    b_init = None # tf.constant_initializer(value=0.0)
+    g_init = tf.random_normal_initializer(1., 0.02)
+    with tf.variable_scope(scope, reuse=reuse) as vs:
+        tl.layers.set_name_reuse(reuse)
+        n = InputLayer(input_defocus, name='input_defocus')
+        
+        n = Conv2d(n, 64, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init3, name='l1/c1')
+        n = BatchNormLayer(n, is_train=is_train, gamma_init=g_init, name='l1/b1')
+        n = Conv2d(n, 64, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init3, name='l1/c2')
+        n = BatchNormLayer(n, act=tf.nn.relu, is_train=is_train, gamma_init=g_init, name='l1/b2')
+        n = Conv2d(n, 64, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init3, name='l1/c3')
+        n = BatchNormLayer(n, act=tf.nn.relu, is_train=is_train, gamma_init=g_init, name='l1/b3')
+
+        n = Conv2d(n, 32, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init3, name='l2/c1')
+        n = BatchNormLayer(n, act=tf.nn.relu, is_train=is_train, gamma_init=g_init, name='l2/b1')
+        n = Conv2d(n, 32, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init3, name='l2/c2')
+        n = BatchNormLayer(n, act=tf.nn.relu, is_train=is_train, gamma_init=g_init, name='l2/b2')
+        n = Conv2d(n, 32, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init3, name='l2/c3')
+        n = BatchNormLayer(n, act=tf.nn.relu, is_train=is_train, gamma_init=g_init, name='l2/b3')
+
+        n = Conv2d(n, 16, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init3, name='l3/c1')
+        n = BatchNormLayer(n, act=tf.nn.relu, is_train=is_train, gamma_init=g_init, name='l3/b1')
+        n = Conv2d(n, 16, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init3, name='l3/c2')
+        n = BatchNormLayer(n, act=tf.nn.relu, is_train=is_train, gamma_init=g_init, name='l3/b2')
+        n = Conv2d(n, 16, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init3, name='l3/c3')
+        n = BatchNormLayer(n, act=tf.nn.relu, is_train=is_train, gamma_init=g_init, name='l3/b3')
+
+        n = Conv2d(n, 1, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init3, name='l4/c1')
+        logits = n.outputs
+
+        return n.outputs, tf.nn.sigmoid(logits)
