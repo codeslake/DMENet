@@ -13,6 +13,7 @@ import shutil
 from flip_gradient import flip_gradient            
 
 batch_size = config.TRAIN.batch_size
+batch_size_init = config.TRAIN.batch_size_init
 lr_init = config.TRAIN.lr_init
 beta1 = config.TRAIN.beta1
 
@@ -85,12 +86,12 @@ def train():
     ## DEFINE MODEL
     # input
     with tf.variable_scope('input'):
-        patches_synthetic = tf.placeholder('float32', [batch_size, h, w, 3], name = 'input_synthetic')
-        labels_synthetic_defocus = tf.placeholder('float32', [batch_size, h, w, 1], name = 'labels_synthetic')
-        labels_synthetic_binary = tf.placeholder('float32', [batch_size, h, w, 1], name = 'labels_synthetic')
+        patches_synthetic = tf.placeholder('float32', [None, h, w, 3], name = 'input_synthetic')
+        labels_synthetic_defocus = tf.placeholder('float32', [None, h, w, 1], name = 'labels_synthetic')
+        labels_synthetic_binary = tf.placeholder('float32', [None, h, w, 1], name = 'labels_synthetic')
 
-        patches_real = tf.placeholder('float32', [batch_size, h, w, 3], name = 'input_real')
-        labels_real_binary = tf.placeholder('float32', [batch_size, h, w, 1], name = 'labels_real_binary')
+        patches_real = tf.placeholder('float32', [None, h, w, 3], name = 'input_real')
+        labels_real_binary = tf.placeholder('float32', [None, h, w, 1], name = 'labels_real_binary')
 
         domain_lambda = tf.placeholder('float32', [], name = 'domain_lambda')
 
@@ -138,9 +139,14 @@ def train():
             loss_synthetic_binary = tl.cost.sigmoid_cross_entropy(output_synthetic_binary_logits, labels_synthetic_binary, name = 'synthetic')
             loss_real_binary = tl.cost.sigmoid_cross_entropy(output_real_binary_logits, labels_real_binary, name = 'real')
             loss_binary = tf.identity((loss_synthetic_binary + loss_real_binary)/2., name = 'total')
-            
-        loss = tf.identity(loss_defocus + loss_binary + loss_domain, name = 'total')
-        loss_init = tf.identity(loss_defocus + loss_synthetic_binary, name = 'loss_init')
+
+        with tf.variable_scope('total_variation'):
+            tv_loss_synthetic = tf.reduce_sum(tf.image.total_variation(output_synthetic_defocus))
+            tv_loss_real = tf.reduce_sum(tf.image.total_variation(output_real_defocus))
+            tv_loss = (tv_loss_real + tv_loss_synthetic) / 2.
+
+        loss = tf.identity(loss_defocus + loss_binary + loss_domain + tv_loss, name = 'total')
+        loss_init = tf.identity(loss_defocus + tv_loss_synthetic + loss_synthetic_binary, name = 'loss_init')
 
     ## DEFINE OPTIMIZER
     # variables to save / train
@@ -157,21 +163,25 @@ def train():
     # writer
     writer_scalar = tf.summary.FileWriter(log_dir, sess.graph, filename_suffix = '.loss_log')
     writer_image = tf.summary.FileWriter(log_dir, sess.graph, filename_suffix = '.image_log')
-    writer_scalar_init = tf.summary.FileWriter(log_dir, sess.graph, filename_suffix = '.loss_log_init')
-    writer_image_init = tf.summary.FileWriter(log_dir, sess.graph, filename_suffix = '.image_log_init')
+    if tl.global_flag['is_pretrain'] is True:
+        writer_scalar_init = tf.summary.FileWriter(log_dir, sess.graph, filename_suffix = '.loss_log_init')
+        writer_image_init = tf.summary.FileWriter(log_dir, sess.graph, filename_suffix = '.image_log_init')
     # summaries
     # for pretrain
     loss_sum_list_init = []
-    with tf.variable_scope('loss'):
+    with tf.variable_scope('loss_init'):
         loss_sum_list_init.append(tf.summary.scalar('1_total_loss_init', loss_init))
         loss_sum_list_init.append(tf.summary.scalar('2_defocus_loss_init', loss_defocus))
         loss_sum_list_init.append(tf.summary.scalar('3_binary_loss_init', loss_synthetic_binary))
+        loss_sum_list_init.append(tf.summary.scalar('4_lv_loss_init', loss_synthetic_binary))
         loss_sum_init = tf.summary.merge(loss_sum_list_init)
 
     image_sum_list_init = []
     image_sum_list_init.append(tf.summary.image('1_synthetic_input_init', patches_synthetic))
     image_sum_list_init.append(tf.summary.image('2_synthetic_defocus_out_init', output_synthetic_defocus))
-    image_sum_list_init.append(tf.summary.image('2_synthetic_binary_out_init', output_synthetic_binary))
+    image_sum_list_init.append(tf.summary.image('3_synthetic_defocus_gt_init', labels_synthetic_defocus))
+    image_sum_list_init.append(tf.summary.image('4_synthetic_binary_out_init', output_synthetic_binary))
+    image_sum_list_init.append(tf.summary.image('5_synthetic_binary_gt_init', labels_synthetic_binary))
     image_sum_init = tf.summary.merge(image_sum_list_init)
 
     # for train
@@ -181,6 +191,7 @@ def train():
         loss_sum_list.append(tf.summary.scalar('2_domain_loss', loss_domain))
         loss_sum_list.append(tf.summary.scalar('3_defocus_loss', loss_defocus))
         loss_sum_list.append(tf.summary.scalar('4_binary_loss', loss_binary))
+        loss_sum_list.append(tf.summary.scalar('5_tv_loss', tv_loss))
         loss_sum = tf.summary.merge(loss_sum_list)
 
     image_sum_list = []
@@ -197,7 +208,7 @@ def train():
 
     ## INITIALIZE SESSION
     tl.layers.initialize_global_variables(sess)
-    if tl.files.load_and_assign_npz_dict(name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess) is False or tl.global_flag['is_pretrain']:
+    if tl.files.load_and_assign_npz_dict(name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess) is False and tl.global_flag['is_pretrain']:
         print '*****************************************'
         print '           PRE-TRAINING START'
         print '*****************************************'
@@ -229,7 +240,7 @@ def train():
                 synthetic_binary_maps = np.expand_dims(images[:, :, :, 4], axis = 3)
 
                 err_init, synthetic_defocus_out, synthetic_binary_out, lr, summary_loss_init, summary_image_init, _ = \
-                sess.run([loss_init, output_synthetic_defocus, output_synthetic_binary, lr_v, loss_sum_init, image_sum_init, optim_g_init], {
+                sess.run([loss_init, output_synthetic_defocus, output_synthetic_binary, lr_v, loss_sum_init, image_sum_init, optim_init], {
                     patches_synthetic: synthetic_images_blur,
                     labels_synthetic_defocus: synthetic_defocus_maps,
                     labels_synthetic_binary: synthetic_binary_maps,
@@ -250,7 +261,7 @@ def train():
                 writer_image_init.close()
                 remove_file_end_with(log_dir, '*.image_log_init')
                 writer_image_init.reopen()
-        tl.files.save_npz_dict(t_g_vars, name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
+        tl.files.save_npz_dict(a_vars, name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
     writer_image_init.close()
     writer_scalar_init.close()
 
@@ -423,13 +434,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--mode', type = str, default = 'sharp_ass', help = 'model name')
-    parser.add_argument('--is_train', type = str , default = 'true', help = 'whether train or not')
-    parser.add_argument('--delete_log', type = str , default = 'false', help = 'whether delete log or not')
+    parser.add_argument('--is_train', type = str , default = 'true', help = 'whether to train or not')
+    parser.add_argument('--is_pretrain', type = str , default = 'false', help = 'whether to pretrain or not')
+    parser.add_argument('--delete_log', type = str , default = 'false', help = 'whether to delete log or not')
 
     args = parser.parse_args()
 
     tl.global_flag['mode'] = args.mode
     tl.global_flag['is_train'] = t_or_f(args.is_train)
+    tl.global_flag['is_pretrain'] = t_or_f(args.is_pretrain)
     tl.global_flag['delete_log'] = t_or_f(args.delete_log)
     
 
