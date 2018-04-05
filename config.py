@@ -26,7 +26,7 @@ config.TRAIN.real_binary_map_path = '/data1/junyonglee/BlurDetection/train/gt/'
 
 ## test set location
 config.TEST.real_img_path = '/data1/junyonglee/BlurDetection/test/image/'
-config.TEST.binary_map_path = '/data1/junyonglee/BlurDetection/test/gt/'
+config.TEST.real_binary_map_path = '/data1/junyonglee/BlurDetection/test/gt/'
 
 ## train image size
 config.TRAIN.height = 240

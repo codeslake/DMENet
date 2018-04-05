@@ -13,7 +13,6 @@ import shutil
 from flip_gradient import flip_gradient            
 
 batch_size = config.TRAIN.batch_size
-batch_size_init = config.TRAIN.batch_size_init
 lr_init = config.TRAIN.lr_init
 beta1 = config.TRAIN.beta1
 
@@ -91,7 +90,9 @@ def train():
 
         patches_real = tf.placeholder('float32', [batch_size, h, w, 3], name = 'input_real')
         labels_real_binary = tf.placeholder('float32', [batch_size, h, w, 1], name = 'labels_real_binary')
-    
+
+        domain_lambda = tf.placeholder('float32', [], name = 'domain_lambda')
+
     # model
     with tf.variable_scope('defocus_net') as scope:
         with tf.variable_scope('unet') as scope:
@@ -99,21 +100,17 @@ def train():
                 f0_synthetic, f1_2_synthetic, f2_3_synthetic, f3_4_synthetic, final_feature_synthetic = UNet_down(patches_synthetic, is_train = True, reuse = False, scope = scope)
                 f0_real, f1_2_real, f2_3_real, f3_4_real, final_feature_real = UNet_down(patches_real, is_train = True, reuse = True, scope = scope)
                 
-        with tf.variable_scope('lambda_predictor') as scope:
-            domain_lambda_synthetic = domain_lambda_predictor(final_feature_synthetic, reuse = False, scope = scope)
-            domain_lambda_real = domain_lambda_predictor(final_feature_real, reuse = True, scope = scope)
-
-            f_f0_synthetic = flip_gradient(f0_synthetic, domain_lambda_synthetic)
-            f_f1_2_synthetic = flip_gradient(f1_2_synthetic, domain_lambda_synthetic)
-            f_f2_3_synthetic = flip_gradient(f2_3_synthetic, domain_lambda_synthetic)
-            f_f3_4_synthetic = flip_gradient(f3_4_synthetic, domain_lambda_synthetic)
-            f_final_feature_synthetic = flip_gradient(final_feature_synthetic, domain_lambda_synthetic)
-            
-            f_f0_real = flip_gradient(f0_real, domain_lambda_real)
-            f_f1_2_real = flip_gradient(f1_2_real, domain_lambda_real)
-            f_f2_3_real = flip_gradient(f2_3_real, domain_lambda_real)
-            f_f3_4_real = flip_gradient(f3_4_real, domain_lambda_real)
-            f_final_feature_real = flip_gradient(final_feature_real, domain_lambda_real)
+        f_f0_synthetic = flip_gradient(f0_synthetic, domain_lambda)
+        f_f1_2_synthetic = flip_gradient(f1_2_synthetic, domain_lambda)
+        f_f2_3_synthetic = flip_gradient(f2_3_synthetic, domain_lambda)
+        f_f3_4_synthetic = flip_gradient(f3_4_synthetic, domain_lambda)
+        f_final_feature_synthetic = flip_gradient(final_feature_synthetic, domain_lambda)
+        
+        f_f0_real = flip_gradient(f0_real, domain_lambda)
+        f_f1_2_real = flip_gradient(f1_2_real, domain_lambda)
+        f_f2_3_real = flip_gradient(f2_3_real, domain_lambda)
+        f_f3_4_real = flip_gradient(f3_4_real, domain_lambda)
+        f_final_feature_real = flip_gradient(final_feature_real, domain_lambda)
                 
         with tf.variable_scope('discriminator') as scope:
             d_logits_synthetic = SRGAN_d(f_f0_synthetic, f_f1_2_synthetic, f_f2_3_synthetic, f_f3_4_synthetic, f_final_feature_synthetic, is_train = True, reuse = False, scope = scope)
@@ -127,7 +124,7 @@ def train():
 
                 output_synthetic_binary_logits, output_synthetic_binary = Binary_Net(output_synthetic_defocus, is_train = True, reuse = False, scope = scope)
                 output_real_binary_logits, output_real_binary = Binary_Net(output_real_defocus, is_train = True, reuse = True, scope = scope)
-
+    
     ## DEFINE LOSS
     with tf.variable_scope('loss'):
         with tf.variable_scope('domain'):
@@ -189,7 +186,7 @@ def train():
     global_step = 0
     for epoch in range(0, n_epoch + 1):
         total_loss, n_iter = 0, 0
-
+        
         # shuffle datasets
         shuffle_index = np.arange(len(train_synthetic_img_list))
         np.random.shuffle(shuffle_index)
@@ -230,17 +227,22 @@ def train():
             # read real data #
             b_idx = (idx % len(train_real_img_list) + np.arange(batch_size)) % len(train_real_img_list)
             images_blur = read_all_imgs(train_real_img_list[b_idx], path = config.TRAIN.real_img_path, n_threads = batch_size, mode = 'RGB')
-            real_binary_maps = read_all_imgs(train_real_binary_map_list[b_idx], path = config.TRAIN.real_binary_map_path, n_threads = batch_size, mode = 'GRAY')
-            real_images_blur, real_binary_maps = crop_pair_with_different_shape_images(images_blur, real_binary_maps, [h, w])
+            binary_maps = read_all_imgs(train_real_binary_map_list[b_idx], path = config.TRAIN.real_binary_map_path, n_threads = batch_size, mode = 'GRAY')
+            real_images_blur, real_binary_maps = crop_pair_with_different_shape_images(images_blur, binary_maps, [h, w])
+
+            # flipped gradient lambda
+            p = float(global_step) * config.TRAIN.lambda_numerator_coef / config.TRAIN.lambda_denominator
+            l = 2. / (1. + np.exp(-10. * p)) - 1
 
             ## RUN NETWORK
             err, err_d, err_def, err_bin, synthetic_defocus_out, synthetic_binary_out, real_defocus_out, real_binary_out, lr, summary_loss, summary_image, _ = \
-            sess.run([loss, loss_domain, loss_defocus, loss_binary,output_synthetic_defocus, output_synthetic_binary, output_real_defocus, output_real_binary, lr_v, loss_sum, image_sum, optim], 
+            sess.run([loss, loss_domain, loss_defocus, loss_binary, output_synthetic_defocus, output_synthetic_binary, output_real_defocus, output_real_binary, lr_v, loss_sum, image_sum, optim], 
                 {patches_synthetic: synthetic_images_blur,
                 labels_synthetic_defocus: synthetic_defocus_maps,
                 labels_synthetic_binary: synthetic_binary_maps,
                 patches_real: real_images_blur,
                 labels_real_binary: real_binary_maps,
+                domain_lambda: l
                 })
             
             print('[%s] Ep [%2d/%2d] %4d/%4d time: %4.2fs, err_tot: %.3f, err_dom: %.3f, err_def: %.3f, err_bin: %.3f, lr: %.8f' % \
@@ -256,7 +258,8 @@ def train():
                 shutil.rmtree(ckpt_dir, ignore_errors = True)
                 tl.files.save_ckpt(sess = sess, mode_name = '{}.ckpt'.format(tl.global_flag['mode']), save_dir = ckpt_dir, var_list = a_vars, global_step = global_step, printable = False)
             # save samples
-            if global_step % config.TRAIN.write_sample_every == 0:
+            #if global_step % config.TRAIN.write_sample_every == 0:
+            if global_step % 5 == 0:
                 save_images(synthetic_images_blur, [ni, ni], sample_dir + '/{}_{}_1_synthetic_input.png'.format(epoch, global_step))
                 save_images(synthetic_defocus_out, [ni, ni], sample_dir + '/{}_{}_2_synthetic_defocus_out.png'.format(epoch, global_step))
                 save_images(synthetic_defocus_maps, [ni, ni], sample_dir + '/{}_{}_3_synthetic_defocus_gt.png'.format(epoch, global_step))
@@ -288,10 +291,10 @@ def evaluate():
     
     # input
     test_blur_img_list = np.array(sorted(tl.files.load_file_list(path = config.TEST.real_img_path, regx = '.*', printable = False)))
-    test_gt_list = np.array(sorted(tl.files.load_file_list(path = config.TEST.binary_map_path, regx = '.*', printable = False)))
+    test_gt_list = np.array(sorted(tl.files.load_file_list(path = config.TEST.real_binary_map_path, regx = '.*', printable = False)))
     
     test_blur_imgs = read_all_imgs(test_blur_img_list, path = config.TEST.real_img_path, n_threads = len(test_blur_img_list), mode = 'RGB')
-    test_gt_imgs = read_all_imgs(test_gt_list, path = config.TEST.binary_map_path, n_threads = len(test_gt_list), mode = 'GRAY')
+    test_gt_imgs = read_all_imgs(test_gt_list, path = config.TEST.real_binary_map_path, n_threads = len(test_gt_list), mode = 'GRAY')
     
     reuse = False
     for i in np.arange(len(test_blur_imgs)):
@@ -305,10 +308,11 @@ def evaluate():
             with tf.variable_scope('unet') as scope:
                 with tf.variable_scope('unet_down') as scope:
                     f0, f1_2, f2_3, f3_4, final_feature = UNet_down(patches_blurred, is_train = False, reuse = reuse, scope = scope)
-                with tf.variable_scope('unet_up_defocus_map') as scope:
-                    _, output_defocus = UNet_up(f0, f1_2, f2_3, f3_4, final_feature, h, w, is_train = False, reuse = reuse, scope = scope)
-                with tf.variable_scope('unet_up_binary_map') as scope:
-                    _, output_binary = UNet_up(f0, f1_2, f2_3, f3_4, final_feature, h, w, is_train = False, reuse = reuse, scope = scope)
+                with tf.variable_scope('binary_net') as scope:
+                    with tf.variable_scope('unet_up_defocus_map') as scope:
+                        _, output_defocus = UNet_up(f0, f1_2, f2_3, f3_4, final_feature, shape[0], shape[1], is_train = False, reuse = reuse, scope = scope)
+
+                _, output_binary = Binary_Net(output_defocus, is_train = False, reuse = reuse, scope = scope)
                         
         a_vars = tl.layers.get_variables_with_name('unet', False, False)
 
@@ -324,14 +328,17 @@ def evaluate():
         processing_time = time.time()
         defocus_map, binary_map = sess.run([output_defocus, output_binary], {patches_blurred: np.expand_dims(test_blur_img, axis = 0)})
         defocus_map = np.squeeze(defocus_map)
+        defocus_map_norm = defocus_map - defocus_map.min()
+        defocus_map_norm = defocus_map_norm / defocus_map_norm.max()
         binary_map = np.squeeze(binary_map)
         print 'processing {} ... Done [{:.3f}s]'.format(test_blur_img_list[i], time.time() - processing_time)
         
         tl.files.exists_or_mkdir(sample_dir, verbose = False)
         scipy.misc.toimage(test_blur_img, cmin = 0., cmax = 1.).save(sample_dir + '/{}_1_input.png'.format(i))
         scipy.misc.toimage(defocus_map, cmin = 0., cmax = 1.).save(sample_dir + '/{}_2_defocus_map_out.png'.format(i))
-        scipy.misc.toimage(binary_map, cmin = 0., cmax = 1.).save(sample_dir + '/{}_3_binary_map_out.png'.format(i))
-        scipy.misc.toimage(np.squeeze(test_gt_imgs[i]), cmin = 0., cmax = 1.).save(sample_dir + '/{}_4_binary_map_gt.png'.format(i))
+        scipy.misc.toimage(defocus_map_norm, cmin = 0., cmax = 1.).save(sample_dir + '/{}_3_defocus_map_norm_out.png'.format(i))
+        scipy.misc.toimage(binary_map, cmin = 0., cmax = 1.).save(sample_dir + '/{}_4_binary_map_out.png'.format(i))
+        scipy.misc.toimage(np.squeeze(test_gt_imgs[i]), cmin = 0., cmax = 1.).save(sample_dir + '/{}_5_binary_map_gt.png'.format(i))
 
         sess.close()
         reuse = True
@@ -342,7 +349,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--mode', type = str, default = 'sharp_ass', help = 'model name')
     parser.add_argument('--is_train', type = str , default = 'true', help = 'whether train or not')
-    parser.add_argument('--delete_log', type = str , default = 'false', help = 'whether to delete log or not')
+    parser.add_argument('--delete_log', type = str , default = 'false', help = 'whether delete log or not')
 
     args = parser.parse_args()
 
@@ -350,6 +357,7 @@ if __name__ == '__main__':
     tl.global_flag['is_train'] = t_or_f(args.is_train)
     tl.global_flag['delete_log'] = t_or_f(args.delete_log)
     
+
     if tl.global_flag['is_train']:
         train()
     else:
