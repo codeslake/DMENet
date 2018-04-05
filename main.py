@@ -17,6 +17,7 @@ lr_init = config.TRAIN.lr_init
 beta1 = config.TRAIN.beta1
 
 n_epoch = config.TRAIN.n_epoch
+n_epoch_init = config.TRAIN.n_epoch_init
 lr_decay = config.TRAIN.lr_decay
 decay_every = config.TRAIN.decay_every
 
@@ -139,6 +140,7 @@ def train():
             loss_binary = tf.identity((loss_synthetic_binary + loss_real_binary)/2., name = 'total')
             
         loss = tf.identity(loss_defocus + loss_binary + loss_domain, name = 'total')
+        loss_init = tf.identity(loss_defocus + loss_synthetic_binary, name = 'loss_init')
 
     ## DEFINE OPTIMIZER
     # variables to save / train
@@ -149,12 +151,30 @@ def train():
     with tf.variable_scope('Optimizer'):
         lr_v = tf.Variable(lr_init, trainable = False)
         optim = tf.train.AdamOptimizer(lr_v, beta1 = beta1).minimize(loss, var_list = t_vars)
+        optim_init = tf.train.AdamOptimizer(lr_v, beta1 = beta1).minimize(loss_init, var_list = a_vars)
 
     ## DEFINE SUMMARY
     # writer
     writer_scalar = tf.summary.FileWriter(log_dir, sess.graph, filename_suffix = '.loss_log')
     writer_image = tf.summary.FileWriter(log_dir, sess.graph, filename_suffix = '.image_log')
+    writer_scalar_init = tf.summary.FileWriter(log_dir, sess.graph, filename_suffix = '.loss_log_init')
+    writer_image_init = tf.summary.FileWriter(log_dir, sess.graph, filename_suffix = '.image_log_init')
     # summaries
+    # for pretrain
+    loss_sum_list_init = []
+    with tf.variable_scope('loss'):
+        loss_sum_list_init.append(tf.summary.scalar('1_total_loss_init', loss_init))
+        loss_sum_list_init.append(tf.summary.scalar('2_defocus_loss_init', loss_defocus))
+        loss_sum_list_init.append(tf.summary.scalar('3_binary_loss_init', loss_synthetic_binary))
+        loss_sum_init = tf.summary.merge(loss_sum_list_init)
+
+    image_sum_list_init = []
+    image_sum_list_init.append(tf.summary.image('1_synthetic_input_init', patches_synthetic))
+    image_sum_list_init.append(tf.summary.image('2_synthetic_defocus_out_init', output_synthetic_defocus))
+    image_sum_list_init.append(tf.summary.image('2_synthetic_binary_out_init', output_synthetic_binary))
+    image_sum_init = tf.summary.merge(image_sum_list_init)
+
+    # for train
     loss_sum_list = []
     with tf.variable_scope('loss'):
         loss_sum_list.append(tf.summary.scalar('1_total_loss', loss))
@@ -177,7 +197,62 @@ def train():
 
     ## INITIALIZE SESSION
     tl.layers.initialize_global_variables(sess)
-    tl.files.load_and_assign_npz_dict(name = init_dir + '/init.npz', sess = sess)
+    if tl.files.load_and_assign_npz_dict(name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess) is False or tl.global_flag['is_pretrain']:
+        print '*****************************************'
+        print '           PRE-TRAINING START'
+        print '*****************************************'
+        global_step = 0
+        for epoch in range(0, n_epoch_init + 1):
+            total_loss_init, n_iter = 0, 0
+            # shuffle datasets
+            shuffle_index = np.arange(len(train_synthetic_img_list))
+            np.random.shuffle(shuffle_index)
+
+            train_synthetic_img_list = train_synthetic_img_list[shuffle_index]
+            train_defocus_map_list = train_defocus_map_list[shuffle_index]
+            train_synthetic_binary_map_list = train_synthetic_binary_map_list[shuffle_index]
+
+            epoch_time = time.time()
+            for idx in range(0, len(train_synthetic_img_list), batch_size_init):
+                step_time = time.time()
+                ## READ DATA
+                # read synthetic data
+                b_idx = (idx + np.arange(batch_size_init)) % len(train_synthetic_img_list)
+                synthetic_images_blur = read_all_imgs(train_synthetic_img_list[b_idx], path = config.TRAIN.synthetic_img_path, n_threads = batch_size_init, mode = 'RGB')
+                defocus_maps = read_all_imgs(train_defocus_map_list[b_idx], path = config.TRAIN.defocus_map_path, n_threads = batch_size_init, mode = 'GRAY')
+                synthetic_binary_maps = read_all_imgs(train_synthetic_binary_map_list[b_idx], path = config.TRAIN.synthetic_binary_map_path, n_threads = batch_size_init, mode = 'GRAY')
+
+                concatenated_images = np.concatenate((synthetic_images_blur, defocus_maps, synthetic_binary_maps), axis = 3)
+                images = tl.prepro.crop_multi(concatenated_images, wrg = h, hrg = w, is_random = True)
+                synthetic_images_blur = images[:, :, :, 0:3]
+                synthetic_defocus_maps = np.expand_dims(images[:, :, :, 3], axis = 3)
+                synthetic_binary_maps = np.expand_dims(images[:, :, :, 4], axis = 3)
+
+                err_init, synthetic_defocus_out, synthetic_binary_out, lr, summary_loss_init, summary_image_init, _ = \
+                sess.run([loss_init, output_synthetic_defocus, output_synthetic_binary, lr_v, loss_sum_init, image_sum_init, optim_g_init], {
+                    patches_synthetic: synthetic_images_blur,
+                    labels_synthetic_defocus: synthetic_defocus_maps,
+                    labels_synthetic_binary: synthetic_binary_maps,
+                    })
+
+                print('[%s] Ep [%2d/%2d] %4d/%4d time: %4.2fs, err_init: %.3f, lr: %.8f' % \
+                    (tl.global_flag['mode'], epoch, n_epoch_init, n_iter, len(train_synthetic_img_list)/batch_size_init, time.time() - step_time, err_init, lr))
+
+                if global_step % config.TRAIN.write_log_every == 0:
+                    writer_scalar_init.add_summary(summary_loss_init, global_step)
+                    writer_image_init.add_summary(summary_image_init, global_step)
+
+                total_loss_init += err_init
+                n_iter += 1
+                global_step += 1
+
+            if epoch != config.TRAIN.n_epoch_init and epoch % config.TRAIN.refresh_image_log_every == 0:
+                writer_image_init.close()
+                remove_file_end_with(log_dir, '*.image_log_init')
+                writer_image_init.reopen()
+        tl.files.save_npz_dict(t_g_vars, name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
+    writer_image_init.close()
+    writer_scalar_init.close()
 
     ## START TRAINING
     print '*****************************************'
