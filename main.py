@@ -217,7 +217,7 @@ def train():
         print '           PRE-TRAINING START'
         print '*****************************************'
         global_step = 0
-        for epoch in range(0, n_epoch_init + 1):
+        for epoch in range(0, n_epoch_init):
             total_loss_init, n_iter = 0, 0
             # shuffle datasets
             shuffle_index = np.arange(len(train_synthetic_img_list))
@@ -261,10 +261,6 @@ def train():
                 n_iter += 1
                 global_step += 1
 
-            if epoch != config.TRAIN.n_epoch_init and epoch % config.TRAIN.refresh_image_log_every == 0:
-                writer_image_init.close()
-                remove_file_end_with(log_dir, '*.image_log_init')
-                writer_image_init.reopen()
         tl.files.save_npz_dict(a_vars, name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
     writer_image_init.close()
     writer_scalar_init.close()
