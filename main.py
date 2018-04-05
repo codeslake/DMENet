@@ -22,6 +22,8 @@ n_epoch_init = config.TRAIN.n_epoch_init
 lr_decay = config.TRAIN.lr_decay
 decay_every = config.TRAIN.decay_every
 
+lambda_tv = config.TRAIN.lambda_tv
+
 h = config.TRAIN.height
 w = config.TRAIN.width
 
@@ -93,8 +95,6 @@ def train():
         patches_real = tf.placeholder('float32', [None, h, w, 3], name = 'input_real')
         labels_real_binary = tf.placeholder('float32', [None, h, w, 1], name = 'labels_real_binary')
 
-        domain_lambda = tf.placeholder('float32', [], name = 'domain_lambda')
-
     # model
     with tf.variable_scope('defocus_net') as scope:
         with tf.variable_scope('unet') as scope:
@@ -103,19 +103,20 @@ def train():
                 f0_real, f1_2_real, f2_3_real, f3_4_real, final_feature_real = UNet_down(patches_real, is_train = True, reuse = True, scope = scope)
 
         with tf.variable_scope('domain_lambda_predictor') as scope:
-            domain_lambda_predictor()
+            domain_lambda_synthetic = domain_lambda_predictor(final_feature_synthetic, reuse = False, scope = scope)
+            domain_lambda_real = domain_lambda_predictor(final_feature_real, reuse = True, scope = scope)
 
-            f_f0_synthetic = flip_gradient(f0_synthetic, domain_lambda)
-            f_f1_2_synthetic = flip_gradient(f1_2_synthetic, domain_lambda)
-            f_f2_3_synthetic = flip_gradient(f2_3_synthetic, domain_lambda)
-            f_f3_4_synthetic = flip_gradient(f3_4_synthetic, domain_lambda)
-            f_final_feature_synthetic = flip_gradient(final_feature_synthetic, domain_lambda)
+            f_f0_synthetic = flip_gradient(f0_synthetic, domain_lambda_synthetic)
+            f_f1_2_synthetic = flip_gradient(f1_2_synthetic, domain_lambda_synthetic)
+            f_f2_3_synthetic = flip_gradient(f2_3_synthetic, domain_lambda_synthetic)
+            f_f3_4_synthetic = flip_gradient(f3_4_synthetic, domain_lambda_synthetic)
+            f_final_feature_synthetic = flip_gradient(final_feature_synthetic, domain_lambda_synthetic)
             
-            f_f0_real = flip_gradient(f0_real, domain_lambda)
-            f_f1_2_real = flip_gradient(f1_2_real, domain_lambda)
-            f_f2_3_real = flip_gradient(f2_3_real, domain_lambda)
-            f_f3_4_real = flip_gradient(f3_4_real, domain_lambda)
-            f_final_feature_real = flip_gradient(final_feature_real, domain_lambda)
+            f_f0_real = flip_gradient(f0_real, domain_lambda_real)
+            f_f1_2_real = flip_gradient(f1_2_real, domain_lambda_real)
+            f_f2_3_real = flip_gradient(f2_3_real, domain_lambda_real)
+            f_f3_4_real = flip_gradient(f3_4_real, domain_lambda_real)
+            f_final_feature_real = flip_gradient(final_feature_real, domain_lambda_real)
                     
         with tf.variable_scope('discriminator') as scope:
             d_logits_synthetic = SRGAN_d(f_f0_synthetic, f_f1_2_synthetic, f_f2_3_synthetic, f_f3_4_synthetic, f_final_feature_synthetic, is_train = True, reuse = False, scope = scope)
@@ -144,8 +145,8 @@ def train():
             loss_binary = tf.identity((loss_synthetic_binary + loss_real_binary)/2., name = 'total')
 
         with tf.variable_scope('total_variation'):
-            tv_loss_synthetic = tf.reduce_sum(tf.image.total_variation(output_synthetic_defocus))
-            tv_loss_real = tf.reduce_sum(tf.image.total_variation(output_real_defocus))
+            tv_loss_synthetic = lambda_tv * tf.reduce_sum(tf.image.total_variation(output_synthetic_defocus))
+            tv_loss_real = lambda_tv * tf.reduce_sum(tf.image.total_variation(output_real_defocus))
             tv_loss = (tv_loss_real + tv_loss_synthetic) / 2.
 
         loss = tf.identity(loss_defocus + loss_binary + loss_domain + tv_loss, name = 'total')
@@ -176,7 +177,7 @@ def train():
         loss_sum_list_init.append(tf.summary.scalar('1_total_loss_init', loss_init))
         loss_sum_list_init.append(tf.summary.scalar('2_defocus_loss_init', loss_defocus))
         loss_sum_list_init.append(tf.summary.scalar('3_binary_loss_init', loss_synthetic_binary))
-        loss_sum_list_init.append(tf.summary.scalar('4_lv_loss_init', loss_synthetic_binary))
+        loss_sum_list_init.append(tf.summary.scalar('4_tv_loss_init', tv_loss_synthetic))
         loss_sum_init = tf.summary.merge(loss_sum_list_init)
 
     image_sum_list_init = []
@@ -211,7 +212,7 @@ def train():
 
     ## INITIALIZE SESSION
     tl.layers.initialize_global_variables(sess)
-    if tl.files.load_and_assign_npz_dict(name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess) is False and tl.global_flag['is_pretrain']:
+    if tl.files.load_and_assign_npz_dict(name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess) is False or tl.global_flag['is_pretrain']:
         print '*****************************************'
         print '           PRE-TRAINING START'
         print '*****************************************'

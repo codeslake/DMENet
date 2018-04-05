@@ -17,6 +17,9 @@ config.TRAIN.n_epoch_init = 10
 config.TRAIN.lr_decay = 0.8
 config.TRAIN.decay_every = 40
 
+## total_variation
+config.TRAIN.lambda_tv = 1e-4
+
 ## train set location
 config.TRAIN.synthetic_img_path = '/data1/junyonglee/blur_sharp_only/image_dof/'
 config.TRAIN.defocus_map_path = '/data1/junyonglee/blur_sharp_only/defocus_map/'
