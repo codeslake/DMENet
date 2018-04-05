@@ -204,7 +204,7 @@ def domain_lambda_predictor(feature, is_train = True, reuse = False, scope = 'dl
         n = BatchNormLayer(n, act=tf.nn.relu, is_train=is_train, gamma_init=g_init, name='d1/b4')
         
         n = FlattenLayer(n, name='d2/flatten')
-        n = DenseLayer(n, n_units=1, act=tf.nn.sigmoid, W_init = w_init1, name='d2/dense')
+        n = DenseLayer(n, n_units=1, act=tf.nn.relu, W_init = w_init1, name='d2/dense')
 
     return tf.reduce_mean(n.outputs)
     

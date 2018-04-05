@@ -137,6 +137,7 @@ def train():
             loss_synthetic_domain = tl.cost.sigmoid_cross_entropy(d_logits_synthetic, tf.zeros_like(d_logits_synthetic), name = 'synthetic')
             loss_real_domain = tl.cost.sigmoid_cross_entropy(d_logits_real, tf.ones_like(d_logits_real), name = 'real')
             loss_domain = tf.identity((loss_synthetic_domain + loss_real_domain)/2., name = 'total')
+
         with tf.variable_scope('defocus'):
             loss_defocus = 10 * tl.cost.mean_squared_error(output_synthetic_defocus, labels_synthetic_defocus, is_mean = True, name = 'synthetic')
         with tf.variable_scope('binary'):
@@ -196,7 +197,9 @@ def train():
         loss_sum_list.append(tf.summary.scalar('3_defocus_loss', loss_defocus))
         loss_sum_list.append(tf.summary.scalar('4_binary_loss', loss_binary))
         loss_sum_list.append(tf.summary.scalar('5_tv_loss', tv_loss))
-        loss_sum = tf.summary.merge(loss_sum_list)
+    loss_sum_list.append(tf.summary.scalar('6_domain_lambda_synthetic', domain_lambda_synthetic))
+    loss_sum_list.append(tf.summary.scalar('7_domain_lambda_real', domain_lambda_real))
+    loss_sum = tf.summary.merge(loss_sum_list)
 
     image_sum_list = []
     image_sum_list.append(tf.summary.image('1_synthetic_input', patches_synthetic))
@@ -262,8 +265,8 @@ def train():
                 global_step += 1
 
         tl.files.save_npz_dict(a_vars, name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
-    writer_image_init.close()
-    writer_scalar_init.close()
+        writer_image_init.close()
+        writer_scalar_init.close()
 
     ## START TRAINING
     print '*****************************************'
@@ -339,8 +342,7 @@ def train():
                 shutil.rmtree(ckpt_dir, ignore_errors = True)
                 tl.files.save_ckpt(sess = sess, mode_name = '{}.ckpt'.format(tl.global_flag['mode']), save_dir = ckpt_dir, var_list = a_vars, global_step = global_step, printable = False)
             # save samples
-            #if global_step % config.TRAIN.write_sample_every == 0:
-            if global_step % 5 == 0:
+            if global_step % config.TRAIN.write_sample_every == 0:
                 save_images(synthetic_images_blur, [ni, ni], sample_dir + '/{}_{}_1_synthetic_input.png'.format(epoch, global_step))
                 save_images(synthetic_defocus_out, [ni, ni], sample_dir + '/{}_{}_2_synthetic_defocus_out.png'.format(epoch, global_step))
                 save_images(synthetic_defocus_maps, [ni, ni], sample_dir + '/{}_{}_3_synthetic_defocus_gt.png'.format(epoch, global_step))
