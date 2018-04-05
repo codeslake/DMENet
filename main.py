@@ -106,6 +106,9 @@ def train():
             domain_lambda_synthetic = domain_lambda_predictor(final_feature_synthetic, reuse = False, scope = scope)
             domain_lambda_real = domain_lambda_predictor(final_feature_real, reuse = True, scope = scope)
 
+            domain_lambda_synthetic = flip_gradient(domain_lambda_synthetic, 1)
+            domain_lambda_real = flip_gradient(domain_lambda_real, 1)
+
             f_f0_synthetic = flip_gradient(f0_synthetic, domain_lambda_synthetic)
             f_f1_2_synthetic = flip_gradient(f1_2_synthetic, domain_lambda_synthetic)
             f_f2_3_synthetic = flip_gradient(f2_3_synthetic, domain_lambda_synthetic)
@@ -191,14 +194,15 @@ def train():
 
     # for train
     loss_sum_list = []
-    with tf.variable_scope('loss'):
+    with tf.variable_scope('1_loss'):
         loss_sum_list.append(tf.summary.scalar('1_total_loss', loss))
         loss_sum_list.append(tf.summary.scalar('2_domain_loss', loss_domain))
         loss_sum_list.append(tf.summary.scalar('3_defocus_loss', loss_defocus))
         loss_sum_list.append(tf.summary.scalar('4_binary_loss', loss_binary))
         loss_sum_list.append(tf.summary.scalar('5_tv_loss', tv_loss))
-    loss_sum_list.append(tf.summary.scalar('6_domain_lambda_synthetic', domain_lambda_synthetic))
-    loss_sum_list.append(tf.summary.scalar('7_domain_lambda_real', domain_lambda_real))
+    with tf.variable_scope('2_domain_lambda'):
+        loss_sum_list.append(tf.summary.scalar('domain_lambda_synthetic', domain_lambda_synthetic))
+        loss_sum_list.append(tf.summary.scalar('domain_lambda_real', domain_lambda_real))
     loss_sum = tf.summary.merge(loss_sum_list)
 
     image_sum_list = []
