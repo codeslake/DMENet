@@ -15,7 +15,7 @@ config.TRAIN.beta1 = 0.9
 config.TRAIN.n_epoch = 1000
 config.TRAIN.n_epoch_init = 2
 config.TRAIN.lr_decay = 0.8
-config.TRAIN.decay_every = 40
+config.TRAIN.decay_every = 50
 
 ## total_variation
 config.TRAIN.lambda_tv = 1e-7
@@ -40,7 +40,7 @@ config.TRAIN.width = 240
 # every global step
 config.TRAIN.write_log_every = 20
 config.TRAIN.write_ckpt_every = 300
-config.TRAIN.write_sample_every = 300
+config.TRAIN.write_sample_every = 1000
 # every epoch
 config.TRAIN.refresh_image_log_every = 50
 

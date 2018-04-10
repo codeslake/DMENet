@@ -194,13 +194,13 @@ def train():
 
     # for train
     loss_sum_list = []
-    with tf.variable_scope('1_loss'):
+    with tf.variable_scope('loss_1'):
         loss_sum_list.append(tf.summary.scalar('1_total_loss', loss))
         loss_sum_list.append(tf.summary.scalar('2_domain_loss', loss_domain))
         loss_sum_list.append(tf.summary.scalar('3_defocus_loss', loss_defocus))
         loss_sum_list.append(tf.summary.scalar('4_binary_loss', loss_binary))
         loss_sum_list.append(tf.summary.scalar('5_tv_loss', tv_loss))
-    with tf.variable_scope('2_domain_lambda'):
+    with tf.variable_scope('domain_lambda'):
         loss_sum_list.append(tf.summary.scalar('domain_lambda_synthetic', domain_lambda_synthetic))
         loss_sum_list.append(tf.summary.scalar('domain_lambda_real', domain_lambda_real))
     loss_sum = tf.summary.merge(loss_sum_list)

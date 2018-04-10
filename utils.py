@@ -175,7 +175,7 @@ def crop_pair_with_different_shape_images(images, labels, resize_shape):
             label = np.expand_dims(cv2.resize(label[:, :, 0], (resize_w, resize_h)), axis = 2)
 
         concatenated_images = np.concatenate((image, label), axis = 2)
-        cropped_images = tl.prepro.crop(concatenated_images, wrg=h, hrg=w, is_random=True)
+        cropped_images = tl.prepro.crop(concatenated_images, wrg=w, hrg=h, is_random=True)
         image = np.expand_dims(cropped_images[:, :, 0:3], axis=0)
         label = np.expand_dims(np.expand_dims(cropped_images[:, :, 3], axis=3), axis=0)
         
