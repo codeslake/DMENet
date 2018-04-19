@@ -21,9 +21,12 @@ config.TRAIN.decay_every = 50
 config.TRAIN.lambda_tv = 1e-7
 
 ## train set location
-config.TRAIN.synthetic_img_path = '/data1/junyonglee/blur_sharp_only/image_dof/'
-config.TRAIN.defocus_map_path = '/data1/junyonglee/blur_sharp_only/defocus_map/'
-config.TRAIN.synthetic_binary_map_path = '/data1/junyonglee/blur_sharp_only/binary_map/'
+# config.TRAIN.synthetic_img_path = '/data1/junyonglee/blur_sharp_only/image_dof/'
+# config.TRAIN.defocus_map_path = '/data1/junyonglee/blur_sharp_only/defocus_map/'
+# config.TRAIN.synthetic_binary_map_path = '/data1/junyonglee/blur_sharp_only/binary_map/'
+
+config.TRAIN.synthetic_img_path = '/data1/synthetic_datasets/out/image/'
+config.TRAIN.defocus_map_path= '/data1/synthetic_datasets/out/blur_map/'
 
 config.TRAIN.real_img_path = '/data1/junyonglee/BlurDetection/train/image/'
 config.TRAIN.real_binary_map_path = '/data1/junyonglee/BlurDetection/train/gt/'

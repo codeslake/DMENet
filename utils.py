@@ -14,6 +14,35 @@ import math
 import os
 import fnmatch
 
+def read_all_imgs(img_list, path = '', n_threads = 32, mode = 'RGB'):
+    for idx in range(0, len(img_list), n_threads):
+        if idx + n_threads > len(img_list):
+            break;
+            
+        b_imgs_list = img_list[idx : idx + n_threads]
+        if mode is 'RGB':
+            if idx == 0:
+                b_imgs = tl.prepro.threading_data(b_imgs_list, fn = get_imgs_RGB_fn, path = path)
+            else:
+                imgs = tl.prepro.threading_data(b_imgs_list, fn = get_imgs_RGB_fn, path = path)
+                b_imgs = np.concatenate((b_imgs, imgs), axis = 0)
+                
+        elif mode is 'GRAY':
+            if idx == 0:
+                b_imgs = tl.prepro.threading_data(b_imgs_list, fn = get_imgs_GRAY_fn, path = path)
+            else:
+                imgs = tl.prepro.threading_data(b_imgs_list, fn = get_imgs_GRAY_fn, path = path)
+                b_imgs = np.concatenate((b_imgs, imgs), axis = 0)
+
+        elif mode is 'DEPTH':
+            if idx == 0:
+                b_imgs = tl.prepro.threading_data(b_imgs_list, fn = get_imgs_DEPTH_fn, path = path)
+            else:
+                imgs = tl.prepro.threading_data(b_imgs_list, fn = get_imgs_DEPTH_fn, path = path)
+                b_imgs = np.concatenate((b_imgs, imgs), axis = 0)
+        
+    return b_imgs
+
 def get_imgs_RGB_fn(file_name, path):
     """ Input an image path and name, return an image array """
     # return scipy.misc.imread(path + file_name).astype(np.float)
@@ -22,6 +51,11 @@ def get_imgs_RGB_fn(file_name, path):
 def get_imgs_GRAY_fn(file_name, path):
     """ Input an image path and name, return an image array """
     image = scipy.misc.imread(path + file_name, mode='P')/255.
+    return np.expand_dims(image, axis = 2)
+
+def get_imgs_DEPTH_fn(file_name, path):
+    """ Input an image path and name, return an image array """
+    image = (cv2.imread(path + file_name, cv2.IMREAD_UNCHANGED)/10.)[:, :, 1]
     return np.expand_dims(image, axis = 2)
 
 def t_or_f(arg):
