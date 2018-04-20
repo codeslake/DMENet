@@ -14,49 +14,26 @@ import math
 import os
 import fnmatch
 
-def read_all_imgs(img_list, path = '', n_threads = 32, mode = 'RGB'):
-    for idx in range(0, len(img_list), n_threads):
-        if idx + n_threads > len(img_list):
-            break;
-            
-        b_imgs_list = img_list[idx : idx + n_threads]
-        if mode is 'RGB':
-            if idx == 0:
-                b_imgs = tl.prepro.threading_data(b_imgs_list, fn = get_imgs_RGB_fn, path = path)
-            else:
-                imgs = tl.prepro.threading_data(b_imgs_list, fn = get_imgs_RGB_fn, path = path)
-                b_imgs = np.concatenate((b_imgs, imgs), axis = 0)
-                
-        elif mode is 'GRAY':
-            if idx == 0:
-                b_imgs = tl.prepro.threading_data(b_imgs_list, fn = get_imgs_GRAY_fn, path = path)
-            else:
-                imgs = tl.prepro.threading_data(b_imgs_list, fn = get_imgs_GRAY_fn, path = path)
-                b_imgs = np.concatenate((b_imgs, imgs), axis = 0)
-
-        elif mode is 'DEPTH':
-            if idx == 0:
-                b_imgs = tl.prepro.threading_data(b_imgs_list, fn = get_imgs_DEPTH_fn, path = path)
-            else:
-                imgs = tl.prepro.threading_data(b_imgs_list, fn = get_imgs_DEPTH_fn, path = path)
-                b_imgs = np.concatenate((b_imgs, imgs), axis = 0)
+def read_all_imgs(file_name_list, path = '', mode = 'RGB'):
+    imgs = []
+    for idx in range(0, len(file_name_list)):
+        imgs.append(get_images(file_name_list[idx], path, mode))
         
-    return b_imgs
+    return imgs 
 
-def get_imgs_RGB_fn(file_name, path):
+def get_images(file_name, path, mode):
     """ Input an image path and name, return an image array """
     # return scipy.misc.imread(path + file_name).astype(np.float)
-    return scipy.misc.imread(path + file_name, mode='RGB')/255.
+    if mode is 'RGB':
+        image = scipy.misc.imread(path + file_name, mode='RGB')/255.
+    elif mode is 'GRAY':
+        image = scipy.misc.imread(path + file_name, mode='P')/255.
+        image = np.expand_dims(image, axis = 2)
+    elif mode is 'DEPTH':
+        image = (np.float32(cv2.imread(path + file_name, cv2.IMREAD_UNCHANGED))/10.)[:, :, 1]
+        image = np.expand_dims(image, axis = 2)
 
-def get_imgs_GRAY_fn(file_name, path):
-    """ Input an image path and name, return an image array """
-    image = scipy.misc.imread(path + file_name, mode='P')/255.
-    return np.expand_dims(image, axis = 2)
-
-def get_imgs_DEPTH_fn(file_name, path):
-    """ Input an image path and name, return an image array """
-    image = (cv2.imread(path + file_name, cv2.IMREAD_UNCHANGED)/10.)[:, :, 1]
-    return np.expand_dims(image, axis = 2)
+    return image
 
 def t_or_f(arg):
     ua = str(arg).upper()
@@ -190,7 +167,7 @@ def refine_image(img):
     
     return img[0 : h - h % 16, 0 : w - w % 16]
 
-def crop_pair_with_different_shape_images(images, labels, resize_shape):
+def crop_pair_with_different_shape_images_2(images, labels, resize_shape):
     images_list = None
     labels_list = None
     h, w = resize_shape[:2]
@@ -217,6 +194,44 @@ def crop_pair_with_different_shape_images(images, labels, resize_shape):
         labels_list = np.copy(label) if i == 0 else np.concatenate((labels_list, label), axis = 0)
 
     return images_list, labels_list
+
+def crop_pair_with_different_shape_images_4(images, labels, labels2, labels3, resize_shape):
+    images_list = None
+    labels_list = None
+    labels2_list = None
+    labels3_list = None
+    h, w = resize_shape[:2]
+    
+    for i in np.arange(len(images)):
+        image = np.copy(images[i])
+        label = np.copy(labels[i])
+        label2 = np.copy(labels2[i])
+        label3 = np.copy(labels3[i])
+        shape = np.array(image.shape[:2])
+        
+        if shape.min() <= h:
+            ratio = resize_shape[shape.argmin()]/float(shape.min())
+            resize_w = int(math.floor(shape[1] * ratio)) + 1
+            resize_h = int(math.floor(shape[0] * ratio)) + 1
+            
+            image = cv2.resize(image, (resize_w, resize_h))
+            label = np.expand_dims(cv2.resize(label[:, :, 0], (resize_w, resize_h)), axis = 2)
+            label2 = np.expand_dims(cv2.resize(label2[:, :, 0], (resize_w, resize_h)), axis = 2)
+            label3 = np.expand_dims(cv2.resize(label3[:, :, 0], (resize_w, resize_h)), axis = 2)
+
+        concatenated_images = np.concatenate((image, label, label2, label3), axis = 2)
+        cropped_images = tl.prepro.crop(concatenated_images, wrg=w, hrg=h, is_random=True)
+        image = np.expand_dims(cropped_images[:, :, :3], axis=0)
+        label = np.expand_dims(np.expand_dims(cropped_images[:, :, 3], axis=3), axis=0)
+        label2 = np.expand_dims(np.expand_dims(cropped_images[:, :, 4], axis=3), axis=0)
+        label3 = np.expand_dims(np.expand_dims(cropped_images[:, :, 5], axis=3), axis=0)
+        
+        images_list = np.copy(image) if i == 0 else np.concatenate((images_list, image), axis = 0)
+        labels_list = np.copy(label) if i == 0 else np.concatenate((labels_list, label), axis = 0)
+        labels2_list = np.copy(label2) if i == 0 else np.concatenate((labels2_list, label2), axis = 0)
+        labels3_list = np.copy(label3) if i == 0 else np.concatenate((labels3_list, label3), axis = 0)
+
+    return images_list, labels_list, labels2_list, labels3_list
 
 def get_binary_maps(maps):
     continuous_maps = maps
