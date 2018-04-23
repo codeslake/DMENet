@@ -119,8 +119,8 @@ def UNet_up(f0_in, f1_2_in, f2_3_in, f3_4_in, last_in, hrg, wrg, is_train=False,
         n = BatchNormLayer(n, act=tf.nn.relu, is_train=is_train, gamma_init=g_init, name='u1/b1')
         n = Conv2d(n, 1, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init1, name='u1/c2')
         logits = n.outputs
-        #n.outputs = tf.nn.sigmoid(n.outputs)
-        n.outputs = tf.nn.relu(n.outputs)
+        n.outputs = tf.nn.sigmoid(n.outputs)
+        #n.outputs = tf.nn.relu(n.outputs)
 
         return logits, n.outputs
 

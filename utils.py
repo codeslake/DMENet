@@ -31,6 +31,7 @@ def get_images(file_name, path, mode):
         image = np.expand_dims(image, axis = 2)
     elif mode is 'DEPTH':
         image = (np.float32(cv2.imread(path + file_name, cv2.IMREAD_UNCHANGED))/10.)[:, :, 1]
+        image = image / 30.
         image = np.expand_dims(image, axis = 2)
 
     return image
@@ -194,6 +195,39 @@ def crop_pair_with_different_shape_images_2(images, labels, resize_shape):
         labels_list = np.copy(label) if i == 0 else np.concatenate((labels_list, label), axis = 0)
 
     return images_list, labels_list
+
+def crop_pair_with_different_shape_images_3(images, labels, labels2, resize_shape):
+    images_list = None
+    labels_list = None
+    labels2_list = None
+    h, w = resize_shape[:2]
+    
+    for i in np.arange(len(images)):
+        image = np.copy(images[i])
+        label = np.copy(labels[i])
+        label2 = np.copy(labels2[i])
+        shape = np.array(image.shape[:2])
+        
+        if shape.min() <= h:
+            ratio = resize_shape[shape.argmin()]/float(shape.min())
+            resize_w = int(math.floor(shape[1] * ratio)) + 1
+            resize_h = int(math.floor(shape[0] * ratio)) + 1
+            
+            image = cv2.resize(image, (resize_w, resize_h))
+            label = np.expand_dims(cv2.resize(label[:, :, 0], (resize_w, resize_h)), axis = 2)
+            label2 = np.expand_dims(cv2.resize(label2[:, :, 0], (resize_w, resize_h)), axis = 2)
+
+        concatenated_images = np.concatenate((image, label, label2), axis = 2)
+        cropped_images = tl.prepro.crop(concatenated_images, wrg=w, hrg=h, is_random=True)
+        image = np.expand_dims(cropped_images[:, :, :3], axis=0)
+        label = np.expand_dims(np.expand_dims(cropped_images[:, :, 3], axis=3), axis=0)
+        label2 = np.expand_dims(np.expand_dims(cropped_images[:, :, 4], axis=3), axis=0)
+        
+        images_list = np.copy(image) if i == 0 else np.concatenate((images_list, image), axis = 0)
+        labels_list = np.copy(label) if i == 0 else np.concatenate((labels_list, label), axis = 0)
+        labels2_list = np.copy(label2) if i == 0 else np.concatenate((labels2_list, label2), axis = 0)
+
+    return images_list, labels_list, labels2_list
 
 def crop_pair_with_different_shape_images_4(images, labels, labels2, labels3, resize_shape):
     images_list = None

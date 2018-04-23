@@ -9,13 +9,14 @@ config.TEST = edict()
 config.TRAIN.batch_size = 8 
 config.TRAIN.batch_size_init = 16
 config.TRAIN.lr_init = 1e-4
-config.TRAIN.beta1 = 0.9
+config.TRAIN.lr_init_init = 1e-5
+config.TRAIN.beta1 = 0.5
 
 # learning rate
 config.TRAIN.n_epoch = 10000
 config.TRAIN.n_epoch_init = 100
 config.TRAIN.lr_decay = 0.8
-config.TRAIN.decay_every = 200
+config.TRAIN.decay_every = 100
 
 ## total_variation
 config.TRAIN.lambda_tv = 1e-7
@@ -25,10 +26,10 @@ config.TRAIN.lambda_tv = 1e-7
 # config.TRAIN.defocus_map_path = '/data1/junyonglee/blur_sharp_only/defocus_map/'
 # config.TRAIN.synthetic_binary_map_path = '/data1/junyonglee/blur_sharp_only/binary_map/'
 
-config.TRAIN.synthetic_img_path = '/data1/synthetic_datasets/out/image/'
-config.TRAIN.defocus_map_path = '/data1/synthetic_datasets/out/blur_map/'
-config.TRAIN.defocus_map_norm_path = '/data1/synthetic_datasets/out/blur_map_norm/'
-config.TRAIN.synthetic_binary_map_path = '/data1/synthetic_datasets/out/blur_map_binary/'
+config.TRAIN.synthetic_img_path = '/data1/synthetic_datasets/out/30/image/'
+config.TRAIN.defocus_map_path = '/data1/synthetic_datasets/out/30/blur_map/'
+config.TRAIN.defocus_map_norm_path = '/data1/synthetic_datasets/out/30/blur_map_norm/'
+config.TRAIN.synthetic_binary_map_path = '/data1/synthetic_datasets/out/30/blur_map_binary/'
 
 config.TRAIN.real_img_path = '/data1/junyonglee/BlurDetection/train/image/'
 config.TRAIN.real_binary_map_path = '/data1/junyonglee/BlurDetection/train/gt/'
