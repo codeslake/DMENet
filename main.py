@@ -199,9 +199,9 @@ def train():
     image_sum_list.append(tf.summary.image('6_synthetic_binary_gt', fix_image(labels_synthetic_binary, 1.)))
     image_sum_list.append(tf.summary.image('7_real_input', patches_real))
     image_sum_list.append(tf.summary.image('8_real_defocus_out', fix_image(output_real_defocus, 1.)))
-    image_sum_list.append(tf.summary.image('9_real_defocus_out', norm_image(output_real_defocus)))
-    image_sum_list.append(tf.summary.image('9_real_binary_out', fix_image(output_real_binary, 1.)))
-    image_sum_list.append(tf.summary.image('10_real_binary_gt', fix_image(labels_real_binary, 1.)))
+    image_sum_list.append(tf.summary.image('9_real_defocus_out_norm', norm_image(output_real_defocus)))
+    image_sum_list.append(tf.summary.image('10_real_binary_out', fix_image(output_real_binary, 1.)))
+    image_sum_list.append(tf.summary.image('11_real_binary_gt', fix_image(labels_real_binary, 1.)))
     image_sum = tf.summary.merge(image_sum_list)
 
     ## INITIALIZE SESSION
