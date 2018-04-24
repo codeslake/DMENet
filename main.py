@@ -168,9 +168,9 @@ def train():
 
     image_sum_list_init = []
     image_sum_list_init.append(tf.summary.image('1_synthetic_input_init', patches_synthetic))
-    image_sum_list_init.append(tf.summary.image('2_synthetic_defocus_out_init', fix_image(output_synthetic_defocus, max_coc)))
+    image_sum_list_init.append(tf.summary.image('2_synthetic_defocus_out_init', fix_image(output_synthetic_defocus, 1.)))
     image_sum_list_init.append(tf.summary.image('3_synthetic_defocus_out_norm_init', norm_image(output_synthetic_defocus)))
-    image_sum_list_init.append(tf.summary.image('4_synthetic_defocus_gt_init', fix_image(labels_synthetic_defocus, max_coc)))
+    image_sum_list_init.append(tf.summary.image('4_synthetic_defocus_gt_init', fix_image(labels_synthetic_defocus, 1.)))
     image_sum_list_init.append(tf.summary.image('5_synthetic_binary_out_init', fix_image(output_synthetic_binary, 1.)))
     image_sum_list_init.append(tf.summary.image('6_synthetic_binary_gt_init', fix_image(labels_synthetic_binary, 1.)))
     image_sum_init = tf.summary.merge(image_sum_list_init)
@@ -192,16 +192,16 @@ def train():
 
     image_sum_list = []
     image_sum_list.append(tf.summary.image('1_synthetic_input', patches_synthetic))
-    image_sum_list.append(tf.summary.image('2_synthetic_defocus_out', fix_image(output_synthetic_defocus, max_coc)))
-    image_sum_list.append(tf.summary.image('3_synthetic_defocus_out_norm', fix_image(output_synthetic_defocus, max_coc)))
-    image_sum_list.append(tf.summary.image('4_synthetic_defocus_gt', fix_image(labels_synthetic_defocus, max_coc)))
+    image_sum_list.append(tf.summary.image('2_synthetic_defocus_out', fix_image(output_synthetic_defocus, 1.)))
+    image_sum_list.append(tf.summary.image('3_synthetic_defocus_out_norm', fix_image(output_synthetic_defocus, 1.)))
+    image_sum_list.append(tf.summary.image('4_synthetic_defocus_gt', fix_image(labels_synthetic_defocus, 1.)))
     image_sum_list.append(tf.summary.image('5_synthetic_binary_out', fix_image(output_synthetic_binary, 1.)))
     image_sum_list.append(tf.summary.image('6_synthetic_binary_gt', fix_image(labels_synthetic_binary, 1.)))
     image_sum_list.append(tf.summary.image('7_real_input', patches_real))
-    image_sum_list.append(tf.summary.image('8_real_defocus_out', fix_image(output_real_defocus, max_coc)))
+    image_sum_list.append(tf.summary.image('8_real_defocus_out', fix_image(output_real_defocus, 1.)))
     image_sum_list.append(tf.summary.image('9_real_defocus_out', norm_image(output_real_defocus)))
-    image_sum_list.append(tf.summary.image('9_real_binary_out', fix_image(output_real_binary, 1)))
-    image_sum_list.append(tf.summary.image('10_real_binary_gt', fix_image(labels_real_binary, 1)))
+    image_sum_list.append(tf.summary.image('9_real_binary_out', fix_image(output_real_binary, 1.)))
+    image_sum_list.append(tf.summary.image('10_real_binary_gt', fix_image(labels_real_binary, 1.)))
     image_sum = tf.summary.merge(image_sum_list)
 
     ## INITIALIZE SESSION
@@ -270,6 +270,8 @@ def train():
                 remove_file_end_with(log_dir_image_init, '*.image_log')
                 writer_image_init.reopen()
 
+            if epoch % 5:
+                tl.files.save_npz_dict(save_vars, name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
 
         tl.files.save_npz_dict(save_vars, name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
         writer_image_init.close()
@@ -338,7 +340,7 @@ def train():
 
             # generator
             err_g, err_def, err_bin, synthetic_defocus_out, synthetic_binary_out, real_defocus_out, real_binary_out, lr, summary_loss_g, summary_image, _ = \
-            sess.run([loss_g, loss_domain, loss_defocus, loss_binary, output_synthetic_defocus, output_synthetic_binary, output_real_defocus, output_real_binary, learning_rate, loss_sum_g, image_sum, optim_g], 
+            sess.run([loss_g, loss_defocus, loss_binary, output_synthetic_defocus, output_synthetic_binary, output_real_defocus, output_real_binary, learning_rate, loss_sum_g, image_sum, optim_g], 
                 {patches_synthetic: synthetic_images_blur,
                 labels_synthetic_defocus: synthetic_defocus_maps,
                 labels_synthetic_binary: synthetic_binary_maps,
@@ -352,7 +354,8 @@ def train():
             ## SAVE LOGS
             # save loss & image log
             if global_step % config.TRAIN.write_log_every == 0:
-                writer_scalar.add_summary(summary_loss, global_step)
+                writer_scalar.add_summary(summary_loss_g, global_step)
+                writer_scalar.add_summary(summary_loss_d, global_step)
                 writer_image.add_summary(summary_image, global_step)
             # save checkpoint
             if global_step % config.TRAIN.write_ckpt_every == 0:
