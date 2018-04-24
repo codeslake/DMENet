@@ -312,6 +312,11 @@ def save_images(images, size, image_path='_temp.png'):
     return imsave(images, size, image_path)
 
 def fix_image(image, norm_value):
-
     return tf.cast(image / norm_value * 255., tf.uint8)
+
+def norm_image(image):
+    image = image - tf.reduce_min(image, axis = [1, 2, 3], keepdims=True)
+    image = image / tf.reduce_max(image, axis = [1, 2, 3], keepdims=True)
+    return tf.cast(image * 255., tf.uint8)
+
 
