@@ -13,7 +13,6 @@ def UNet_down(image_in, is_train=False, reuse=False, scope = 'unet_down'):
     hrg = image_in.get_shape()[1]
     wrg = image_in.get_shape()[2]
     with tf.variable_scope(scope, reuse=reuse) as vs:
-        tl.layers.set_name_reuse(reuse)
         n = InputLayer(image_in, name='image_in')
         n = Conv2d(n, 64, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init1, name='f0/c')
         n = BatchNormLayer(n, is_train=is_train, gamma_init=g_init, name='f0/b')
@@ -63,7 +62,6 @@ def UNet_up(f0_in, f1_2_in, f2_3_in, f3_4_in, last_in, hrg, wrg, is_train=False,
     b_init = None # tf.constant_initializer(value=0.0)
     g_init = tf.random_normal_initializer(1., 0.02)
     with tf.variable_scope(scope, reuse=reuse) as vs:
-        tl.layers.set_name_reuse(reuse)
         f0 = InputLayer(f0_in, name='f0')
         f1_2 = InputLayer(f1_2_in, name='f1_2')
         f2_3 = InputLayer(f2_3_in, name='f2_3')
@@ -119,7 +117,6 @@ def UNet_up(f0_in, f1_2_in, f2_3_in, f3_4_in, last_in, hrg, wrg, is_train=False,
         n = BatchNormLayer(n, act=tf.nn.relu, is_train=is_train, gamma_init=g_init, name='u1/b1')
         n = Conv2d(n, 1, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init1, name='u1/c2')
         logits = n.outputs
-        n.outputs = tf.nn.sigmoid(n.outputs)
         #n.outputs = tf.nn.relu(n.outputs)
 
         return logits, n.outputs
@@ -131,7 +128,6 @@ def SRGAN_d(f0_in, f1_2_in, f2_3_in, f3_4_in, last_in, is_train=True, reuse=Fals
     
     lrelu = lambda x: tl.act.lrelu(x, 0.2)
     with tf.variable_scope(scope, reuse=reuse):
-        tl.layers.set_name_reuse(reuse)
         f0 = InputLayer(f0_in, name='f0')
         f1_2 = InputLayer(f1_2_in, name='f1_2')
         f2_3 = InputLayer(f2_3_in, name='f2_3')
@@ -194,7 +190,6 @@ def domain_lambda_predictor(feature, is_train = True, reuse = False, scope = 'dl
     b_init = None # tf.constant_initializer(value=0.0)
     g_init = tf.random_normal_initializer(1., 0.02)
     with tf.variable_scope(scope, reuse=reuse) as vs:
-        tl.layers.set_name_reuse(reuse)
         n = InputLayer(feature, name='in')
         
         n = Conv2d(n, 32, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init1, name='d1/c1')
@@ -217,7 +212,6 @@ def Binary_Net(input_defocus, is_train=False, reuse=False, scope = 'Binary_Net')
     b_init = None # tf.constant_initializer(value=0.0)
     g_init = tf.random_normal_initializer(1., 0.02)
     with tf.variable_scope(scope, reuse=reuse) as vs:
-        tl.layers.set_name_reuse(reuse)
         n = InputLayer(input_defocus, name='input_defocus')
         
         n = Conv2d(n, 64, (1, 1), (1, 1), act=None, padding='SAME', W_init=w_init3, name='l1/c1')

@@ -26,10 +26,10 @@ config.TRAIN.lambda_tv = 1e-7
 # config.TRAIN.defocus_map_path = '/data1/junyonglee/blur_sharp_only/defocus_map/'
 # config.TRAIN.synthetic_binary_map_path = '/data1/junyonglee/blur_sharp_only/binary_map/'
 
-config.TRAIN.synthetic_img_path = '/data1/synthetic_datasets/out/30/image/'
-config.TRAIN.defocus_map_path = '/data1/synthetic_datasets/out/30/blur_map/'
-config.TRAIN.defocus_map_norm_path = '/data1/synthetic_datasets/out/30/blur_map_norm/'
-config.TRAIN.synthetic_binary_map_path = '/data1/synthetic_datasets/out/30/blur_map_binary/'
+config.TRAIN.synthetic_img_path = '/data1/synthetic_datasets/out/30_new/image/'
+config.TRAIN.defocus_map_path = '/data1/synthetic_datasets/out/30_new/blur_map/'
+config.TRAIN.defocus_map_norm_path = '/data1/synthetic_datasets/out/30_new/blur_map_norm/'
+config.TRAIN.synthetic_binary_map_path = '/data1/synthetic_datasets/out/30_new/blur_map_binary/'
 
 config.TRAIN.real_img_path = '/data1/junyonglee/BlurDetection/train/image/'
 config.TRAIN.real_binary_map_path = '/data1/junyonglee/BlurDetection/train/gt/'
@@ -52,6 +52,8 @@ config.TRAIN.refresh_image_log_every = 50
 
 # save dir
 config.TRAIN.root_dir = '/data2/junyonglee/sharpness_assessment/'
+
+config.TRAIN.max_coc = 29.;
 
 def log_config(path, cfg):
     with open(path + '/config.txt', 'w') as f:
