@@ -78,8 +78,8 @@ def train():
     # input
     with tf.variable_scope('input'):
         patches_synthetic = tf.placeholder('float32', [None, h, w, 3], name = 'input_synthetic')
-        labels_synthetic_defocus = tf.placeholder('float32', [None, h, w, 1], name = 'labels_synthetic')
-        labels_synthetic_binary = tf.placeholder('float32', [None, h, w, 1], name = 'labels_synthetic')
+        labels_synthetic_defocus = tf.placeholder('float32', [None, h, w, 1], name = 'labels_synthetic_defocus')
+        labels_synthetic_binary = tf.placeholder('float32', [None, h, w, 1], name = 'labels_synthetic_bianry')
 
         patches_real = tf.placeholder('float32', [None, h, w, 3], name = 'input_real')
         labels_real_binary = tf.placeholder('float32', [None, h, w, 1], name = 'labels_real_binary')
@@ -164,15 +164,11 @@ def train():
     # writer
     writer_scalar = tf.summary.FileWriter(log_dir_scalar, sess.graph, filename_suffix = '.loss_log')
     writer_image = tf.summary.FileWriter(log_dir_image, sess.graph, filename_suffix = '.image_log')
-    if tl.files.load_and_assign_npz_dict(name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess) is False or tl.global_flag['is_pretrain']:
+    if tl.global_flag['is_pretrain']:
         writer_scalar_init = tf.summary.FileWriter(log_dir_scalar_init, sess.graph, filename_suffix = '.loss_log_init')
         writer_image_init = tf.summary.FileWriter(log_dir_image_init, sess.graph, filename_suffix = '.image_log_init')
  
     # for pretrain
-    output_synthetic_defocus = tf.cast(output_synthetic_defocus / max_coc * 255., tf.uint8)
-    labels_synthetic_defocus = tf.cast(labels_synthetic_defocus / max_coc * 255., tf.uint8)
-    output_real_defocus = tf.cast(output_real_defocus / max_coc * 255., tf.uint8)
-
     loss_sum_list_init = []
     with tf.variable_scope('loss_init'):
         loss_sum_list_init.append(tf.summary.scalar('1_total_loss_init', loss_init))
@@ -183,10 +179,10 @@ def train():
 
     image_sum_list_init = []
     image_sum_list_init.append(tf.summary.image('1_synthetic_input_init', patches_synthetic))
-    image_sum_list_init.append(tf.summary.image('2_synthetic_defocus_out_init', output_synthetic_defocus))
-    image_sum_list_init.append(tf.summary.image('3_synthetic_defocus_gt_init', labels_synthetic_defocus))
-    image_sum_list_init.append(tf.summary.image('4_synthetic_binary_out_init', output_synthetic_binary))
-    image_sum_list_init.append(tf.summary.image('5_synthetic_binary_gt_init', labels_synthetic_binary))
+    image_sum_list_init.append(tf.summary.image('2_synthetic_defocus_out_init', fix_image(output_synthetic_defocus, max_coc)))
+    image_sum_list_init.append(tf.summary.image('3_synthetic_defocus_gt_init', fix_image(labels_synthetic_defocus, max_coc)))
+    image_sum_list_init.append(tf.summary.image('4_synthetic_binary_out_init', fix_image(output_synthetic_binary, 1.)))
+    image_sum_list_init.append(tf.summary.image('5_synthetic_binary_gt_init', fix_image(labels_synthetic_binary, 1.)))
     image_sum_init = tf.summary.merge(image_sum_list_init)
 
     # for train
@@ -204,19 +200,19 @@ def train():
 
     image_sum_list = []
     image_sum_list.append(tf.summary.image('1_synthetic_input', patches_synthetic))
-    image_sum_list.append(tf.summary.image('2_synthetic_defocus_out', output_synthetic_defocus))
-    image_sum_list.append(tf.summary.image('3_synthetic_defocus_gt', labels_synthetic_defocus))
-    image_sum_list.append(tf.summary.image('4_synthetic_binary_out', output_synthetic_binary))
-    image_sum_list.append(tf.summary.image('5_synthetic_binary_gt', labels_synthetic_binary))
+    image_sum_list.append(tf.summary.image('2_synthetic_defocus_out', fix_image(output_synthetic_defocus, max_coc)))
+    image_sum_list.append(tf.summary.image('3_synthetic_defocus_gt', fix_image(labels_synthetic_defocus, max_coc)))
+    image_sum_list.append(tf.summary.image('4_synthetic_binary_out', fix_image(output_synthetic_binary, 1.)))
+    image_sum_list.append(tf.summary.image('5_synthetic_binary_gt', fix_image(labels_synthetic_binary, 1.)))
     image_sum_list.append(tf.summary.image('6_real_input', patches_real))
-    image_sum_list.append(tf.summary.image('7_real_defocus_out', output_real_defocus))
-    image_sum_list.append(tf.summary.image('8_real_binary_out', output_real_binary))
-    image_sum_list.append(tf.summary.image('9_real_binary_gt', labels_real_binary))
+    image_sum_list.append(tf.summary.image('7_real_defocus_out', fix_image(output_real_defocus, max_coc)))
+    image_sum_list.append(tf.summary.image('8_real_binary_out', fix_image(output_real_binary, 1)))
+    image_sum_list.append(tf.summary.image('9_real_binary_gt', fix_image(labels_real_binary, 1)))
     image_sum = tf.summary.merge(image_sum_list)
 
     ## INITIALIZE SESSION
     tl.layers.initialize_global_variables(sess)
-    if tl.files.load_and_assign_npz_dict(name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess) is False or tl.global_flag['is_pretrain']:
+    if tl.files.load_and_assign_npz_dict(name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess) is False and tl.global_flag['is_pretrain']:
         print '*****************************************'
         print '           PRE-TRAINING START'
         print '*****************************************'
@@ -342,13 +338,13 @@ def train():
             real_images_blur, real_binary_maps = crop_pair_with_different_shape_images_2(real_images_blur, real_binary_maps, [h, w])
 
             ## RUN NETWORK
-            err, err_d, err_def, err_bin, synthetic_defocus_out, synthetic_binary_out, real_defocus_out, real_binary_out, lr, summary_loss, summary_image _ = \
+            err, err_d, err_def, err_bin, synthetic_defocus_out, synthetic_binary_out, real_defocus_out, real_binary_out, lr, summary_loss, summary_image, _ = \
             sess.run([loss, loss_domain, loss_defocus, loss_binary, output_synthetic_defocus, output_synthetic_binary, output_real_defocus, output_real_binary, learning_rate, loss_sum, image_sum, optim], 
                 {patches_synthetic: synthetic_images_blur,
                 labels_synthetic_defocus: synthetic_defocus_maps,
                 labels_synthetic_binary: synthetic_binary_maps,
                 patches_real: real_images_blur,
-                labels_real_binary: real_binary_maps,
+                labels_real_binary: real_binary_maps
                 })
 
             print('[%s] Ep [%2d/%2d] %4d/%4d time: %4.2fs, err_tot: %.3f, err_dom: %.3f, err_def: %.3f, err_bin: %.3f, lr: %.8f' % \

@@ -14,7 +14,7 @@ config.TRAIN.beta1 = 0.5
 
 # learning rate
 config.TRAIN.n_epoch = 10000
-config.TRAIN.n_epoch_init = 100
+config.TRAIN.n_epoch_init = 1
 config.TRAIN.lr_decay = 0.8
 config.TRAIN.decay_every = 100
 

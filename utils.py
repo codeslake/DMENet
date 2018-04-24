@@ -310,3 +310,8 @@ def save_images(images, size, image_path='_temp.png'):
     assert len(images) <= size[0] * size[1], "number of images should be equal or less than size[0] * size[1] {}".format(len(images))
 
     return imsave(images, size, image_path)
+
+def fix_image(image, norm_value):
+
+    return tf.cast(image / norm_value * 255., tf.uint8)
+
