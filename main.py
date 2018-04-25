@@ -102,10 +102,6 @@ def train():
                     output_synthetic_defocus_logits, output_synthetic_defocus = UNet_up(f0_synthetic, f1_2_synthetic, f2_3_synthetic, f3_4_synthetic, final_feature_synthetic, h, w, is_train = True, reuse = False, scope = scope)
                     output_real_defocus_logits, output_real_defocus = UNet_up(f0_real, f1_2_real, f2_3_real, f3_4_real, final_feature_real, h, w, is_train = True, reuse = True, scope = scope)
 
-        with tf.variable_scope('kernel_detect_net') as scope:
-            output_synthetic_defocus_kdn = kernel_detect_net(patches_synthetic, output_synthetic_defocus, is_train = True, reuse = False, scope = scope)
-            output_real_defocus_kdn = kernel_detect_net(patches_real, output_real_defocus, is_train = True, reuse = True, scope = scope)
-
                 output_synthetic_binary_logits, output_synthetic_binary = Binary_Net(output_synthetic_defocus, is_train = True, reuse = False, scope = scope)
                 output_real_binary_logits, output_real_binary = Binary_Net(output_real_defocus, is_train = True, reuse = True, scope = scope)
     
