@@ -17,14 +17,14 @@ def UNet_down(image_in, is_train=False, reuse=False, scope = 'unet_down'):
         n = Conv2d(n, 64, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init1, name='f0/c')
         n = BatchNormLayer(n, is_train=is_train, gamma_init=g_init, name='f0/b')
         f0 = n
-        n = Conv2d(n, 64, (5, 5), (2, 2), act=None, padding='SAME', W_init=w_init2, name='d1/c1')
+        n = Conv2d(n, 64, (4, 4), (2, 2), act=None, padding='SAME', W_init=w_init2, name='d1/c1')
         n = BatchNormLayer(n, act=tf.nn.relu, is_train=is_train, gamma_init=g_init, name='d1/b1')
         n = Conv2d(n, 64, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init2, name='d1/c2')
         n = BatchNormLayer(n, act=tf.nn.relu, is_train=is_train, gamma_init=g_init, name='d1/b2')
         n = Conv2d(n, 128, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init2, name='d1/c3')
         n = BatchNormLayer(n, is_train=is_train, gamma_init=g_init, name='d1/b3')
         f1_2 = n
-        n = Conv2d(n, 128, (5, 5), (2, 2), act=None, padding='SAME', W_init=w_init3, name='d2/c1')
+        n = Conv2d(n, 128, (4, 4), (2, 2), act=None, padding='SAME', W_init=w_init3, name='d2/c1')
         n = BatchNormLayer(n, act=tf.nn.relu, is_train=is_train, gamma_init=g_init, name='d2/b1')
         n = Conv2d(n, 128, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init3, name='d2/c2')
         n = BatchNormLayer(n, act=tf.nn.relu, is_train=is_train, gamma_init=g_init, name='d2/b2')
@@ -33,7 +33,7 @@ def UNet_down(image_in, is_train=False, reuse=False, scope = 'unet_down'):
         n = Conv2d(n, 128, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init3, name='d2/c4')
         n = BatchNormLayer(n, is_train=is_train, gamma_init=g_init, name='d2/b4')
         f2_3 = n
-        n = Conv2d(n, 256, (5, 5), (2, 2), act=None, padding='SAME', W_init=w_init4, name='d3/c1')
+        n = Conv2d(n, 256, (4, 4), (2, 2), act=None, padding='SAME', W_init=w_init4, name='d3/c1')
         n = BatchNormLayer(n, act=tf.nn.relu, is_train=is_train, gamma_init=g_init, name='d3/b1')
         n = Conv2d(n, 256, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init4, name='d3/c2')
         n = BatchNormLayer(n, act=tf.nn.relu, is_train=is_train, gamma_init=g_init, name='d3/b2')
@@ -43,7 +43,7 @@ def UNet_down(image_in, is_train=False, reuse=False, scope = 'unet_down'):
         n = BatchNormLayer(n, act=tf.nn.relu, is_train=is_train, gamma_init=g_init, name='d3/b4')
         
         f3_4 = n
-        n = Conv2d(n, 256, (5, 5), (2, 2), act=None, padding='SAME', W_init=w_init4, name='d4/c1')
+        n = Conv2d(n, 256, (4, 4), (2, 2), act=None, padding='SAME', W_init=w_init4, name='d4/c1')
         n = BatchNormLayer(n, act=tf.nn.relu, is_train=is_train, gamma_init=g_init, name='d4/b1')
         n = Conv2d(n, 256, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init4, name='d4/c2')
         n = BatchNormLayer(n, act=tf.nn.relu, is_train=is_train, gamma_init=g_init, name='d4/b2')
@@ -69,7 +69,7 @@ def UNet_up(f0_in, f1_2_in, f2_3_in, f3_4_in, last_in, hrg, wrg, is_train=False,
         f3_4 = InputLayer(f3_4_in, name='f3_4')
         last = InputLayer(last_in, name='last')
         
-        #n = DeConv2d(last, 256, (5, 5), (hrg/8, wrg/8), (2, 2), act=None, padding='SAME', W_init=w_init3, name='u4/d')
+        #n = DeConv2d(last, 256, (4, 4), (hrg/8, wrg/8), (2, 2), act=None, padding='SAME', W_init=w_init3, name='u4/d')
         n = UpSampling2dLayer(last, (hrg/8, wrg/8), is_scale = False, method = 1, align_corners=False, name='u4/u')
         #n = SubpixelConv2d(last, scale = 2, n_out_channel = 256, name='u4/u')
         n = Conv2d(n, 256, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init3, name='u4/c')
@@ -84,7 +84,7 @@ def UNet_up(f0_in, f1_2_in, f2_3_in, f3_4_in, last_in, hrg, wrg, is_train=False,
         #n = Conv2d(n, 512, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init3, name='u4/c3')
         n = Conv2d(n, 256, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init3, name='u4/c3')
         n = BatchNormLayer(n, act=tf.nn.relu, is_train=is_train, gamma_init=g_init, name='u4/b3')
-        #n = DeConv2d(n, 128, (5, 5), (hrg/4, wrg/4), (2, 2), act=None, padding='SAME', W_init=w_init3, name='u3/d')
+        #n = DeConv2d(n, 128, (4, 4), (hrg/4, wrg/4), (2, 2), act=None, padding='SAME', W_init=w_init3, name='u3/d')
         n = UpSampling2dLayer(n, (hrg/4, wrg/4), is_scale = False, method = 1, align_corners=False, name='u3/u')
         #n = SubpixelConv2d(n, scale = 2, n_out_channel = 128, name='u3/u')
         n = Conv2d(n, 128, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init3, name='u3/c')
@@ -100,7 +100,7 @@ def UNet_up(f0_in, f1_2_in, f2_3_in, f3_4_in, last_in, hrg, wrg, is_train=False,
         n = Conv2d(n, 512, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init3, name='u3/c3')
         n = BatchNormLayer(n, act=tf.nn.relu, is_train=is_train, gamma_init=g_init, name='u3/b3')
 
-        #n = DeConv2d(n, 128, (5, 5), (hrg/2, wrg/2), (2, 2), act=None, padding='SAME', W_init=w_init2, name='u2/d')
+        #n = DeConv2d(n, 128, (4, 4), (hrg/2, wrg/2), (2, 2), act=None, padding='SAME', W_init=w_init2, name='u2/d')
         n = UpSampling2dLayer(n, (hrg/2, wrg/2), is_scale = False, method = 1, align_corners=False, name='u2/u')
         #n = SubpixelConv2d(n, scale = 2, n_out_channel = 128, name='u2/u')
         n = Conv2d(n, 128, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init3, name='u2/c')
@@ -114,7 +114,7 @@ def UNet_up(f0_in, f1_2_in, f2_3_in, f3_4_in, last_in, hrg, wrg, is_train=False,
         #n = Conv2d(n, 256, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init2, name='u2/c2')
         n = BatchNormLayer(n, act=tf.nn.relu, is_train=is_train, gamma_init=g_init, name='u2/b2')
 
-        #n = DeConv2d(n, 64, (5, 5), (hrg, wrg), (2, 2), act=None, padding='SAME', W_init=w_init1, name='u1/d')
+        #n = DeConv2d(n, 64, (4, 4), (hrg, wrg), (2, 2), act=None, padding='SAME', W_init=w_init1, name='u1/d')
         n = UpSampling2dLayer(n, (hrg, wrg), is_scale = False, method = 1, align_corners=False, name='u1/u')
         #n = SubpixelConv2d(n, scale = 2, n_out_channel = 64, name='u1/u')
         n = Conv2d(n, 64, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init3, name='u1/c')
@@ -142,7 +142,7 @@ def SRGAN_d(f0_in, f1_2_in, f2_3_in, f3_4_in, last_in, is_train=True, reuse=Fals
         f3_4 = InputLayer(f3_4_in, name='f3_4')
         last = InputLayer(last_in, name='last')
         
-        net_h0 = Conv2d(f0, 16, (5, 5), (2, 2), act=lrelu, padding='SAME', W_init=w_init, name='h0/c')
+        net_h0 = Conv2d(f0, 16, (4, 4), (2, 2), act=lrelu, padding='SAME', W_init=w_init, name='h0/c')
 
         net_h1 = Conv2d(net_h0, 32, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init, b_init=b_init, name='h1/c')
         net_h1 = BatchNormLayer(net_h1, act=lrelu, is_train=is_train, gamma_init=gamma_init, name='h1/bn')
@@ -154,19 +154,19 @@ def SRGAN_d(f0_in, f1_2_in, f2_3_in, f3_4_in, last_in, is_train=True, reuse=Fals
         net_h3 = BatchNormLayer(net_h3, act=lrelu, is_train=is_train, gamma_init=gamma_init, name='h3/bn')
         net_h3 = ElementwiseLayer([net_h3, f1_2], tf.add, name='s5')
 
-        net_h4 = Conv2d(net_h3, 128, (5, 5), (2, 2), act=None, padding='SAME', W_init=w_init, b_init=b_init, name='h4/c1')
+        net_h4 = Conv2d(net_h3, 128, (4, 4), (2, 2), act=None, padding='SAME', W_init=w_init, b_init=b_init, name='h4/c1')
         net_h4 = BatchNormLayer(net_h4, act=lrelu, is_train=is_train, gamma_init=gamma_init, name='h4/bn1')
         net_h4 = Conv2d(net_h4, 128, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init, b_init=b_init, name='h4/c2')
         net_h4 = BatchNormLayer(net_h4, act=lrelu, is_train=is_train, gamma_init=gamma_init, name='h4/bn2')
         net_h4 = ElementwiseLayer([net_h4, f2_3], tf.add, name='s4')
         
-        net_h5 = Conv2d(net_h4, 256, (5, 5), (2, 2), act=None, padding='SAME', W_init=w_init, b_init=b_init, name='h5/c1')
+        net_h5 = Conv2d(net_h4, 256, (4, 4), (2, 2), act=None, padding='SAME', W_init=w_init, b_init=b_init, name='h5/c1')
         net_h5 = BatchNormLayer(net_h5, act=lrelu, is_train=is_train, gamma_init=gamma_init, name='h5/bn1')
         net_h5 = Conv2d(net_h5, 256, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init, b_init=b_init, name='h5/c2')
         net_h5 = BatchNormLayer(net_h5, act=lrelu, is_train=is_train, gamma_init=gamma_init, name='h5/bn2')
         net_h5 = ElementwiseLayer([net_h5, f3_4], tf.add, name='s3')
         
-        net_h7 = Conv2d(net_h5, 256, (5, 5), (2, 2), act=None, padding='SAME', W_init=w_init, b_init=b_init, name='h7/c1')
+        net_h7 = Conv2d(net_h5, 256, (4, 4), (2, 2), act=None, padding='SAME', W_init=w_init, b_init=b_init, name='h7/c1')
         net_h7 = BatchNormLayer(net_h7, act=lrelu, is_train=is_train, gamma_init=gamma_init, name='h7/bn1')
         #net_h7 = Conv2d(net_h7, 1024, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init, b_init=b_init, name='h7/c2')
         net_h7 = Conv2d(net_h7, 512, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init, b_init=b_init, name='h7/c2')
