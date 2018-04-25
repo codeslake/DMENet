@@ -411,10 +411,10 @@ def evaluate():
         with tf.variable_scope('defocus_net') as scope:
             with tf.variable_scope('unet') as scope:
                 with tf.variable_scope('unet_down') as scope:
-                    f0, f1_2, f2_3, f3_4, final_feature = UNet_down(patches_blurred, is_train = False, reuse = reuse, scope = scope)
+                    feats = UNet_down(patches_blurred, is_train = False, reuse = reuse, scope = scope)
                 with tf.variable_scope('binary_net') as scope:
                     with tf.variable_scope('unet_up_defocus_map') as scope:
-                        _, output_defocus = UNet_up(f0, f1_2, f2_3, f3_4, final_feature, shape[0], shape[1], is_train = False, reuse = reuse, scope = scope)
+                        _, output_defocus = UNet_up(feats, is_train = False, reuse = reuse, scope = scope)
 
                 _, output_binary = Binary_Net(output_defocus, is_train = False, reuse = reuse, scope = scope)
                         
