@@ -47,9 +47,9 @@ def UNet_down(image_in, is_train=False, reuse=False, scope = 'unet_down'):
         n = BatchNormLayer(n, act=lrelu, is_train=is_train, gamma_init=g_init, name='d4/b2')
         d4 = n
 
-        return d0.outputs, d1.outputs, d2.outputs, d3.outputs, d4.outputs
+        return [d0.outputs, d1.outputs, d2.outputs, d3.outputs, d4.outputs]
 
-def UNet_up(d0_in, d1_in, d2_in, d3_in, d4_in, is_train=False, reuse=False, scope = 'unet_up'):
+def UNet_up(feats, is_train=False, reuse=False, scope = 'unet_up'):
     w_init1 = tf.random_normal_initializer(stddev=0.02)
     w_init2 = tf.random_normal_initializer(stddev=0.01)
     w_init3 = tf.random_normal_initializer(stddev=0.005)
@@ -58,11 +58,11 @@ def UNet_up(d0_in, d1_in, d2_in, d3_in, d4_in, is_train=False, reuse=False, scop
     g_init = tf.random_normal_initializer(1., 0.02)
     lrelu = lambda x: tl.act.lrelu(x, 0.2)
     with tf.variable_scope(scope, reuse=reuse) as vs:
-        d0 = InputLayer(d0_in, name='d0')
-        d1 = InputLayer(d1_in, name='d1')
-        d2 = InputLayer(d2_in, name='d2')
-        d3 = InputLayer(d3_in, name='d3')
-        d4 = InputLayer(d4_in, name='d4')
+        d0 = InputLayer(feats[0], name='d0')
+        d1 = InputLayer(feats[1], name='d1')
+        d2 = InputLayer(feats[2], name='d2')
+        d3 = InputLayer(feats[3], name='d3')
+        d4 = InputLayer(feats[4], name='d4')
         
         n = UpSampling2dLayer(d4, (2, 2), is_scale = True, method = 1, align_corners=False, name='u3/u')
         n = ConcatLayer([n, d3], concat_dim = 3, name='u3/concat')
@@ -96,18 +96,18 @@ def UNet_up(d0_in, d1_in, d2_in, d3_in, d4_in, is_train=False, reuse=False, scop
 
         return n.outputs, tf.nn.sigmoid(n.outputs)
 
-def SRGAN_d(d0_in, d1_in, d2_in, d3_in, d4_in, is_train=True, reuse=False, scope = 'Discriminator'):
+def SRGAN_d(feats, is_train=True, reuse=False, scope = 'Discriminator'):
     w_init = tf.random_normal_initializer(stddev=0.02)
     b_init = None # tf.constant_initializer(value=0.0)
     gamma_init=tf.random_normal_initializer(1., 0.02)
     
     lrelu = lambda x: tl.act.lrelu(x, 0.2)
     with tf.variable_scope(scope, reuse=reuse):
-        d0 = InputLayer(d0_in, name='d0')
-        d1 = InputLayer(d1_in, name='d1')
-        d2 = InputLayer(d2_in, name='d2')
-        d3 = InputLayer(d3_in, name='d3')
-        d4 = InputLayer(d4_in, name='d4')
+        d0 = InputLayer(feats[0], name='d0')
+        d1 = InputLayer(feats[1], name='d1')
+        d2 = InputLayer(feats[2], name='d2')
+        d3 = InputLayer(feats[3], name='d3')
+        d4 = InputLayer(feats[4], name='d4')
         
         net_h0 = Conv2d(d0, 128, (4, 4), (2, 2), act=lrelu, padding='SAME', W_init=w_init, name='h0/c1')
         net_h0 = Conv2d(net_h0, 128, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init, b_init=b_init, name='h0/c2')
