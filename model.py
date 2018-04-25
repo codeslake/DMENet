@@ -142,7 +142,7 @@ def SRGAN_d(f0_in, f1_2_in, f2_3_in, f3_4_in, last_in, is_train=True, reuse=Fals
         f3_4 = InputLayer(f3_4_in, name='f3_4')
         last = InputLayer(last_in, name='last')
         
-        net_h0 = Conv2d(f0, 16, (3, 3), (2, 2), act=lrelu, padding='SAME', W_init=w_init, name='h0/c')
+        net_h0 = Conv2d(f0, 16, (4, 4), (2, 2), act=lrelu, padding='SAME', W_init=w_init, name='h0/c')
 
         net_h1 = Conv2d(net_h0, 32, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init, b_init=b_init, name='h1/c')
         net_h1 = BatchNormLayer(net_h1, act=lrelu, is_train=is_train, gamma_init=gamma_init, name='h1/bn')
@@ -154,19 +154,19 @@ def SRGAN_d(f0_in, f1_2_in, f2_3_in, f3_4_in, last_in, is_train=True, reuse=Fals
         net_h3 = BatchNormLayer(net_h3, act=lrelu, is_train=is_train, gamma_init=gamma_init, name='h3/bn')
         net_h3 = ElementwiseLayer([net_h3, f1_2], tf.add, name='s5')
 
-        net_h4 = Conv2d(net_h3, 128, (3, 3), (2, 2), act=None, padding='SAME', W_init=w_init, b_init=b_init, name='h4/c1')
+        net_h4 = Conv2d(net_h3, 128, (4, 4), (2, 2), act=None, padding='SAME', W_init=w_init, b_init=b_init, name='h4/c1')
         net_h4 = BatchNormLayer(net_h4, act=lrelu, is_train=is_train, gamma_init=gamma_init, name='h4/bn1')
         net_h4 = Conv2d(net_h4, 128, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init, b_init=b_init, name='h4/c2')
         net_h4 = BatchNormLayer(net_h4, act=lrelu, is_train=is_train, gamma_init=gamma_init, name='h4/bn2')
         net_h4 = ElementwiseLayer([net_h4, f2_3], tf.add, name='s4')
         
-        net_h5 = Conv2d(net_h4, 256, (3, 3), (2, 2), act=None, padding='SAME', W_init=w_init, b_init=b_init, name='h5/c1')
+        net_h5 = Conv2d(net_h4, 256, (4, 4), (2, 2), act=None, padding='SAME', W_init=w_init, b_init=b_init, name='h5/c1')
         net_h5 = BatchNormLayer(net_h5, act=lrelu, is_train=is_train, gamma_init=gamma_init, name='h5/bn1')
         net_h5 = Conv2d(net_h5, 256, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init, b_init=b_init, name='h5/c2')
         net_h5 = BatchNormLayer(net_h5, act=lrelu, is_train=is_train, gamma_init=gamma_init, name='h5/bn2')
         net_h5 = ElementwiseLayer([net_h5, f3_4], tf.add, name='s3')
         
-        net_h7 = Conv2d(net_h5, 256, (3, 3), (2, 2), act=None, padding='SAME', W_init=w_init, b_init=b_init, name='h7/c1')
+        net_h7 = Conv2d(net_h5, 256, (4, 4), (2, 2), act=None, padding='SAME', W_init=w_init, b_init=b_init, name='h7/c1')
         net_h7 = BatchNormLayer(net_h7, act=lrelu, is_train=is_train, gamma_init=gamma_init, name='h7/bn1')
         #net_h7 = Conv2d(net_h7, 1024, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init, b_init=b_init, name='h7/c2')
         net_h7 = Conv2d(net_h7, 512, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init, b_init=b_init, name='h7/c2')
@@ -192,27 +192,6 @@ def SRGAN_d(f0_in, f1_2_in, f2_3_in, f3_4_in, last_in, is_train=True, reuse=Fals
 
     return logits
 
-def domain_lambda_predictor(feature, is_train = True, reuse = False, scope = 'dln_predictor'):
-    w_init1 = tf.random_normal_initializer(stddev=0.02)
-    w_init2 = tf.random_normal_initializer(stddev=0.01)
-    w_init3 = tf.random_normal_initializer(stddev=0.005)
-    b_init = None # tf.constant_initializer(value=0.0)
-    g_init = tf.random_normal_initializer(1., 0.02)
-    with tf.variable_scope(scope, reuse=reuse) as vs:
-        n = InputLayer(feature, name='in')
-        
-        n = Conv2d(n, 32, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init1, name='d1/c1')
-        n = BatchNormLayer(n, is_train=is_train, gamma_init=g_init, name='d1/b1')
-        n = Conv2d(n, 16, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init2, name='d1/c2')
-        n = BatchNormLayer(n, act=tf.nn.relu, is_train=is_train, gamma_init=g_init, name='d1/b2')
-        n = Conv2d(n, 8, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init3, name='d1/c4')
-        n = BatchNormLayer(n, act=tf.nn.relu, is_train=is_train, gamma_init=g_init, name='d1/b4')
-        
-        n = FlattenLayer(n, name='d2/flatten')
-        n = DenseLayer(n, n_units=1, act=tf.nn.relu, W_init = w_init1, name='d2/dense')
-
-    return tf.reduce_mean(n.outputs)
-    
 def Binary_Net(input_defocus, is_train=False, reuse=False, scope = 'Binary_Net'):
     w_init1 = tf.random_normal_initializer(stddev=0.02)
     w_init2 = tf.random_normal_initializer(stddev=0.01)
