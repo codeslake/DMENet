@@ -115,7 +115,7 @@ def train():
         with tf.variable_scope('generator'):
             loss_synthetic_g = tl.cost.sigmoid_cross_entropy(d_logits_synthetic, tf.ones_like(d_logits_synthetic), name = 'synthetic')
             #loss_real_g = tl.cost.sigmoid_cross_entropy(d_logits_real, tf.zeros_like(d_logits_real), name = 'real')
-            loss_gan = loss_synthetic_g * 2e-3
+            loss_gan = loss_synthetic_g * 1e-3
 
         with tf.variable_scope('defocus'):
             # loss_defocus = tl.cost.mean_squared_error(output_synthetic_defocus, labels_synthetic_defocus, is_mean = True, name = 'synthetic') * 10.
