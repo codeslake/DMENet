@@ -92,7 +92,7 @@ def UNet_up(d0_in, d1_in, d2_in, d3_in, d4_in, is_train=False, reuse=False, scop
         n = Conv2d(n, 64, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init3, name='u0/c2')
         n = BatchNormLayer(n, act=lrelu, is_train=is_train, gamma_init=g_init, name='u0/b2')
 
-        n = Conv2d(n, 1, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init3, name='uf/c1')
+        n = Conv2d(n, 1, (1, 1), (1, 1), act=None, padding='SAME', W_init=w_init3, name='uf/c1')
 
         return n.outputs, tf.nn.sigmoid(n.outputs)
 

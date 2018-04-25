@@ -115,7 +115,7 @@ def train():
         with tf.variable_scope('generator'):
             loss_synthetic_g = tl.cost.sigmoid_cross_entropy(d_logits_synthetic, tf.ones_like(d_logits_synthetic), name = 'synthetic')
             #loss_real_g = tl.cost.sigmoid_cross_entropy(d_logits_real, tf.zeros_like(d_logits_real), name = 'real')
-            loss_gan = loss_synthetic_g * 5e-3
+            loss_gan = loss_synthetic_g * 2e-3
 
         with tf.variable_scope('defocus'):
             # loss_defocus = tl.cost.mean_squared_error(output_synthetic_defocus, labels_synthetic_defocus, is_mean = True, name = 'synthetic') * 10.
@@ -152,11 +152,11 @@ def train():
 
     ## DEFINE SUMMARY
     # writer
-    writer_scalar = tf.summary.FileWriter(log_dir_scalar, sess.graph, filename_suffix = '.loss_log')
-    writer_image = tf.summary.FileWriter(log_dir_image, sess.graph, filename_suffix = '.image_log')
+    writer_scalar = tf.summary.FileWriter(log_dir_scalar, sess.graph, flush_secs=30, filename_suffix = '.loss_log')
+    writer_image = tf.summary.FileWriter(log_dir_image, sess.graph, flush_secs=30, filename_suffix = '.image_log')
     if tl.global_flag['is_pretrain']:
-        writer_scalar_init = tf.summary.FileWriter(log_dir_scalar_init, sess.graph, filename_suffix = '.loss_log_init')
-        writer_image_init = tf.summary.FileWriter(log_dir_image_init, sess.graph, filename_suffix = '.image_log_init')
+        writer_scalar_init = tf.summary.FileWriter(log_dir_scalar_init, sess.graph, flush_secs=30, filename_suffix = '.loss_log_init')
+        writer_image_init = tf.summary.FileWriter(log_dir_image_init, sess.graph, flush_secs=30, filename_suffix = '.image_log_init')
  
     # for pretrain
     loss_sum_list_init = []
