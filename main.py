@@ -92,62 +92,69 @@ def train():
                 feats_synthetic = UNet_down(patches_synthetic, is_train = True, reuse = False, scope = scope)
                 feats_real = UNet_down(patches_real, is_train = True, reuse = True, scope = scope)
 
-    with tf.variable_scope('discriminator') as scope:
-        d_logits_synthetic = SRGAN_d(feats_synthetic, is_train = True, reuse = False, scope = scope)
-        d_logits_real = SRGAN_d(feats_real, is_train = True, reuse = True, scope = scope)
+    # with tf.variable_scope('discriminator') as scope:
+    #     d_logits_synthetic = SRGAN_d(feats_synthetic, is_train = True, reuse = False, scope = scope)
+    #     d_logits_real = SRGAN_d(feats_real, is_train = True, reuse = True, scope = scope)
 
     with tf.variable_scope('defocus_net') as scope:
         with tf.variable_scope('unet') as scope:
             with tf.variable_scope('unet_up_defocus_map') as scope:
                 output_synthetic_defocus_logits, output_synthetic_defocus, _ = UNet_up(feats_synthetic, is_train = True, reuse = False, scope = scope)
                 output_real_defocus_logits, output_real_defocus, _ = UNet_up(feats_real, is_train = True, reuse = True, scope = scope)
-        with tf.variable_scope('recon_net') as scope:
-            _, _, output_synthetic_recon = UNet_up(feats_synthetic, is_train = True, reuse = False, scope = scope)
-            _, _, output_real_recon = UNet_up(feats_real, is_train = True, reuse = True, scope = scope)
+        # with tf.variable_scope('recon_net') as scope:
+        #     _, _, output_synthetic_recon = UNet_up(feats_synthetic, is_train = True, reuse = False, scope = scope)
+        #     _, _, output_real_recon = UNet_up(feats_real, is_train = True, reuse = True, scope = scope)
 
     
     ## DEFINE LOSS
     with tf.variable_scope('loss'):
-        with tf.variable_scope('discriminator'):
-            loss_synthetic_d = tl.cost.sigmoid_cross_entropy(d_logits_synthetic, tf.zeros_like(d_logits_synthetic), name = 'synthetic')
-            loss_real_d = tl.cost.sigmoid_cross_entropy(d_logits_real, tf.ones_like(d_logits_real), name = 'real')
-            loss_disc = tf.identity((loss_synthetic_d + loss_real_d), name = 'discriminator')
+        # with tf.variable_scope('discriminator'):
+        #     loss_synthetic_d = tl.cost.sigmoid_cross_entropy(d_logits_synthetic, tf.zeros_like(d_logits_synthetic), name = 'synthetic')
+        #     loss_real_d = tl.cost.sigmoid_cross_entropy(d_logits_real, tf.ones_like(d_logits_real), name = 'real')
+        #     loss_disc = tf.identity((loss_synthetic_d + loss_real_d), name = 'discriminator')
 
-        with tf.variable_scope('generator'):
-            loss_synthetic_g = tl.cost.sigmoid_cross_entropy(d_logits_synthetic, tf.ones_like(d_logits_synthetic), name = 'synthetic')
-            #loss_real_g = tl.cost.sigmoid_cross_entropy(d_logits_real, tf.zeros_like(d_logits_real), name = 'real')
-            loss_gan = loss_synthetic_g * 1e-3
+        # with tf.variable_scope('generator'):
+        #     loss_synthetic_g = tl.cost.sigmoid_cross_entropy(d_logits_synthetic, tf.ones_like(d_logits_synthetic), name = 'synthetic')
+        #     #loss_real_g = tl.cost.sigmoid_cross_entropy(d_logits_real, tf.zeros_like(d_logits_real), name = 'real')
+        #     loss_gan = loss_synthetic_g * 1e-3
 
         with tf.variable_scope('defocus'):
             # loss_defocus = tl.cost.mean_squared_error(output_synthetic_defocus, labels_synthetic_defocus, is_mean = True, name = 'synthetic') * 10.
             loss_defocus = tl.cost.absolute_difference_error(output_synthetic_defocus, labels_synthetic_defocus, is_mean = True)
 
-        with tf.variable_scope('recon'):
-            loss_real_recon = tl.cost.mean_squared_error(output_real_recon, patches_real, is_mean = True, name = 'real')
-            loss_recon = tf.identity(loss_real_recon)
+        # with tf.variable_scope('recon'):
+        #     loss_real_recon = tl.cost.mean_squared_error(output_real_recon, patches_real, is_mean = True, name = 'real')
+        #     loss_recon = tf.identity(loss_real_recon)
 
         with tf.variable_scope('total_variation'):
             tv_loss_synthetic = lambda_tv * tf.reduce_sum(tf.image.total_variation(output_synthetic_defocus))
             tv_loss_real = lambda_tv * tf.reduce_sum(tf.image.total_variation(output_real_defocus))
             tv_loss = (tv_loss_real + tv_loss_synthetic) / 2.
 
-        loss_d = tf.identity(loss_disc)
-        loss_g = tf.identity(loss_defocus + loss_gan + loss_recon + tv_loss, name = 'total')
+        # loss_d = tf.identity(loss_disc)
+        # loss_g = tf.identity(loss_defocus + loss_gan + loss_recon + tv_loss, name = 'total')
+        # loss_init = tf.identity(loss_defocus + tv_loss_synthetic, name = 'loss_init')
+        loss = tf.identity(loss_defocus + tv_loss, name = 'total')
         loss_init = tf.identity(loss_defocus + tv_loss_synthetic, name = 'loss_init')
 
     ## DEFINE OPTIMIZER
     # variables to save / train
-    d_vars = tl.layers.get_variables_with_name('discriminator', True, False)
-    g_vars = tl.layers.get_variables_with_name('defocus_net', True, False)
-    init_vars = tl.layers.get_variables_with_name('unet', True, False)
-    save_vars = tl.layers.get_variables_with_name('unet', False, False)
+    # d_vars = tl.layers.get_variables_with_name('discriminator', True, False)
+    # g_vars = tl.layers.get_variables_with_name('defocus_net', True, False)
+    # init_vars = tl.layers.get_variables_with_name('unet', True, False)
+    # save_vars = tl.layers.get_variables_with_name('unet', False, False)
+
+    train_vars = tl.layers.get_variables_with_name('defocus_net', True, False)
+    init_vars = tl.layers.get_variables_with_name('defocus_net', True, False)
+    save_vars = tl.layers.get_variables_with_name('defocus_net', False, False)
 
     # define optimizer
     with tf.variable_scope('Optimizer'):
         learning_rate = tf.Variable(lr_init, trainable = False)
         learning_rate_init = tf.Variable(lr_init_init, trainable = False)
-        optim_d = tf.train.AdamOptimizer(learning_rate, beta1 = beta1).minimize(loss_d, var_list = d_vars)
-        optim_g = tf.train.AdamOptimizer(learning_rate, beta1 = beta1).minimize(loss_g, var_list = g_vars)
+        # optim_d = tf.train.AdamOptimizer(learning_rate, beta1 = beta1).minimize(loss_d, var_list = d_vars)
+        # optim_g = tf.train.AdamOptimizer(learning_rate, beta1 = beta1).minimize(loss_g, var_list = g_vars)
+        optim = tf.train.AdamOptimizer(learning_rate, beta1 = beta1).minimize(loss, var_list = train_vars)
         optim_init = tf.train.AdamOptimizer(learning_rate_init, beta1 = beta1).minimize(loss_init, var_list = init_vars)
 
     ## DEFINE SUMMARY
@@ -168,35 +175,41 @@ def train():
 
     image_sum_list_init = []
     image_sum_list_init.append(tf.summary.image('1_synthetic_input_init', patches_synthetic))
-    image_sum_list_init.append(tf.summary.image('2_synthetic_recon_init', output_synthetic_recon))
+    #image_sum_list_init.append(tf.summary.image('2_synthetic_recon_init', output_synthetic_recon))
     image_sum_list_init.append(tf.summary.image('3_synthetic_defocus_out_init', fix_image(output_synthetic_defocus, 1.)))
     image_sum_list_init.append(tf.summary.image('4_synthetic_defocus_out_norm_init', norm_image(output_synthetic_defocus)))
     image_sum_list_init.append(tf.summary.image('5_synthetic_defocus_gt_init', fix_image(labels_synthetic_defocus, 1.)))
     image_sum_init = tf.summary.merge(image_sum_list_init)
 
     # for train
-    loss_sum_g_list = []
+    # loss_sum_g_list = []
+    # with tf.variable_scope('loss_generator'):
+    #     loss_sum_g_list.append(tf.summary.scalar('1_total_loss', loss_g))
+    #     loss_sum_g_list.append(tf.summary.scalar('2_gan_loss', loss_gan))
+    #     loss_sum_g_list.append(tf.summary.scalar('3_defocus_loss', loss_defocus))
+    #     loss_sum_g_list.append(tf.summary.scalar('4_loss_recon', loss_recon))
+    #     loss_sum_g_list.append(tf.summary.scalar('5_tv_loss', tv_loss))
+    # loss_sum_g = tf.summary.merge(loss_sum_g_list)
+    loss_sum_list = []
     with tf.variable_scope('loss_generator'):
-        loss_sum_g_list.append(tf.summary.scalar('1_total_loss', loss_g))
-        loss_sum_g_list.append(tf.summary.scalar('2_gan_loss', loss_gan))
-        loss_sum_g_list.append(tf.summary.scalar('3_defocus_loss', loss_defocus))
-        loss_sum_g_list.append(tf.summary.scalar('4_loss_recon', loss_recon))
-        loss_sum_g_list.append(tf.summary.scalar('5_tv_loss', tv_loss))
-    loss_sum_g = tf.summary.merge(loss_sum_g_list)
+        loss_sum_list.append(tf.summary.scalar('1_total_loss', loss))
+        loss_sum_list.append(tf.summary.scalar('2_defocus_loss', loss_defocus))
+        loss_sum_list.append(tf.summary.scalar('3_tv_loss', tv_loss))
+    loss_sum = tf.summary.merge(loss_sum_list)
 
-    loss_sum_d_list = []
-    with tf.variable_scope('loss_discriminator'):
-        loss_sum_d_list.append(tf.summary.scalar('1_loss_d', loss_disc))
-    loss_sum_d = tf.summary.merge(loss_sum_d_list)
+    # loss_sum_d_list = []
+    # with tf.variable_scope('loss_discriminator'):
+    #     loss_sum_d_list.append(tf.summary.scalar('1_loss_d', loss_disc))
+    # loss_sum_d = tf.summary.merge(loss_sum_d_list)
 
     image_sum_list = []
     image_sum_list.append(tf.summary.image('1_synthetic_input', patches_synthetic))
-    image_sum_list.append(tf.summary.image('2_synthetic_recon', output_synthetic_recon))
+    #image_sum_list.append(tf.summary.image('2_synthetic_recon', output_synthetic_recon))
     image_sum_list.append(tf.summary.image('3_synthetic_defocus_out', fix_image(output_synthetic_defocus, 1.)))
     image_sum_list.append(tf.summary.image('4_synthetic_defocus_out_norm', norm_image(output_synthetic_defocus)))
     image_sum_list.append(tf.summary.image('5_synthetic_defocus_gt', fix_image(labels_synthetic_defocus, 1.)))
     image_sum_list.append(tf.summary.image('6_real_input', patches_real))
-    image_sum_list.append(tf.summary.image('7_real_recon', output_real_recon))
+    #image_sum_list.append(tf.summary.image('7_real_recon', output_real_recon))
     image_sum_list.append(tf.summary.image('8_real_defocus_out', fix_image(output_real_defocus, 1.)))
     image_sum_list.append(tf.summary.image('9_real_defocus_out_norm', norm_image(output_real_defocus)))
     image_sum = tf.summary.merge(image_sum_list)
@@ -343,27 +356,33 @@ def train():
 
             ## RUN NETWORK
             # discriminator
-            err_d, err_r, summary_loss_d, _ = \
-            sess.run([loss_d, loss_recon, loss_sum_d, optim_d], {patches_synthetic: synthetic_images_blur, patches_real: real_images_blur})
+            # err_d, err_r, summary_loss_d, _ = \
+            # sess.run([loss_d, loss_recon, loss_sum_d, optim_d], {patches_synthetic: synthetic_images_blur, patches_real: real_images_blur})
 
-            # generator
-            # err_g, err_def, err_bin, synthetic_defocus_out, synthetic_binary_out, real_defocus_out, real_binary_out, lr, summary_loss_g, summary_image, _ = \
-            # sess.run([loss_g, loss_defocus, loss_binary, output_synthetic_defocus, output_synthetic_binary, output_real_defocus, output_real_binary, learning_rate, loss_sum_g, image_sum, optim_g], 
+            # # generator
+            # # err_g, err_def, err_bin, synthetic_defocus_out, synthetic_binary_out, real_defocus_out, real_binary_out, lr, summary_loss_g, summary_image, _ = \
+            # # sess.run([loss_g, loss_defocus, loss_binary, output_synthetic_defocus, output_synthetic_binary, output_real_defocus, output_real_binary, learning_rate, loss_sum_g, image_sum, optim_g], 
+            # #     {patches_synthetic: synthetic_images_blur,
+            # #     labels_synthetic_defocus: synthetic_defocus_maps,
+            # #     labels_synthetic_binary: synthetic_binary_maps,
+            # #     patches_real: real_images_blur,
+            # #     labels_real_binary: real_binary_maps
+            # #     })
+            # err_g, err_def, synthetic_defocus_out, real_defocus_out, lr, summary_loss_g, summary_image, _ = \
+            # sess.run([loss_g, loss_defocus, output_synthetic_defocus, output_real_defocus, learning_rate, loss_sum_g, image_sum, optim_g], 
             #     {patches_synthetic: synthetic_images_blur,
             #     labels_synthetic_defocus: synthetic_defocus_maps,
-            #     labels_synthetic_binary: synthetic_binary_maps,
             #     patches_real: real_images_blur,
-            #     labels_real_binary: real_binary_maps
             #     })
-            err_g, err_def, synthetic_defocus_out, real_defocus_out, lr, summary_loss_g, summary_image, _ = \
-            sess.run([loss_g, loss_defocus, output_synthetic_defocus, output_real_defocus, learning_rate, loss_sum_g, image_sum, optim_g], 
+            err, err_def, synthetic_defocus_out, real_defocus_out, lr, summary_loss_g, summary_image, _ = \
+            sess.run([loss, loss_defocus, output_synthetic_defocus, output_real_defocus, learning_rate, loss_sum, image_sum, optim], 
                 {patches_synthetic: synthetic_images_blur,
                 labels_synthetic_defocus: synthetic_defocus_maps,
                 patches_real: real_images_blur,
                 })
 
-            print('[%s] Ep [%2d/%2d] %4d/%4d time: %4.2fs, err_g: %.3f, err_d: %.3f, err_def: %.3f, err_r: %.3f, lr: %.8f' % \
-                (tl.global_flag['mode'], epoch, n_epoch, n_iter, len(train_synthetic_img_list)/batch_size, time.time() - step_time, err_g, err_d, err_def, err_r, lr))
+            print('[%s] Ep [%2d/%2d] %4d/%4d time: %4.2fs, err: %.3f, err_def: %.3f, lr: %.8f' % \
+                (tl.global_flag['mode'], epoch, n_epoch, n_iter, len(train_synthetic_img_list)/batch_size, time.time() - step_time, err, err_def, lr))
             
             ## SAVE LOGS
             # save loss & image log
@@ -387,7 +406,7 @@ def train():
                 #save_images(real_binary_out, [ni, ni], sample_dir + '/{}_{}_8_real_binary_out.png'.format(epoch, global_step))
                 #save_images(real_binary_maps, [ni, ni], sample_dir + '/{}_{}_9_real_binary_gt.png'.format(epoch, global_step))
 
-            total_loss += err_g
+            total_loss += err
             n_iter += 1
             global_step += 1
             
