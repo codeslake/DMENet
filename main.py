@@ -92,18 +92,22 @@ def train():
                 feats_synthetic = UNet_down(patches_synthetic, is_train = True, reuse = False, scope = scope)
                 feats_real = UNet_down(patches_real, is_train = True, reuse = True, scope = scope)
 
-        with tf.variable_scope('discriminator') as scope:
-            d_logits_synthetic = SRGAN_d(feats_synthetic, is_train = True, reuse = False, scope = scope)
-            d_logits_real = SRGAN_d(feats_real, is_train = True, reuse = True, scope = scope)
+    with tf.variable_scope('discriminator') as scope:
+        d_logits_synthetic = SRGAN_d(feats_synthetic, is_train = True, reuse = False, scope = scope)
+        d_logits_real = SRGAN_d(feats_real, is_train = True, reuse = True, scope = scope)
 
+    with tf.variable_scope('defocus_net') as scope:
         with tf.variable_scope('unet') as scope:
-            with tf.variable_scope('binary_net') as scope:
-                with tf.variable_scope('unet_up_defocus_map') as scope:
-                    output_synthetic_defocus_logits, output_synthetic_defocus = UNet_up(feats_synthetic, is_train = True, reuse = False, scope = scope)
-                    output_real_defocus_logits, output_real_defocus = UNet_up(feats_real, is_train = True, reuse = True, scope = scope)
+            with tf.variable_scope('unet_up_defocus_map') as scope:
+                output_synthetic_defocus_logits, output_synthetic_defocus, _ = UNet_up(feats_synthetic, is_train = True, reuse = False, scope = scope)
+                output_real_defocus_logits, output_real_defocus, _ = UNet_up(feats_real, is_train = True, reuse = True, scope = scope)
 
-                output_synthetic_binary_logits, output_synthetic_binary = Binary_Net(output_synthetic_defocus, is_train = True, reuse = False, scope = scope)
-                output_real_binary_logits, output_real_binary = Binary_Net(output_real_defocus, is_train = True, reuse = True, scope = scope)
+        # with tf.variable_scope('binary_net') as scope:
+        #     output_synthetic_binary_logits, output_synthetic_binary = Binary_Net(output_synthetic_defocus, is_train = True, reuse = False, scope = scope)
+        #     output_real_binary_logits, output_real_binary = Binary_Net(output_real_defocus, is_train = True, reuse = True, scope = scope)
+    with tf.variable_scope('recon_net') as scope:
+        _, _, output_synthetic_recon = UNet_up(feats_synthetic, is_train = True, reuse = False, scope = scope)
+        _, _, output_real_recon = UNet_up(feats_real, is_train = True, reuse = True, scope = scope)
     
     ## DEFINE LOSS
     with tf.variable_scope('loss'):
