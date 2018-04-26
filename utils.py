@@ -28,10 +28,10 @@ def get_images(file_name, path, mode):
         image = scipy.misc.imread(path + file_name, mode='RGB')/255.
     elif mode is 'GRAY':
         image = scipy.misc.imread(path + file_name, mode='P')/255.
-        image = np.expand_dims(image, axis = 2)
+        image = np.expand_dims(1 - image, axis = 2)
     elif mode is 'DEPTH':
         image = (np.float32(cv2.imread(path + file_name, cv2.IMREAD_UNCHANGED))/10.)[:, :, 1]
-        image = image / 29.
+        image = 1 - (image / 29.)
         image = np.expand_dims(image, axis = 2)
 
     return image
@@ -167,6 +167,28 @@ def refine_image(img):
     h, w = img.shape[:2]
     
     return img[0 : h - h % 16, 0 : w - w % 16]
+
+def random_crop(images, resize_shape):
+    images_list = None
+    h, w = resize_shape[:2]
+    
+    for i in np.arange(len(images)):
+        image = np.copy(images[i])
+        shape = np.array(image.shape[:2])
+        
+        if shape.min() <= h:
+            ratio = resize_shape[shape.argmin()]/float(shape.min())
+            resize_w = int(math.floor(shape[1] * ratio)) + 1
+            resize_h = int(math.floor(shape[0] * ratio)) + 1
+            
+            image = cv2.resize(image, (resize_w, resize_h))
+
+        cropped_image = tl.prepro.crop(image, wrg=w, hrg=h, is_random=True)
+        image = np.expand_dims(cropped_image, axis=0)
+        
+        images_list = np.copy(image) if i == 0 else np.concatenate((images_list, image), axis = 0)
+
+    return images_list
 
 def crop_pair_with_different_shape_images_2(images, labels, resize_shape):
     images_list = None
