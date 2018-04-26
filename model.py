@@ -115,7 +115,7 @@ def UNet_up(feats, is_train=False, reuse=False, scope = 'unet_up'):
         n_1c = Conv2d(n, 1, (1, 1), (1, 1), act=None, padding='SAME', W_init=w_init3, name='uf/c1')
         n_3c = Conv2d(n, 3, (1, 1), (1, 1), act=None, padding='SAME', W_init=w_init3, name='uf/c1')
 
-        return n.outputs, tf.nn.sigmoid(n_1c.outputs), tf.nn.sigmoid(n_3c.outputs)
+        return n.outputs, tf.nn.sigmoid(n_1c.outputs)
 
 def SRGAN_d(feats, is_train=True, reuse=False, scope = 'Discriminator'):
     w_init = tf.random_normal_initializer(stddev=0.02)
