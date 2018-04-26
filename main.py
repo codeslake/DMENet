@@ -374,7 +374,7 @@ def train():
             #     labels_synthetic_defocus: synthetic_defocus_maps,
             #     patches_real: real_images_blur,
             #     })
-            err, err_def, synthetic_defocus_out, real_defocus_out, lr, summary_loss_g, summary_image, _ = \
+            err, err_def, synthetic_defocus_out, real_defocus_out, lr, summary_loss, summary_image, _ = \
             sess.run([loss, loss_defocus, output_synthetic_defocus, output_real_defocus, learning_rate, loss_sum, image_sum, optim], 
                 {patches_synthetic: synthetic_images_blur,
                 labels_synthetic_defocus: synthetic_defocus_maps,
@@ -387,8 +387,7 @@ def train():
             ## SAVE LOGS
             # save loss & image log
             if global_step % config.TRAIN.write_log_every == 0:
-                writer_scalar.add_summary(summary_loss_g, global_step)
-                writer_scalar.add_summary(summary_loss_d, global_step)
+                writer_scalar.add_summary(summary_loss, global_step)
                 writer_image.add_summary(summary_image, global_step)
             # save checkpoint
             if global_step % config.TRAIN.write_ckpt_every == 0:
