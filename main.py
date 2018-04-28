@@ -85,7 +85,6 @@ def train():
         #labels_real_binary = tf.placeholder('float32', [None, h, w, 1], name = 'labels_real_binary')
 
     # model
-
     with tf.variable_scope('defocus_net') as scope:
         with tf.variable_scope('unet') as scope:
             with tf.variable_scope('unet_down') as scope:
