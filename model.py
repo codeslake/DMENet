@@ -84,6 +84,7 @@ def UNet_up(feats, is_train=False, reuse=False, scope = 'unet_up'):
         n = BatchNormLayer(n, act=lrelu, is_train=is_train, gamma_init=g_init, name='u3/b2')
         n = Conv2d(n, 512, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init3, name='u3/c3')
         n = BatchNormLayer(n, act=lrelu, is_train=is_train, gamma_init=g_init, name='u3/b3')
+        u3 = n
 
         n = UpSampling2dLayer(n, (2, 2), is_scale = True, method = 1, align_corners=False, name='u2/u')
         n = ConcatLayer([n, d2], concat_dim = 3, name='u2/concat')
@@ -93,6 +94,7 @@ def UNet_up(feats, is_train=False, reuse=False, scope = 'unet_up'):
         n = BatchNormLayer(n, act=lrelu, is_train=is_train, gamma_init=g_init, name='u2/b2')
         n = Conv2d(n, 256, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init3, name='u2/c3')
         n = BatchNormLayer(n, act=lrelu, is_train=is_train, gamma_init=g_init, name='u2/b3')
+        u2 = n
 
         n = UpSampling2dLayer(n, (2, 2), is_scale = True, method = 1, align_corners=False, name='u1/u')
         n = ConcatLayer([n, d1], concat_dim = 3, name='u1/concat')
@@ -102,6 +104,7 @@ def UNet_up(feats, is_train=False, reuse=False, scope = 'unet_up'):
         n = BatchNormLayer(n, act=lrelu, is_train=is_train, gamma_init=g_init, name='u1/b2')
         n = Conv2d(n, 128, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init3, name='u1/c3')
         n = BatchNormLayer(n, act=lrelu, is_train=is_train, gamma_init=g_init, name='u1/b3')
+        u1 = n
 
         n = UpSampling2dLayer(n, (2, 2), is_scale = True, method = 1, align_corners=False, name='u0/u')
         n = ConcatLayer([n, d0], concat_dim = 3, name='u0/concat')
@@ -111,11 +114,12 @@ def UNet_up(feats, is_train=False, reuse=False, scope = 'unet_up'):
         n = BatchNormLayer(n, act=lrelu, is_train=is_train, gamma_init=g_init, name='u0/b2')
         n = Conv2d(n, 64, (3, 3), (1, 1), act=None, padding='SAME', W_init=w_init3, name='u0/c3')
         n = BatchNormLayer(n, act=lrelu, is_train=is_train, gamma_init=g_init, name='u0/b3')
+        u0 = n
 
         n_1c = Conv2d(n, 1, (1, 1), (1, 1), act=None, padding='SAME', W_init=w_init3, name='uf/1c')
         n_3c = Conv2d(n, 3, (1, 1), (1, 1), act=None, padding='SAME', W_init=w_init3, name='uf/3c')
 
-        return n.outputs, tf.nn.sigmoid(n_1c.outputs), tf.nn.sigmoid(n_3c.outputs)
+        return n.outputs, tf.nn.sigmoid(n_1c.outputs), [u0.outputs, u1.outputs, u2.outputs, u3.outputs, d4.outputs]
 
 def SRGAN_d(feats, is_train=True, reuse=False, scope = 'Discriminator'):
     w_init = tf.random_normal_initializer(stddev=0.02)
