@@ -86,7 +86,7 @@ def train():
 
     # model
     with tf.variable_scope('defocus_net') as scope:
-        with tf.variable_scope('save_net') as scope:
+        with tf.variable_scope('unet') as scope:
             with tf.variable_scope('unet_down') as scope:
                 feats_synthetic_down = UNet_down(patches_synthetic, is_train = True, reuse = False, scope = scope)
                 feats_real_down = UNet_down(patches_real, is_train = True, reuse = True, scope = scope)
@@ -96,7 +96,7 @@ def train():
         d_logits_real = SRGAN_d(feats_real_down, is_train = True, reuse = True, scope = scope)
 
     with tf.variable_scope('defocus_net') as scope:
-        with tf.variable_scope('save_net') as scope:
+        with tf.variable_scope('unet') as scope:
             with tf.variable_scope('unet_up_defocus_map') as scope:
                 output_synthetic_defocus_logits, output_synthetic_defocus, feats_synthetic_up  = UNet_up(feats_synthetic_down, is_train = True, reuse = False, scope = scope)
                 output_real_defocus_logits, output_real_defocus, feats_real_up = UNet_up(feats_real_down, is_train = True, reuse = True, scope = scope)
@@ -123,9 +123,11 @@ def train():
             # loss_defocus = tl.cost.absolute_difference_error(output_synthetic_defocus, labels_synthetic_defocus, is_mean = True)
 
         with tf.variable_scope('binary'):
-             loss_synthetic_binary = tl.cost.mean_squared_error(output_synthetic_binary, labels_synthetic_binary, is_mean = True, name = 'synthetic')
+             # loss_synthetic_binary = tl.cost.mean_squared_error(output_synthetic_binary, labels_synthetic_binary, is_mean = True, name = 'synthetic')
+             # loss_real_binary = tl.cost.mean_squared_error(output_real_binary, labels_real_binary, is_mean = True, name = 'real')
+             # loss_binary = tf.identity((loss_synthetic_binary + loss_real_binary)/2.)
              loss_real_binary = tl.cost.mean_squared_error(output_real_binary, labels_real_binary, is_mean = True, name = 'real')
-             loss_binary = tf.identity((loss_synthetic_binary + loss_real_binary)/2.)
+             loss_binary = tf.identity(loss_real_binary)
 
         with tf.variable_scope('total_variation'):
             tv_loss_synthetic = lambda_tv * tf.reduce_sum(tf.image.total_variation(output_synthetic_defocus))
@@ -135,11 +137,12 @@ def train():
         loss_d = tf.identity(loss_disc)
         loss_g = tf.identity(loss_defocus + loss_binary + loss_gan + tv_loss, name = 'total')
         loss_init = tf.identity(loss_defocus + tv_loss_synthetic, name = 'loss_init')
+
     ## DEFINE OPTIMIZER
     # variables to save / train
     d_vars = tl.layers.get_variables_with_name('discriminator', True, False)
     g_vars = tl.layers.get_variables_with_name('defocus_net', True, False)
-    save_vars = tl.layers.get_variables_with_name('save_net', False, False)
+    save_vars = tl.layers.get_variables_with_name('unet', False, False)
 
     # define optimizer
     with tf.variable_scope('Optimizer'):
@@ -203,9 +206,6 @@ def train():
 
     ## INITIALIZE SESSION
     tl.layers.initialize_global_variables(sess)
-    tl.files.load_ckpt(sess = sess, mode_name = '{}.ckpt'.format('pure_unet'), save_dir = '/data2/junyonglee/sharpness_assessment/pure_unet/checkpoint', var_list = save_vars)
-    tl.files.save_npz_dict(save_vars, name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
-    return
     if tl.files.load_and_assign_npz_dict(name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess) is False and tl.global_flag['is_pretrain']:
         print '*****************************************'
         print '           PRE-TRAINING START'
