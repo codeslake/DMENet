@@ -135,7 +135,6 @@ def train():
         loss_d = tf.identity(loss_disc)
         loss_g = tf.identity(loss_defocus + loss_binary + loss_gan + tv_loss, name = 'total')
         loss_init = tf.identity(loss_defocus + tv_loss_synthetic, name = 'loss_init')
-
     ## DEFINE OPTIMIZER
     # variables to save / train
     d_vars = tl.layers.get_variables_with_name('discriminator', True, False)
