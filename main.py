@@ -72,17 +72,17 @@ def train():
     #train_synthetic_binary_map_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.synthetic_binary_map_path, regx = '.*', printable = False)))
     
     train_real_img_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.real_img_path, regx = '.*', printable = False)))
-    train_real_binary_map_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.real_binary_map_path, regx = '.*', printable = False)))
+    #train_real_binary_map_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.real_binary_map_path, regx = '.*', printable = False)))
 
     ## DEFINE MODEL
     # input
     with tf.variable_scope('input'):
         patches_synthetic = tf.placeholder('float32', [None, h, w, 3], name = 'input_synthetic')
         labels_synthetic_defocus = tf.placeholder('float32', [None, h, w, 1], name = 'labels_synthetic_defocus')
-        labels_synthetic_binary = tf.placeholder('float32', [None, h, w, 1], name = 'labels_synthetic_bianry')
+        #labels_synthetic_binary = tf.placeholder('float32', [None, h, w, 1], name = 'labels_synthetic_bianry')
 
         patches_real = tf.placeholder('float32', [None, h, w, 3], name = 'input_real')
-        labels_real_binary = tf.placeholder('float32', [None, h, w, 1], name = 'labels_real_binary')
+        #labels_real_binary = tf.placeholder('float32', [None, h, w, 1], name = 'labels_real_binary')
 
     # model
     with tf.variable_scope('defocus_net') as scope:
@@ -103,10 +103,10 @@ def train():
                     output_synthetic_defocus_logits, output_synthetic_defocus, feats_synthetic_up,  = UNet_up(feats_synthetic_down, is_train = True, reuse = False, scope = scope)
                     output_real_defocus_logits, output_real_defocus, feats_real_up = UNet_up(feats_real_down, is_train = True, reuse = True, scope = scope)
 
-    with tf.variable_scope('isolate') as scope:
-        with tf.variable_scope('binary_net') as scope:
-                _, output_synthetic_binary, _ = UNet_up(feats_synthetic_up, is_train = True, reuse = False, scope = scope)
-                _, output_real_binary, _ = UNet_up(feats_real_up, is_train = True, reuse = True, scope = scope)
+    # with tf.variable_scope('isolate') as scope:
+    #     with tf.variable_scope('binary_net') as scope:
+    #             _, output_synthetic_binary, _ = UNet_up(feats_synthetic_up, is_train = True, reuse = False, scope = scope)
+    #             _, output_real_binary, _ = UNet_up(feats_real_up, is_train = True, reuse = True, scope = scope)
 
     
     ## DEFINE LOSS
@@ -126,24 +126,24 @@ def train():
             loss_defocus = tl.cost.mean_squared_error(output_synthetic_defocus, labels_synthetic_defocus, is_mean = True, name = 'synthetic')
             # loss_defocus = tl.cost.absolute_difference_error(output_synthetic_defocus, labels_synthetic_defocus, is_mean = True)
 
-        with tf.variable_scope('binary'):
-             loss_synthetic_binary = tl.cost.mean_squared_error(output_synthetic_binary, labels_synthetic_binary, is_mean = True, name = 'synthetic')
-             loss_real_binary = tl.cost.mean_squared_error(output_real_binary, labels_real_binary, is_mean = True, name = 'real')
-             loss_binary = tf.identity((loss_synthetic_binary + loss_real_binary)/2.)
+        # with tf.variable_scope('binary'):
+        #      loss_synthetic_binary = tl.cost.mean_squared_error(output_synthetic_binary, labels_synthetic_binary, is_mean = True, name = 'synthetic')
+        #      loss_real_binary = tl.cost.mean_squared_error(output_real_binary, labels_real_binary, is_mean = True, name = 'real')
+        #      loss_binary = tf.identity((loss_synthetic_binary + loss_real_binary)/2.)
 
         with tf.variable_scope('total_variation'):
             tv_loss_synthetic = lambda_tv * tf.reduce_sum(tf.image.total_variation(output_synthetic_defocus))
             tv_loss_real = lambda_tv * tf.reduce_sum(tf.image.total_variation(output_real_defocus))
             tv_loss = (tv_loss_real + tv_loss_synthetic) / 2.
 
-        loss_d = tf.identity(loss_disc + loss_binary)
+        loss_d = tf.identity(loss_disc)
         loss_g = tf.identity(loss_defocus + loss_gan + tv_loss, name = 'total')
         loss_init = tf.identity(loss_defocus + tv_loss_synthetic, name = 'loss_init')
 
 
     ## DEFINE OPTIMIZER
     # variables to save / train
-    d_vars = tl.layers.get_variables_with_name('isolate', True, False)
+    d_vars = tl.layers.get_variables_with_name('discriminator', True, False)
     g_vars = tl.layers.get_variables_with_name('defocus_net', True, False)
     save_vars = tl.layers.get_variables_with_name('unet', False, False)
 
@@ -193,7 +193,7 @@ def train():
     loss_sum_d_list = []
     with tf.variable_scope('loss_discriminator'):
         loss_sum_d_list.append(tf.summary.scalar('1_loss_d', loss_disc))
-        loss_sum_d_list.append(tf.summary.scalar('2_loss_binary', loss_binary))
+        #loss_sum_d_list.append(tf.summary.scalar('2_loss_binary', loss_binary))
     loss_sum_d = tf.summary.merge(loss_sum_d_list)
 
     image_sum_list = []
@@ -201,13 +201,13 @@ def train():
     image_sum_list.append(tf.summary.image('3_synthetic_defocus_out', fix_image(output_synthetic_defocus, 1.)))
     image_sum_list.append(tf.summary.image('4_synthetic_defocus_out_norm', norm_image(output_synthetic_defocus)))
     image_sum_list.append(tf.summary.image('5_synthetic_defocus_gt', fix_image(labels_synthetic_defocus, 1.)))
-    image_sum_list.append(tf.summary.image('6_synthetic_binary', fix_image(output_synthetic_binary, 1.)))
-    image_sum_list.append(tf.summary.image('7_synthetic_binary_gt', fix_image(labels_synthetic_binary, 1.)))
+    # image_sum_list.append(tf.summary.image('6_synthetic_binary', fix_image(output_synthetic_binary, 1.)))
+    # image_sum_list.append(tf.summary.image('7_synthetic_binary_gt', fix_image(labels_synthetic_binary, 1.)))
     image_sum_list.append(tf.summary.image('8_real_input', patches_real))
     image_sum_list.append(tf.summary.image('9_real_defocus_out', fix_image(output_real_defocus, 1.)))
     image_sum_list.append(tf.summary.image('10_real_defocus_out_norm', norm_image(output_real_defocus)))
-    image_sum_list.append(tf.summary.image('11_real_binary', fix_image(output_real_binary, 1.)))
-    image_sum_list.append(tf.summary.image('12_real_binary_gt', fix_image(labels_real_binary, 1.)))
+    # image_sum_list.append(tf.summary.image('11_real_binary', fix_image(output_real_binary, 1.)))
+    # image_sum_list.append(tf.summary.image('12_real_binary_gt', fix_image(labels_real_binary, 1.)))
     image_sum = tf.summary.merge(image_sum_list)
 
     ## INITIALIZE SESSION
@@ -222,19 +222,19 @@ def train():
             # reload image list
             train_synthetic_img_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.synthetic_img_path, regx = '.*', printable = False)))
             train_defocus_map_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.defocus_map_path, regx = '.*', printable = False)))
-            train_synthetic_binary_map_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.synthetic_binary_map_path, regx = '.*', printable = False)))
+            #train_synthetic_binary_map_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.synthetic_binary_map_path, regx = '.*', printable = False)))
 
             # shuffle datasets
             shuffle_index = np.arange(len(train_synthetic_img_list))
             np.random.shuffle(shuffle_index)
             train_synthetic_img_list = train_synthetic_img_list[shuffle_index]
             train_defocus_map_list = train_defocus_map_list[shuffle_index]
-            train_synthetic_binary_map_list = train_synthetic_binary_map_list[shuffle_index]
+            #train_synthetic_binary_map_list = train_synthetic_binary_map_list[shuffle_index]
 
             shuffle_index = np.arange(len(train_real_img_list))
             np.random.shuffle(shuffle_index)
             train_real_img_list = train_real_img_list[shuffle_index]
-            train_real_binary_map_list = train_real_binary_map_list[shuffle_index]
+            #train_real_binary_map_list = train_real_binary_map_list[shuffle_index]
 
             epoch_time = time.time()
             for idx in range(0, len(train_synthetic_img_list), batch_size_init):
@@ -244,10 +244,12 @@ def train():
                 b_idx = (idx + np.arange(batch_size_init)) % len(train_synthetic_img_list)
                 synthetic_images_blur = read_all_imgs(train_synthetic_img_list[b_idx], path = config.TRAIN.synthetic_img_path, mode = 'RGB')
                 synthetic_defocus_maps = read_all_imgs(train_defocus_map_list[b_idx], path = config.TRAIN.defocus_map_path, mode = 'DEPTH')
-                synthetic_binary_maps = read_all_imgs(train_synthetic_binary_map_list[b_idx], path = config.TRAIN.synthetic_binary_map_path, mode = 'GRAY')
+                #synthetic_binary_maps = read_all_imgs(train_synthetic_binary_map_list[b_idx], path = config.TRAIN.synthetic_binary_map_path, mode = 'GRAY')
 
-                synthetic_images_blur, synthetic_defocus_maps, synthetic_binary_maps = \
-                        crop_pair_with_different_shape_images_3(synthetic_images_blur, synthetic_defocus_maps, synthetic_binary_maps, [h, w])
+                # synthetic_images_blur, synthetic_defocus_maps, synthetic_binary_maps = \
+                #         crop_pair_with_different_shape_images_3(synthetic_images_blur, synthetic_defocus_maps, synthetic_binary_maps, [h, w])
+                synthetic_images_blur, synthetic_defocus_map = \
+                         crop_pair_with_different_shape_images_2(synthetic_images_blur, synthetic_defocus_maps, [h, w])
                
                 err_init, lr, _ = \
                         sess.run([loss_init, learning_rate_init, optim_init], {patches_synthetic: synthetic_images_blur, labels_synthetic_defocus: synthetic_defocus_maps})
@@ -287,7 +289,7 @@ def train():
         # reload synthetic datasets
         train_synthetic_img_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.synthetic_img_path, regx = '.*', printable = False)))
         train_defocus_map_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.defocus_map_path, regx = '.*', printable = False)))
-        train_synthetic_binary_map_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.synthetic_binary_map_path, regx = '.*', printable = False)))
+        #train_synthetic_binary_map_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.synthetic_binary_map_path, regx = '.*', printable = False)))
 
         # shuffle datasets
         shuffle_index = np.arange(len(train_synthetic_img_list))
@@ -295,12 +297,12 @@ def train():
 
         train_synthetic_img_list = train_synthetic_img_list[shuffle_index]
         train_defocus_map_list = train_defocus_map_list[shuffle_index]
-        train_synthetic_binary_map_list = train_synthetic_binary_map_list[shuffle_index]
+        #train_synthetic_binary_map_list = train_synthetic_binary_map_list[shuffle_index]
         
         shuffle_index = np.arange(len(train_real_img_list))
         np.random.shuffle(shuffle_index)
         train_real_img_list = train_real_img_list[shuffle_index]
-        train_real_binary_map_list = train_real_binary_map_list[shuffle_index]
+        #train_real_binary_map_list = train_real_binary_map_list[shuffle_index]
 
         # update learning rate
         if epoch != 0 and (epoch % decay_every == 0):
@@ -318,15 +320,17 @@ def train():
             b_idx = (idx + np.arange(batch_size)) % len(train_synthetic_img_list)
             synthetic_images_blur = read_all_imgs(train_synthetic_img_list[b_idx], path = config.TRAIN.synthetic_img_path, mode = 'RGB')
             synthetic_defocus_maps = read_all_imgs(train_defocus_map_list[b_idx], path = config.TRAIN.defocus_map_path, mode = 'DEPTH')
-            synthetic_binary_maps = read_all_imgs(train_synthetic_binary_map_list[b_idx], path = config.TRAIN.synthetic_binary_map_path, mode = 'GRAY')
+            #synthetic_binary_maps = read_all_imgs(train_synthetic_binary_map_list[b_idx], path = config.TRAIN.synthetic_binary_map_path, mode = 'GRAY')
 
-            synthetic_images_blur, synthetic_defocus_maps, synthetic_binary_maps = crop_pair_with_different_shape_images_3(synthetic_images_blur, synthetic_defocus_maps, synthetic_binary_maps, [h, w])
+            #synthetic_images_blur, synthetic_defocus_maps, synthetic_binary_maps = crop_pair_with_different_shape_images_3(synthetic_images_blur, synthetic_defocus_maps, synthetic_binary_maps, [h, w])
+            synthetic_images_blur, synthetic_defocus_maps = crop_pair_with_different_shape_images_2(synthetic_images_blur, synthetic_defocus_maps, [h, w])
 
             # read real data #
             b_idx = (idx % len(train_real_img_list) + np.arange(batch_size)) % len(train_real_img_list)
             real_images_blur = read_all_imgs(train_real_img_list[b_idx], path = config.TRAIN.real_img_path, mode = 'RGB')
-            real_binary_maps = read_all_imgs(train_real_binary_map_list[b_idx], path = config.TRAIN.real_binary_map_path, mode = 'GRAY')
-            real_images_blur, real_binary_maps = crop_pair_with_different_shape_images_2(real_images_blur, real_binary_maps, [h, w])
+            # real_binary_maps = read_all_imgs(train_real_binary_map_list[b_idx], path = config.TRAIN.real_binary_map_path, mode = 'GRAY')
+            # real_images_blur, real_binary_maps = crop_pair_with_different_shape_images_2(real_images_blur, real_binary_maps, [h, w])
+            real_images_blur = crop_pair_with_different_shape_images_2(real_images_blur, real_binary_maps, [h, w])
 
             ## RUN NETWORK
             #discriminator
