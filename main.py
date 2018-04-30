@@ -72,7 +72,7 @@ def train():
     #train_synthetic_binary_map_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.synthetic_binary_map_path, regx = '.*', printable = False)))
     
     train_real_img_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.real_img_path, regx = '.*', printable = False)))
-    #train_real_binary_map_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.real_binary_map_path, regx = '.*', printable = False)))
+    train_real_binary_map_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.real_binary_map_path, regx = '.*', printable = False)))
 
     ## DEFINE MODEL
     # input
@@ -136,7 +136,7 @@ def train():
             tv_loss_real = lambda_tv * tf.reduce_sum(tf.image.total_variation(output_real_defocus))
             tv_loss = (tv_loss_real + tv_loss_synthetic) / 2.
 
-        loss_d = tf.identity(loss_disc + loss_binary )
+        loss_d = tf.identity(loss_disc + loss_binary)
         loss_g = tf.identity(loss_defocus + loss_gan + tv_loss, name = 'total')
         loss_init = tf.identity(loss_defocus + tv_loss_synthetic, name = 'loss_init')
 
@@ -246,11 +246,11 @@ def train():
                 synthetic_defocus_maps = read_all_imgs(train_defocus_map_list[b_idx], path = config.TRAIN.defocus_map_path, mode = 'DEPTH')
                 synthetic_binary_maps = read_all_imgs(train_synthetic_binary_map_list[b_idx], path = config.TRAIN.synthetic_binary_map_path, mode = 'GRAY')
 
-                 synthetic_images_blur, synthetic_defocus_maps, synthetic_binary_maps = \
-                 crop_pair_with_different_shape_images_3(synthetic_images_blur, synthetic_defocus_maps, synthetic_binary_maps, [h, w])
+                synthetic_images_blur, synthetic_defocus_maps, synthetic_binary_maps = \
+                        crop_pair_with_different_shape_images_3(synthetic_images_blur, synthetic_defocus_maps, synthetic_binary_maps, [h, w])
                
                 err_init, lr, _ = \
-                sess.run([loss_init, learning_rate_init, optim_init], {patches_synthetic: synthetic_images_blur, labels_synthetic_defocus: synthetic_defocus_maps})
+                        sess.run([loss_init, learning_rate_init, optim_init], {patches_synthetic: synthetic_images_blur, labels_synthetic_defocus: synthetic_defocus_maps})
 
                 print('[%s] Ep [%2d/%2d] %4d/%4d time: %4.2fs, err_init: %.3f, lr: %.8f' % \
                     (tl.global_flag['mode'], epoch, n_epoch_init, n_iter, len(train_synthetic_img_list)/batch_size_init, time.time() - step_time, err_init, lr))
@@ -326,7 +326,7 @@ def train():
             b_idx = (idx % len(train_real_img_list) + np.arange(batch_size)) % len(train_real_img_list)
             real_images_blur = read_all_imgs(train_real_img_list[b_idx], path = config.TRAIN.real_img_path, mode = 'RGB')
             real_binary_maps = read_all_imgs(train_real_binary_map_list[b_idx], path = config.TRAIN.real_binary_map_path, mode = 'GRAY')
-            real_images_blur = crop_pair_with_different_shape_images_2(real_images_blur, real_binary_maps, [h, w])
+            real_images_blur, real_binary_maps = crop_pair_with_different_shape_images_2(real_images_blur, real_binary_maps, [h, w])
 
             ## RUN NETWORK
             #discriminator
@@ -346,7 +346,7 @@ def train():
             ## SAVE LOGS
             # save loss & image log
             if global_step % config.TRAIN.write_log_every == 0:
-                summary_loss_g, summary_loss_d, summary_image  = sess.run([loss_sum_g, loss_sum_d, image_sum], {patches_synthetic: synthetic_images_blur, labels_synthetic_defocus: synthetic_defocus_maps, patches_real: real_images_blur})
+                summary_loss_g, summary_loss_d, summary_image  = sess.run([loss_sum_g, loss_sum_d, image_sum], {patches_synthetic: synthetic_images_blur, labels_synthetic_defocus: synthetic_defocus_maps, patches_real: real_images_blur, labels_synthetic_binary: synthetic_binary_maps, labels_real_binary: real_binary_maps})
                 writer_scalar.add_summary(summary_loss_d, global_step)
                 writer_scalar.add_summary(summary_loss_g, global_step)
                 writer_image.add_summary(summary_image, global_step)

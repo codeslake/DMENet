@@ -145,7 +145,7 @@ def UNet_up(feats, is_train=False, reuse=False, scope = 'unet_up'):
         n_1c = Conv2d(n, 1, (1, 1), (1, 1), act=None, padding='SAME', W_init=w_init3, name='uf/1c')
         n_3c = Conv2d(n, 3, (1, 1), (1, 1), act=None, padding='SAME', W_init=w_init3, name='uf/3c')
 
-        return n.outputs, tf.nn.sigmoid(n_1c.outputs), [u0, u1, u2, u3, d4]
+        return n.outputs, tf.nn.sigmoid(n_1c.outputs), [u0.outputs, u1.outputs, u2.outputs, u3.outputs, d4.outputs]
 
 def SRGAN_d(feats, is_train=True, reuse=False, scope = 'Discriminator'):
     w_init = tf.random_normal_initializer(stddev=0.02)
@@ -161,51 +161,51 @@ def SRGAN_d(feats, is_train=True, reuse=False, scope = 'Discriminator'):
         d4 = InputLayer(feats[4], name='d4')
         
         net_h0 = Conv2d(d0, 128, (4, 4), (2, 2), act=lrelu, padding='SAME', W_init=w_init, name='h0/c1')
-        n = DropoutLayer(n, keep=0.9, is_fix=True, is_train=is_train, name='h0/dr1')
+        net_h0 = DropoutLayer(net_h0, keep=0.9, is_fix=True, is_train=is_train, name='h0/dr1')
         net_h0 = Conv2d(net_h0, 128, (3, 3), (1, 1), act=lrelu, padding='SAME', W_init=w_init, b_init=b_init, name='h0/c2')
         #net_h0 = BatchNormLayer(net_h0, act=lrelu, is_train=is_train, gamma_init=gamma_init, name='h0/bn1')
-        n = DropoutLayer(n, keep=0.9, is_fix=True, is_train=is_train, name='h0/dr2')
+        net_h0 = DropoutLayer(net_h0, keep=0.9, is_fix=True, is_train=is_train, name='h0/dr2')
         net_h0 = Conv2d(net_h0, 128, (3, 3), (1, 1), act=lrelu, padding='SAME', W_init=w_init, b_init=b_init, name='h0/c3')
         #net_h0 = BatchNormLayer(net_h0, act=lrelu, is_train=is_train, gamma_init=gamma_init, name='h0/b2')
 
         net_h1 = ElementwiseLayer([net_h0, d1], tf.add, name='add1')
         net_h1 = Conv2d(net_h1, 256, (4, 4), (2, 2), act=lrelu, padding='SAME', W_init=w_init, b_init=b_init, name='h1/c1')
-        n = DropoutLayer(n, keep=0.9, is_fix=True, is_train=is_train, name='h1/dr1')
+        net_h1 = DropoutLayer(net_h1, keep=0.9, is_fix=True, is_train=is_train, name='h1/dr1')
         net_h1 = Conv2d(net_h1, 256, (3, 3), (1, 1), act=lrelu, padding='SAME', W_init=w_init, b_init=b_init, name='h1/c2')
         #net_h1 = BatchNormLayer(net_h1, act=lrelu, is_train=is_train, gamma_init=gamma_init, name='h1/bn1')
-        n = DropoutLayer(n, keep=0.9, is_fix=True, is_train=is_train, name='h1/dr2')
+        net_h1 = DropoutLayer(net_h1, keep=0.9, is_fix=True, is_train=is_train, name='h1/dr2')
         net_h1 = Conv2d(net_h1, 256, (3, 3), (1, 1), act=lrelu, padding='SAME', W_init=w_init, b_init=b_init, name='h1/c3')
         #net_h1 = BatchNormLayer(net_h1, act=lrelu, is_train=is_train, gamma_init=gamma_init, name='h1/bn2')
 
         net_h2 = ElementwiseLayer([net_h1, d2], tf.add, name='add2')
         net_h2 = Conv2d(net_h2, 512, (4, 4), (2, 2), act=lrelu, padding='SAME', W_init=w_init, b_init=b_init, name='h2/c1')
-        n = DropoutLayer(n, keep=0.9, is_fix=True, is_train=is_train, name='h2/dr1')
+        net_h2 = DropoutLayer(net_h2, keep=0.9, is_fix=True, is_train=is_train, name='h2/dr1')
         net_h2 = Conv2d(net_h2, 512, (3, 3), (1, 1), act=lrelu, padding='SAME', W_init=w_init, b_init=b_init, name='h2/c2')
         #net_h2 = BatchNormLayer(net_h2, act=lrelu, is_train=is_train, gamma_init=gamma_init, name='h2/bn1')
-        n = DropoutLayer(n, keep=0.9, is_fix=True, is_train=is_train, name='h2/dr2')
+        net_h2 = DropoutLayer(net_h2, keep=0.9, is_fix=True, is_train=is_train, name='h2/dr2')
         net_h2 = Conv2d(net_h2, 512, (3, 3), (1, 1), act=lrelu, padding='SAME', W_init=w_init, b_init=b_init, name='h2/c3')
         #net_h2 = BatchNormLayer(net_h2, act=lrelu, is_train=is_train, gamma_init=gamma_init, name='h2/bn2')
 
         net_h3 = ElementwiseLayer([net_h2, d3], tf.add, name='add3')
         net_h3 = Conv2d(net_h3, 1024, (4, 4), (2, 2), act=lrelu, padding='SAME', W_init=w_init, b_init=b_init, name='h3/c1')
-        n = DropoutLayer(n, keep=0.9, is_fix=True, is_train=is_train, name='h3/dr1')
+        net_h3 = DropoutLayer(net_h3, keep=0.9, is_fix=True, is_train=is_train, name='h3/dr1')
         net_h3 = Conv2d(net_h3, 1024, (3, 3), (1, 1), act=lrelu, padding='SAME', W_init=w_init, b_init=b_init, name='h3/c2')
         #net_h3 = BatchNormLayer(net_h3, act=lrelu, is_train=is_train, gamma_init=gamma_init, name='h3/bn1')
-        n = DropoutLayer(n, keep=0.9, is_fix=True, is_train=is_train, name='h3/dr2')
+        net_h3 = DropoutLayer(net_h3, keep=0.9, is_fix=True, is_train=is_train, name='h3/dr2')
         net_h3 = Conv2d(net_h3, 1024, (3, 3), (1, 1), act=lrelu, padding='SAME', W_init=w_init, b_init=b_init, name='h3/c3')
         #net_h3 = BatchNormLayer(net_h3, act=lrelu, is_train=is_train, gamma_init=gamma_init, name='h3/bn2')
 
         net_h4 = ElementwiseLayer([net_h3, d4], tf.add, name='add4')
         net_h4 = Conv2d(net_h4, 1024, (4, 4), (2, 2), act=lrelu, padding='SAME', W_init=w_init, b_init=b_init, name='h4/c1')
-        n = DropoutLayer(n, keep=0.9, is_fix=True, is_train=is_train, name='h4/dr1')
+        net_h4 = DropoutLayer(net_h4, keep=0.9, is_fix=True, is_train=is_train, name='h4/dr1')
         net_h4 = Conv2d(net_h4, 1024, (3, 3), (1, 1), act=lrelu, padding='SAME', W_init=w_init, b_init=b_init, name='h4/c2')
         #net_h4 = BatchNormLayer(net_h4, act=lrelu, is_train=is_train, gamma_init=gamma_init, name='h4/bn1')
-        n = DropoutLayer(n, keep=0.9, is_fix=True, is_train=is_train, name='h4/dr2')
+        net_h4 = DropoutLayer(net_h4, keep=0.9, is_fix=True, is_train=is_train, name='h4/dr2')
         net_h4 = Conv2d(net_h4, 1024, (3, 3), (1, 1), act=lrelu, padding='SAME', W_init=w_init, b_init=b_init, name='h4/c3')
         #net_h4 = BatchNormLayer(net_h4, act=lrelu, is_train=is_train, gamma_init=gamma_init, name='h4/bn2')
 
         net_hf = FlattenLayer(net_h4, name='hf/flatten')
-        n = DropoutLayer(n, keep=0.5, is_fix=True, is_train=is_train, name='hf/dr1')
+        net_hf = DropoutLayer(net_hf, keep=0.5, is_fix=True, is_train=is_train, name='hf/dr1')
         net_hf = DenseLayer(net_hf, n_units=1, act=tf.identity, W_init = w_init, name='hf/dense')
         logits = net_hf.outputs
 

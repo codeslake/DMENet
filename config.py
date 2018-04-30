@@ -9,7 +9,7 @@ config.TEST = edict()
 config.TRAIN.batch_size = 4 
 config.TRAIN.batch_size_init = 8
 config.TRAIN.lr_init = 1e-4
-config.TRAIN.lr_init_init = 1e-5
+config.TRAIN.lr_init_init = 0
 config.TRAIN.beta1 = 0.5
 
 # learning rate
