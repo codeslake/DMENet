@@ -342,4 +342,7 @@ def norm_image(image):
     image = image / tf.reduce_max(image, axis = [1, 2, 3], keepdims=True)
     return tf.cast(image * 255., tf.uint8)
 
+def entry_stop_gradients(target, mask):
+    mask_h = tf.abs(mask-1)
+    return tf.stop_gradient(mask_h * target) + mask * target
 
