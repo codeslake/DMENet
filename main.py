@@ -102,7 +102,8 @@ def train():
                 output_real_defocus_logits, output_real_defocus, feats_real_up = UNet_up(feats_real_down, is_train = True, reuse = True, scope = scope)
 
         with tf.variable_scope('binary_net') as scope:
-            output_real_binary = entry_stop_gradients(output_real_defocus, labels_real_binary)
+            #output_real_binary = entry_stop_gradients(output_real_defocus, labels_real_binary)
+            output_real_binary = Binary_Net(feats_real_down, is_train = True, reuse = True, scope = scope)
 
     ## DEFINE LOSS
     with tf.variable_scope('loss'):

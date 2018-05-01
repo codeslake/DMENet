@@ -62,10 +62,14 @@ def UNet_down(image_in, is_train=False, reuse=False, scope = 'unet_down'):
         return [d0.outputs, d1.outputs, d2.outputs, d3.outputs, d4.outputs]
 
 def UNet_up(feats, is_train=False, reuse=False, scope = 'unet_up'):
-    w_init1 = tf.random_normal_initializer(stddev=0.02)
-    w_init2 = tf.random_normal_initializer(stddev=0.01)
-    w_init3 = tf.random_normal_initializer(stddev=0.005)
-    w_init4 = tf.random_normal_initializer(stddev=0.002)
+    # w_init1 = tf.random_normal_initializer(stddev=0.02)
+    # w_init2 = tf.random_normal_initializer(stddev=0.01)
+    # w_init3 = tf.random_normal_initializer(stddev=0.005)
+    # w_init4 = tf.random_normal_initializer(stddev=0.002)
+    w_init1 = tf.contrib.layers.xavier_initializer
+    w_init2 = tf.contrib.layers.xavier_initializer
+    w_init3 = tf.contrib.layers.xavier_initializer
+    w_init4 = tf.contrib.layers.xavier_initializer
     b_init = None # tf.constant_initializer(value=0.0)
     g_init = tf.random_normal_initializer(1., 0.02)
     lrelu = lambda x: tl.act.lrelu(x, 0.2)
@@ -122,7 +126,8 @@ def UNet_up(feats, is_train=False, reuse=False, scope = 'unet_up'):
         return n.outputs, tf.nn.sigmoid(n_1c.outputs), [u0.outputs, u1.outputs, u2.outputs, u3.outputs, d4.outputs]
 
 def SRGAN_d(feats, is_train=True, reuse=False, scope = 'Discriminator'):
-    w_init = tf.random_normal_initializer(stddev=0.02)
+    #w_init = tf.random_normal_initializer(stddev=0.02)
+    w_init = tf.contrib.layers.xavier_initializer
     b_init = None # tf.constant_initializer(value=0.0)
     gamma_init=tf.random_normal_initializer(1., 0.02)
     
