@@ -161,7 +161,8 @@ def train():
     # variables to save / train
     d_vars = tl.layers.get_variables_with_name('discriminator', True, False)
     g_vars = tl.layers.get_variables_with_name('defocus_net', True, False)
-    save_vars = tl.layers.get_variables_with_name('unet', False, False)
+    init_vars = tl.layers.get_variables_with_name('unet', False, False)
+    save_vars = tl.layers.get_variables_with_name('defocus_net', False, False)
 
     # define optimizer
     with tf.variable_scope('Optimizer'):
@@ -169,7 +170,7 @@ def train():
         learning_rate_init = tf.Variable(lr_init_init, trainable = False)
         optim_d = tf.train.AdamOptimizer(learning_rate, beta1 = beta1).minimize(loss_d, var_list = d_vars)
         optim_g = tf.train.AdamOptimizer(learning_rate, beta1 = beta1).minimize(loss_g, var_list = g_vars)
-        optim_init = tf.train.AdamOptimizer(learning_rate_init, beta1 = beta1).minimize(loss_init, var_list = save_vars)
+        optim_init = tf.train.AdamOptimizer(learning_rate_init, beta1 = beta1).minimize(loss_init, var_list = init_vars)
 
     ## DEFINE SUMMARY
     # writer
@@ -281,9 +282,9 @@ def train():
                 writer_image_init.reopen()
 
             if epoch % 5:
-                tl.files.save_npz_dict(save_vars, name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
+                tl.files.save_npz_dict(init_vars, name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
 
-        tl.files.save_npz_dict(save_vars, name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
+        tl.files.save_npz_dict(init_vars, name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
         writer_image_init.close()
         writer_scalar_init.close()
 
@@ -424,6 +425,7 @@ def evaluate():
             with tf.variable_scope('binary_net') as scope:
                 _, output_binary = Binary_Net(output_defocus, is_train = False, reuse = reuse, scope = scope)
                         
+        #save_vars = tl.layers.get_variables_with_name('defocus_net', False, False)
         save_vars = tl.layers.get_variables_with_name('unet', False, False)
 
         # init session
@@ -437,10 +439,10 @@ def evaluate():
         print 'processing {} ...'.format(test_blur_img_list[i])
         processing_time = time.time()
         defocus_map, binary_map = sess.run([output_defocus, output_binary], {patches_blurred: np.expand_dims(test_blur_img, axis = 0)})
-        defocus_map = np.squeeze(defocus_map)
+        defocus_map = np.squeeze(1 - defocus_map)
         defocus_map_norm = defocus_map - defocus_map.min()
         defocus_map_norm = defocus_map_norm / defocus_map_norm.max()
-        binary_map = np.squeeze(binary_map)
+        binary_map = np.squeeze(1 - binary_map)
         print 'processing {} ... Done [{:.3f}s]'.format(test_blur_img_list[i], time.time() - processing_time)
         
         tl.files.exists_or_mkdir(sample_dir, verbose = False)
