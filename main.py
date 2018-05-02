@@ -101,12 +101,12 @@ def train():
 
     with tf.variable_scope('discriminator') as scope:
         with tf.variable_scope('feature') as scope:
-            d_feature_logits_synthetic = SRGAN_d_multi(feats_synthetic_down, is_train = True, reuse = False, scope = scope)
-            d_feature_logits_real = SRGAN_d_multi(feats_real_down, is_train = True, reuse = True, scope = scope)
+            d_feature_logits_synthetic = feature_discriminator(feats_synthetic_down, is_train = True, reuse = False, scope = scope)
+            d_feature_logits_real = feature_discriminator(feats_real_down, is_train = True, reuse = True, scope = scope)
         with tf.variable_scope('defocus_map') as scope:
-            d_defocus_logits_synthetic = SRGAN_d2(output_synthetic_defocus, is_train = True, reuse = False, scope = scope)
-            d_defocus_logits_real = SRGAN_d2(output_real_defocus, is_train = True, reuse = True, scope = scope)
-            d_defocus_logits_actual = SRGAN_d2(labels_synthetic_defocus, is_train = True, reuse = True, scope = scope)
+            d_defocus_logits_synthetic = defocus_discriminator(output_synthetic_defocus, is_train = True, reuse = False, scope = scope)
+            d_defocus_logits_real = defocus_discriminator(output_real_defocus, is_train = True, reuse = True, scope = scope)
+            d_defocus_logits_actual = defocus_discriminator(labels_synthetic_defocus, is_train = True, reuse = True, scope = scope)
 
     ## DEFINE LOSS
     with tf.variable_scope('loss'):

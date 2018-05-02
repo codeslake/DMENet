@@ -141,7 +141,7 @@ def UNet_up(feats, is_train=False, reuse=False, scope = 'unet_up'):
 
         return n.outputs, tf.nn.sigmoid(n_1c.outputs), [u0.outputs, u1.outputs, u2.outputs, u3.outputs, d4.outputs]
 
-def SRGAN_d_multi(feats, is_train=True, reuse=False, scope = 'Discriminator'):
+def feature_discriminator(feats, is_train=True, reuse=False, scope = 'feature_discriminator'):
     w_init = tf.contrib.layers.variance_scaling_initializer()
     w_init_sigmoid = tf.contrib.layers.xavier_initializer()
     b_init = None # tf.constant_initializer(value=0.0)
@@ -190,10 +190,7 @@ def SRGAN_d_multi(feats, is_train=True, reuse=False, scope = 'Discriminator'):
 
     return logits
 
-def SRGAN_d2(t_image, is_train=False, reuse=False, scope='SRGAN_d2'):
-    """ Discriminator in Photo-Realistic Single Image Super-Resolution Using a Generative Adversarial Network
-    feature maps (n) and stride (s) feature maps (n) and stride (s)
-    """
+def defocus_discriminator(t_image, is_train=False, reuse=False, scope='defocus_discriminator'):
     w_init = tf.contrib.layers.variance_scaling_initializer()
     w_init_sigmoid = tf.contrib.layers.xavier_initializer()
     b_init = None
