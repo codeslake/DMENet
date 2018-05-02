@@ -150,7 +150,7 @@ def train():
             tv_loss_synthetic_defocus = lambda_tv_defocus * tf.reduce_sum(tf.image.total_variation(output_synthetic_defocus))
             tv_loss_real_defocus = lambda_tv_defocus * tf.reduce_sum(tf.image.total_variation(output_real_defocus))
 
-            tv_loss_real_binary = lambda_tv * tf.reduce_sum(tf.image.total_variation(output_real_binary))
+            tv_loss_real_binary = lambda_tv_binary * tf.reduce_sum(tf.image.total_variation(output_real_binary))
             tv_loss = (tv_loss_real_defocus + tv_loss_synthetic_defocus) / 2. + tv_loss_real_binary
 
         loss_g = tf.identity(loss_defocus + loss_binary + loss_gan + tv_loss, name = 'total')
@@ -183,7 +183,7 @@ def train():
     with tf.variable_scope('loss_init'):
         loss_sum_list_init.append(tf.summary.scalar('1_total_loss_init', loss_init))
         loss_sum_list_init.append(tf.summary.scalar('2_defocus_loss_init', loss_defocus))
-        loss_sum_list_init.append(tf.summary.scalar('4_tv_loss_init', tv_loss_synthetic))
+        loss_sum_list_init.append(tf.summary.scalar('4_tv_loss_init', tv_loss_synthetic_defocus))
         loss_sum_init = tf.summary.merge(loss_sum_list_init)
 
     image_sum_list_init = []
