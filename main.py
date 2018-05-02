@@ -47,8 +47,9 @@ def train():
 
     if tl.global_flag['delete_log']:
         shutil.rmtree(ckpt_dir, ignore_errors = True)
-        shutil.rmtree(log_dir_scalar_init, ignore_errors = True)
-        shutil.rmtree(log_dir_image_init, ignore_errors = True)
+        if tl.global_flag['is_pretrain']:
+            shutil.rmtree(log_dir_scalar_init, ignore_errors = True)
+            shutil.rmtree(log_dir_image_init, ignore_errors = True)
         shutil.rmtree(log_dir_scalar, ignore_errors = True)
         shutil.rmtree(log_dir_image, ignore_errors = True)
         shutil.rmtree(sample_dir, ignore_errors = True)
