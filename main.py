@@ -208,7 +208,7 @@ def train():
     with tf.variable_scope('loss_discriminator'):
         loss_sum_d_list.append(tf.summary.scalar('1_loss_d', loss_d))
         loss_sum_d_list.append(tf.summary.scalar('2_loss_d_feature', loss_d_feature))
-        loss_sum_d_list.append(tf.summary.scalar('3_loss_d', loss_d_defocus))
+        loss_sum_d_list.append(tf.summary.scalar('3_loss_d_defocus', loss_d_defocus))
     loss_sum_d = tf.summary.merge(loss_sum_d_list)
 
     image_sum_list = []
