@@ -19,7 +19,7 @@ config.TRAIN.lr_decay = 0.8
 config.TRAIN.decay_every = 100
 
 ## total_variation
-config.TRAIN.lambda_tv_binary = 1
+config.TRAIN.lambda_tv_binary = 1e-4
 config.TRAIN.lambda_tv_defocus = 1e-9
 #config.TRAIN.lambda_tv = 0
 
