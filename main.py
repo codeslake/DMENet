@@ -122,7 +122,7 @@ def train():
                 loss_actual_d_defocus = tl.cost.sigmoid_cross_entropy(d_defocus_logits_actual, tf.ones_like(d_defocus_logits_actual), name = 'actual')
                 loss_d_defocus = tf.identity((loss_synthetic_d_defocus + loss_real_d_defocus + loss_actual_d_defocus), name = 'total')
 
-            loss_d = tf.identity((loss_d_feature + loss_d_defocus)/2. * 1e-2, name = 'total')
+            loss_d = tf.identity((loss_d_feature + loss_d_defocus)/2., name = 'total')
 
         with tf.variable_scope('generator'):
             loss_synthetic_g_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_synthetic, tf.ones_like(d_feature_logits_synthetic), name = 'synthetic')
@@ -207,6 +207,8 @@ def train():
     loss_sum_d_list = []
     with tf.variable_scope('loss_discriminator'):
         loss_sum_d_list.append(tf.summary.scalar('1_loss_d', loss_d))
+        loss_sum_d_list.append(tf.summary.scalar('2_loss_d_feature', loss_d_feature))
+        loss_sum_d_list.append(tf.summary.scalar('3_loss_d', loss_d_defocus))
     loss_sum_d = tf.summary.merge(loss_sum_d_list)
 
     image_sum_list = []
