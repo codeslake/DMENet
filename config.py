@@ -19,8 +19,8 @@ config.TRAIN.lr_decay = 0.8
 config.TRAIN.decay_every = 100
 
 ## total_variation
-config.TRAIN.lambda_tv = 1e-3
-config.TRAIN.lambda_tv_init = 1e-9
+config.TRAIN.lambda_tv_binary = 1
+config.TRAIN.lambda_tv_defocus = 1e-9
 #config.TRAIN.lambda_tv = 0
 
 ## train set location

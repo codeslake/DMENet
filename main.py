@@ -23,8 +23,8 @@ n_epoch_init = config.TRAIN.n_epoch_init
 lr_decay = config.TRAIN.lr_decay
 decay_every = config.TRAIN.decay_every
 
-lambda_tv = config.TRAIN.lambda_tv
-lambda_tv_init = config.TRAIN.lambda_tv_init
+lambda_tv_defocus = config.TRAIN.lambda_tv_defocus
+lambda_tv_binary = config.TRAIN.lambda_tv_binary
 max_coc = config.TRAIN.max_coc
 
 h = config.TRAIN.height
@@ -147,14 +147,14 @@ def train():
              loss_binary = tf.identity(loss_real_binary)
 
         with tf.variable_scope('total_variation'):
-            tv_loss_synthetic = lambda_tv_init * tf.reduce_sum(tf.image.total_variation(output_synthetic_defocus))
-            tv_loss_real = lambda_tv_init * tf.reduce_sum(tf.image.total_variation(output_real_defocus))
+            tv_loss_synthetic_defocus = lambda_tv_defocus * tf.reduce_sum(tf.image.total_variation(output_synthetic_defocus))
+            tv_loss_real_defocus = lambda_tv_defocus * tf.reduce_sum(tf.image.total_variation(output_real_defocus))
 
             tv_loss_real_binary = lambda_tv * tf.reduce_sum(tf.image.total_variation(output_real_binary))
-            tv_loss = (tv_loss_real + tv_loss_synthetic + tv_loss_real_binary) / 2.
+            tv_loss = (tv_loss_real_defocus + tv_loss_synthetic_defocus) / 2. + tv_loss_real_binary
 
         loss_g = tf.identity(loss_defocus + loss_binary + loss_gan + tv_loss, name = 'total')
-        loss_init = tf.identity(loss_defocus + tv_loss_synthetic, name = 'loss_init')
+        loss_init = tf.identity(loss_defocus + tv_loss_synthetic_defocus, name = 'loss_init')
 
     ## DEFINE OPTIMIZER
     # variables to save / train
