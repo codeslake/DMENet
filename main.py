@@ -90,33 +90,48 @@ def train():
             with tf.variable_scope('unet_down') as scope:
                 feats_synthetic_down = UNet_down(patches_synthetic, is_train = True, reuse = False, scope = scope)
                 feats_real_down = UNet_down(patches_real, is_train = True, reuse = True, scope = scope)
-
-    with tf.variable_scope('discriminator') as scope:
-        d_logits_synthetic = SRGAN_d(feats_synthetic_down, is_train = True, reuse = False, scope = scope)
-        d_logits_real = SRGAN_d(feats_real_down, is_train = True, reuse = True, scope = scope)
-
-    with tf.variable_scope('defocus_net') as scope:
-        with tf.variable_scope('unet') as scope:
             with tf.variable_scope('unet_up_defocus_map') as scope:
-                output_synthetic_defocus_logits, output_synthetic_defocus, feats_synthetic_up  = UNet_up(feats_synthetic_down, is_train = True, reuse = False, scope = scope)
-                output_real_defocus_logits, output_real_defocus, feats_real_up = UNet_up(feats_real_down, is_train = True, reuse = True, scope = scope)
-
+                output_synthetic_defocus_logits, output_synthetic_defocus, _ = UNet_up(feats_synthetic_down, is_train = True, reuse = False, scope = scope)
+                output_real_defocus_logits, output_real_defocus, _ = UNet_up(feats_real_down, is_train = True, reuse = True, scope = scope)
         with tf.variable_scope('binary_net') as scope:
             #output_real_binary = entry_stop_gradients(output_real_defocus, labels_real_binary)
-            output_real_binary = Binary_Net(feats_real_down, is_train = True, reuse = True, scope = scope)
+            output_real_binary_logits, output_real_binary = Binary_Net(output_real_defocus, is_train = True, reuse = False, scope = scope)
+
+    with tf.variable_scope('discriminator') as scope:
+        with tf.variable_scope('feature') as scope:
+            d_feature_logits_synthetic = SRGAN_d_multi(feats_synthetic_down, is_train = True, reuse = False, scope = scope)
+            d_feature_logits_real = SRGAN_d_multi(feats_real_down, is_train = True, reuse = True, scope = scope)
+        with tf.variable_scope('defocus_map') as scope:
+            d_defocus_logits_synthetic = SRGAN_d2(output_synthetic_defocus, is_train = True, reuse = False, scope = scope)
+            d_defocus_logits_real = SRGAN_d2(output_real_defocus, is_train = True, reuse = True, scope = scope)
+            d_defocus_logits_actual = SRGAN_d2(labels_synthetic_defocus, is_train = True, reuse = True, scope = scope)
 
     ## DEFINE LOSS
     with tf.variable_scope('loss'):
         with tf.variable_scope('discriminator'):
-            loss_synthetic_d = tl.cost.sigmoid_cross_entropy(d_logits_synthetic, tf.zeros_like(d_logits_synthetic), name = 'synthetic')
-            loss_real_d = tl.cost.sigmoid_cross_entropy(d_logits_real, tf.ones_like(d_logits_real), name = 'real')
-            loss_disc = tf.identity((loss_synthetic_d + loss_real_d), name = 'discriminator')
+            with tf.variable_scope('feature'):
+                loss_synthetic_d_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_synthetic, tf.zeros_like(d_feature_logits_synthetic), name = 'synthetic')
+                loss_real_d_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_real, tf.ones_like(d_feature_logits_real), name = 'real')
+                loss_d_feature = tf.identity((loss_synthetic_d_feature + loss_real_d_feature), name = 'total')
+
+            with tf.variable_scope('defocus'):
+                loss_synthetic_d_defocus = tl.cost.sigmoid_cross_entropy(d_defocus_logits_synthetic, tf.zeros_like(d_defocus_logits_synthetic), name = 'synthetic')
+                loss_real_d_defocus = tl.cost.sigmoid_cross_entropy(d_defocus_logits_real, tf.zeros_like(d_defocus_logits_real), name = 'real')
+                loss_actual_d_defocus = tl.cost.sigmoid_cross_entropy(d_defocus_logits_actual, tf.ones_like(d_defocus_logits_actual), name = 'actual')
+                loss_d_defocus = tf.identity((loss_synthetic_d_defocus + loss_real_d_defocus + loss_actual_d_defocus), name = 'total')
+
+            loss_d = tf.identity((loss_d_feature + loss_d_defocus)/2. * 1e-2, name = 'total')
 
         with tf.variable_scope('generator'):
-            loss_synthetic_g = tl.cost.sigmoid_cross_entropy(d_logits_synthetic, tf.zeros_like(d_logits_synthetic), name = 'synthetic')
-            # loss_gan = loss_synthetic_g * 1e-2
-            loss_real_g = tl.cost.sigmoid_cross_entropy(d_logits_real, tf.zeros_like(d_logits_real), name = 'real')
-            loss_gan = (loss_synthetic_g + loss_real_g) * 1e-2
+            loss_synthetic_g_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_synthetic, tf.ones_like(d_feature_logits_synthetic), name = 'synthetic')
+            loss_real_g_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_real, tf.ones_like(d_feature_logits_real), name = 'real')
+            loss_g_feature = loss_synthetic_g_feature + loss_real_g_feature
+
+            loss_synthetic_g_defocus = tl.cost.sigmoid_cross_entropy(d_defocus_logits_synthetic, tf.ones_like(d_defocus_logits_synthetic), name = 'synthetic')
+            loss_real_g_defocus = tl.cost.sigmoid_cross_entropy(d_defocus_logits_real, tf.ones_like(d_defocus_logits_real), name = 'real')
+            loss_g_defocus = loss_synthetic_g_defocus + loss_real_g_defocus
+
+            loss_gan = ((loss_g_feature + loss_g_defocus) / 2.) * 1e-3
 
         with tf.variable_scope('defocus'):
             loss_defocus = tl.cost.mean_squared_error(output_synthetic_defocus, labels_synthetic_defocus, is_mean = True, name = 'synthetic')
@@ -126,7 +141,8 @@ def train():
              # loss_synthetic_binary = tl.cost.mean_squared_error(output_synthetic_binary, labels_synthetic_binary, is_mean = True, name = 'synthetic')
              # loss_real_binary = tl.cost.mean_squared_error(output_real_binary, labels_real_binary, is_mean = True, name = 'real')
              # loss_binary = tf.identity((loss_synthetic_binary + loss_real_binary)/2.)
-             loss_real_binary = tl.cost.mean_squared_error(output_real_binary, labels_real_binary, is_mean = True, name = 'real')
+             #loss_real_binary = tl.cost.mean_squared_error(output_real_binary, labels_real_binary, is_mean = True, name = 'real')
+             loss_real_binary = tl.cost.sigmoid_cross_entropy(output_real_binary_logits, labels_real_binary, name = 'real')
              loss_binary = tf.identity(loss_real_binary)
 
         with tf.variable_scope('total_variation'):
@@ -134,7 +150,6 @@ def train():
             tv_loss_real = lambda_tv * tf.reduce_sum(tf.image.total_variation(output_real_defocus))
             tv_loss = (tv_loss_real + tv_loss_synthetic) / 2.
 
-        loss_d = tf.identity(loss_disc)
         loss_g = tf.identity(loss_defocus + loss_binary + loss_gan + tv_loss, name = 'total')
         loss_init = tf.identity(loss_defocus + tv_loss_synthetic, name = 'loss_init')
 
@@ -187,7 +202,7 @@ def train():
 
     loss_sum_d_list = []
     with tf.variable_scope('loss_discriminator'):
-        loss_sum_d_list.append(tf.summary.scalar('1_loss_d', loss_disc))
+        loss_sum_d_list.append(tf.summary.scalar('1_loss_d', loss_d))
     loss_sum_d = tf.summary.merge(loss_sum_d_list)
 
     image_sum_list = []
@@ -236,7 +251,7 @@ def train():
                 synthetic_images_blur = read_all_imgs(train_synthetic_img_list[b_idx], path = config.TRAIN.synthetic_img_path, mode = 'RGB')
                 synthetic_defocus_maps = read_all_imgs(train_defocus_map_list[b_idx], path = config.TRAIN.defocus_map_path, mode = 'DEPTH')
 
-                synthetic_images_blur, synthetic_defocus_map = \
+                synthetic_images_blur, synthetic_defocus_maps = \
                          crop_pair_with_different_shape_images_2(synthetic_images_blur, synthetic_defocus_maps, [h, w])
                
                 err_init, lr, _ = \
@@ -260,7 +275,7 @@ def train():
                 writer_image_init.reopen()
 
             if epoch % 5:
-                tl.files.save_npz_dict(save_init_vars, name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
+                tl.files.save_npz_dict(save_vars, name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
 
         tl.files.save_npz_dict(save_vars, name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
         writer_image_init.close()
@@ -320,7 +335,7 @@ def train():
 
             ## RUN NETWORK
             #discriminator
-            err_d, _ = sess.run([loss_d, optim_d], {patches_synthetic: synthetic_images_blur, patches_real: real_images_blur})
+            err_d, _ = sess.run([loss_d, optim_d], {patches_synthetic: synthetic_images_blur, patches_real: real_images_blur, labels_synthetic_defocus: synthetic_defocus_maps})
 
             #generator
             err_g, err_def, err_bin, lr, _ = \
@@ -397,10 +412,10 @@ def evaluate():
             with tf.variable_scope('unet') as scope:
                 with tf.variable_scope('unet_down') as scope:
                     feats = UNet_down(patches_blurred, is_train = False, reuse = reuse, scope = scope)
-                with tf.variable_scope('binary_net') as scope:
-                    with tf.variable_scope('unet_up_defocus_map') as scope:
-                        _, output_defocus = UNet_up(feats, is_train = False, reuse = reuse, scope = scope)
+                with tf.variable_scope('unet_up_defocus_map') as scope:
+                    _, output_defocus, _ = UNet_up(feats, is_train = False, reuse = reuse, scope = scope)
 
+            with tf.variable_scope('binary_net') as scope:
                 _, output_binary = Binary_Net(output_defocus, is_train = False, reuse = reuse, scope = scope)
                         
         save_vars = tl.layers.get_variables_with_name('unet', False, False)
