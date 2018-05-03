@@ -25,6 +25,7 @@ decay_every = config.TRAIN.decay_every
 
 lambda_tv_defocus = config.TRAIN.lambda_tv_defocus
 lambda_tv_binary = config.TRAIN.lambda_tv_binary
+lambda_adv = config.TRAIN.lambda_adv
 max_coc = config.TRAIN.max_coc
 
 h = config.TRAIN.height
@@ -114,36 +115,34 @@ def train():
             with tf.variable_scope('feature'):
                 loss_synthetic_d_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_synthetic, tf.zeros_like(d_feature_logits_synthetic), name = 'synthetic')
                 loss_real_d_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_real, tf.ones_like(d_feature_logits_real), name = 'real')
-                loss_d_feature = tf.identity((loss_synthetic_d_feature + loss_real_d_feature), name = 'total')
+                loss_d_feature = tf.identity((loss_synthetic_d_feature + loss_real_d_feature) * lambda_adv, name = 'total')
 
             with tf.variable_scope('defocus'):
                 loss_synthetic_d_defocus = tl.cost.sigmoid_cross_entropy(d_defocus_logits_synthetic, tf.zeros_like(d_defocus_logits_synthetic), name = 'synthetic')
                 loss_real_d_defocus = tl.cost.sigmoid_cross_entropy(d_defocus_logits_real, tf.zeros_like(d_defocus_logits_real), name = 'real')
                 loss_actual_d_defocus = tl.cost.sigmoid_cross_entropy(d_defocus_logits_actual, tf.ones_like(d_defocus_logits_actual), name = 'actual')
-                loss_d_defocus = tf.identity((loss_synthetic_d_defocus + loss_real_d_defocus + loss_actual_d_defocus), name = 'total')
+                loss_d_defocus = tf.identity((loss_synthetic_d_defocus + loss_real_d_defocus + loss_actual_d_defocus) * lambda_adv, name = 'total')
 
             loss_d = tf.identity((loss_d_feature + loss_d_defocus)/2., name = 'total')
 
         with tf.variable_scope('generator'):
-            loss_synthetic_g_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_synthetic, tf.ones_like(d_feature_logits_synthetic), name = 'synthetic')
-            loss_real_g_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_real, tf.ones_like(d_feature_logits_real), name = 'real')
-            loss_g_feature = loss_synthetic_g_feature + loss_real_g_feature
+            with tf.variable_scope('feature'):
+                loss_synthetic_g_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_synthetic, tf.ones_like(d_feature_logits_synthetic), name = 'synthetic')
+                loss_real_g_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_real, tf.ones_like(d_feature_logits_real), name = 'real')
+                loss_g_feature = tf.identity((loss_synthetic_g_feature + loss_real_g_feature) * lambda_adv, name = 'total')
 
-            loss_synthetic_g_defocus = tl.cost.sigmoid_cross_entropy(d_defocus_logits_synthetic, tf.ones_like(d_defocus_logits_synthetic), name = 'synthetic')
-            loss_real_g_defocus = tl.cost.sigmoid_cross_entropy(d_defocus_logits_real, tf.ones_like(d_defocus_logits_real), name = 'real')
-            loss_g_defocus = loss_synthetic_g_defocus + loss_real_g_defocus
+            with tf.variable_scope('defocus'):
+                loss_synthetic_g_defocus = tl.cost.sigmoid_cross_entropy(d_defocus_logits_synthetic, tf.ones_like(d_defocus_logits_synthetic), name = 'synthetic')
+                loss_real_g_defocus = tl.cost.sigmoid_cross_entropy(d_defocus_logits_real, tf.ones_like(d_defocus_logits_real), name = 'real')
+                loss_g_defocus = tf.identity((loss_synthetic_g_defocus + loss_real_g_defocus) * lambda_adv, name = 'total')
 
-            loss_gan = ((loss_g_feature + loss_g_defocus) / 2.) * 1e-3
+            loss_g = tf.identity((loss_g_feature + loss_g_defocus) / 2., name = 'total')
 
         with tf.variable_scope('defocus'):
             loss_defocus = tl.cost.mean_squared_error(output_synthetic_defocus, labels_synthetic_defocus, is_mean = True, name = 'synthetic')
             # loss_defocus = tl.cost.absolute_difference_error(output_synthetic_defocus, labels_synthetic_defocus, is_mean = True)
 
         with tf.variable_scope('binary'):
-             # loss_synthetic_binary = tl.cost.mean_squared_error(output_synthetic_binary, labels_synthetic_binary, is_mean = True, name = 'synthetic')
-             # loss_real_binary = tl.cost.mean_squared_error(output_real_binary, labels_real_binary, is_mean = True, name = 'real')
-             # loss_binary = tf.identity((loss_synthetic_binary + loss_real_binary)/2.)
-             #loss_real_binary = tl.cost.mean_squared_error(output_real_binary, labels_real_binary, is_mean = True, name = 'real')
              loss_real_binary = tl.cost.sigmoid_cross_entropy(output_real_binary_logits, labels_real_binary, name = 'real')
              loss_binary = tf.identity(loss_real_binary)
 
@@ -154,8 +153,10 @@ def train():
             tv_loss_real_binary = lambda_tv_binary * tf.reduce_sum(tf.image.total_variation(output_real_binary))
             tv_loss = (tv_loss_real_defocus + tv_loss_synthetic_defocus) / 2. + tv_loss_real_binary
 
-        loss_g = tf.identity(loss_defocus + loss_binary + loss_gan + tv_loss, name = 'total')
-        loss_init = tf.identity(loss_defocus + tv_loss_synthetic_defocus, name = 'loss_init')
+        # loss_main = tf.identity(loss_defocus + loss_binary + loss_g + tv_loss, name = 'total')
+        # loss_init = tf.identity(loss_defocus + tv_loss_synthetic_defocus, name = 'loss_init')
+        loss_main = tf.identity(loss_defocus + loss_binary + loss_g, name = 'total')
+        loss_init = tf.identity(loss_defocus, name = 'loss_init')
 
     ## DEFINE OPTIMIZER
     # variables to save / train
@@ -169,7 +170,7 @@ def train():
         learning_rate = tf.Variable(lr_init, trainable = False)
         learning_rate_init = tf.Variable(lr_init_init, trainable = False)
         optim_d = tf.train.AdamOptimizer(learning_rate, beta1 = beta1).minimize(loss_d, var_list = d_vars)
-        optim_g = tf.train.AdamOptimizer(learning_rate, beta1 = beta1).minimize(loss_g, var_list = g_vars)
+        optim_g = tf.train.AdamOptimizer(learning_rate, beta1 = beta1).minimize(loss_main, var_list = g_vars)
         optim_init = tf.train.AdamOptimizer(learning_rate_init, beta1 = beta1).minimize(loss_init, var_list = init_vars)
 
     ## DEFINE SUMMARY
@@ -198,8 +199,8 @@ def train():
     # for train
     loss_sum_g_list = []
     with tf.variable_scope('loss_generator'):
-        loss_sum_g_list.append(tf.summary.scalar('1_total_loss', loss_g))
-        loss_sum_g_list.append(tf.summary.scalar('2_gan_loss', loss_gan))
+        loss_sum_g_list.append(tf.summary.scalar('1_total_loss', loss_main))
+        loss_sum_g_list.append(tf.summary.scalar('2_gan_loss', loss_g))
         loss_sum_g_list.append(tf.summary.scalar('3_defocus_loss', loss_defocus))
         loss_sum_g_list.append(tf.summary.scalar('4_loss_binary', loss_binary))
         loss_sum_g_list.append(tf.summary.scalar('5_tv_loss', tv_loss))
@@ -345,8 +346,8 @@ def train():
             err_d, _ = sess.run([loss_d, optim_d], {patches_synthetic: synthetic_images_blur, patches_real: real_images_blur, labels_synthetic_defocus: synthetic_defocus_maps})
 
             #generator
-            err_g, err_def, err_bin, lr, _ = \
-            sess.run([loss_g, loss_defocus, loss_binary, learning_rate, optim_g], 
+            err_main, err_def, err_bin, lr, _ = \
+            sess.run([loss_main, loss_defocus, loss_binary, learning_rate, optim_g], 
                 {patches_synthetic: synthetic_images_blur,
                 labels_synthetic_defocus: synthetic_defocus_maps,
                 labels_synthetic_binary: synthetic_binary_maps,
@@ -354,8 +355,8 @@ def train():
                 labels_real_binary: real_binary_maps
                 })
 
-            print('[%s] Ep [%2d/%2d] %4d/%4d time: %4.2fs, err_g: %.3f, err_d: %.3f, err_def: %.3f, err_bin: %.3f, lr: %.8f' % \
-                (tl.global_flag['mode'], epoch, n_epoch, n_iter, len(train_synthetic_img_list)/batch_size, time.time() - step_time, err_g, err_d, err_def, err_bin, lr))
+            print('[%s] Ep [%2d/%2d] %4d/%4d time: %4.2fs, err_main: %.3f, err_d: %.3f, err_def: %.3f, err_bin: %.3f, lr: %.8f' % \
+                (tl.global_flag['mode'], epoch, n_epoch, n_iter, len(train_synthetic_img_list)/batch_size, time.time() - step_time, err_main, err_d, err_def, err_bin, lr))
             
             ## SAVE LOGS
             # save loss & image log
@@ -381,7 +382,7 @@ def train():
                 save_images(real_binary_out, [ni, ni], sample_dir + '/{}_{}_8_real_binary_out.png'.format(epoch, global_step))
                 save_images(real_binary_maps, [ni, ni], sample_dir + '/{}_{}_9_real_binary_gt.png'.format(epoch, global_step))
 
-            total_loss += err_g
+            total_loss += err_main
             n_iter += 1
             global_step += 1
             

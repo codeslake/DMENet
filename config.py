@@ -6,7 +6,7 @@ config.TRAIN = edict()
 config.TEST = edict()
 
 ## Adam
-config.TRAIN.batch_size = 4 
+config.TRAIN.batch_size = 4
 config.TRAIN.batch_size_init = 8
 config.TRAIN.lr_init = 1e-4
 config.TRAIN.lr_init_init = 1e-4
@@ -21,6 +21,9 @@ config.TRAIN.decay_every = 100
 ## total_variation
 config.TRAIN.lambda_tv_defocus = 1e-9
 config.TRAIN.lambda_tv_binary = 1e-7
+
+## adversarial loss coefficient
+config.TRAIN.lambda_adv = 1e-4;
 
 ## train set location
 # config.TRAIN.synthetic_img_path = '/data1/junyonglee/blur_sharp_only/image_dof/'
