@@ -199,32 +199,30 @@ def train():
     # for train
     loss_sum_g_list = []
     with tf.variable_scope('loss_generator'):
-        loss_sum_g_list.append(tf.summary.scalar('1_total_loss', loss_main))
-        loss_sum_g_list.append(tf.summary.scalar('2_gan_loss', loss_g))
-        loss_sum_g_list.append(tf.summary.scalar('3_defocus_loss', loss_defocus))
-        loss_sum_g_list.append(tf.summary.scalar('4_loss_binary', loss_binary))
-        loss_sum_g_list.append(tf.summary.scalar('5_tv_loss', tv_loss))
+        loss_sum_g_list.append(tf.summary.scalar('1_total', loss_main))
+        loss_sum_g_list.append(tf.summary.scalar('2_g', loss_g))
+        loss_sum_g_list.append(tf.summary.scalar('3_g_feature', loss_g_feature))
+        loss_sum_g_list.append(tf.summary.scalar('4_g_defocus', loss_g_defocus))
+        loss_sum_g_list.append(tf.summary.scalar('5_defocus', loss_defocus))
+        loss_sum_g_list.append(tf.summary.scalar('6_binary', loss_binary))
+        #loss_sum_g_list.append(tf.summary.scalar('5_tv', tv_loss))
     loss_sum_g = tf.summary.merge(loss_sum_g_list)
 
     loss_sum_d_list = []
     with tf.variable_scope('loss_discriminator'):
-        loss_sum_d_list.append(tf.summary.scalar('1_loss_d', loss_d))
-        loss_sum_d_list.append(tf.summary.scalar('2_loss_d_feature', loss_d_feature))
-        loss_sum_d_list.append(tf.summary.scalar('3_loss_d_defocus', loss_d_defocus))
+        loss_sum_d_list.append(tf.summary.scalar('1_d', loss_d))
+        loss_sum_d_list.append(tf.summary.scalar('2_d_feature', loss_d_feature))
+        loss_sum_d_list.append(tf.summary.scalar('3_d_defocus', loss_d_defocus))
     loss_sum_d = tf.summary.merge(loss_sum_d_list)
 
     image_sum_list = []
     image_sum_list.append(tf.summary.image('1_synthetic_input', patches_synthetic))
     image_sum_list.append(tf.summary.image('2_synthetic_defocus_out', fix_image(output_synthetic_defocus, 1.)))
-    image_sum_list.append(tf.summary.image('3_synthetic_defocus_out_norm', norm_image(output_synthetic_defocus)))
-    image_sum_list.append(tf.summary.image('4_synthetic_defocus_gt', fix_image(labels_synthetic_defocus, 1.)))
-    #image_sum_list.append(tf.summary.image('5_synthetic_binary_out', fix_image(output_synthetic_binary, 1.)))
-    image_sum_list.append(tf.summary.image('6_synthetic_binary_gt', fix_image(labels_synthetic_binary, 1.)))
-    image_sum_list.append(tf.summary.image('7_real_input', patches_real))
-    image_sum_list.append(tf.summary.image('8_real_defocus_out', fix_image(output_real_defocus, 1.)))
-    image_sum_list.append(tf.summary.image('9_real_defocus_out_norm', norm_image(output_real_defocus)))
-    image_sum_list.append(tf.summary.image('10_real_binary_out', fix_image(output_real_binary, 1.)))
-    image_sum_list.append(tf.summary.image('11_real_binary_gt', fix_image(labels_real_binary, 1.)))
+    image_sum_list.append(tf.summary.image('3_synthetic_defocus_gt', fix_image(labels_synthetic_defocus, 1.)))
+    image_sum_list.append(tf.summary.image('4_real_input', patches_real))
+    image_sum_list.append(tf.summary.image('5_real_defocus_out', fix_image(output_real_defocus, 1.)))
+    image_sum_list.append(tf.summary.image('6_real_binary_out', fix_image(output_real_binary, 1.)))
+    image_sum_list.append(tf.summary.image('7_real_binary_gt', fix_image(labels_real_binary, 1.)))
     image_sum = tf.summary.merge(image_sum_list)
 
     ## INITIALIZE SESSION
