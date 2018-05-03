@@ -344,14 +344,15 @@ def train():
             err_d, _ = sess.run([loss_d, optim_d], {patches_synthetic: synthetic_images_blur, patches_real: real_images_blur, labels_synthetic_defocus: synthetic_defocus_maps})
 
             #generator
-            err_main, err_def, err_bin, lr, _ = \
-            sess.run([loss_main, loss_defocus, loss_binary, learning_rate, optim_g], 
-                {patches_synthetic: synthetic_images_blur,
-                labels_synthetic_defocus: synthetic_defocus_maps,
-                labels_synthetic_binary: synthetic_binary_maps,
-                patches_real: real_images_blur,
-                labels_real_binary: real_binary_maps
-                })
+            for i in np.arange(3):
+                err_main, err_def, err_bin, lr, _ = \
+                sess.run([loss_main, loss_defocus, loss_binary, learning_rate, optim_g], 
+                    {patches_synthetic: synthetic_images_blur,
+                    labels_synthetic_defocus: synthetic_defocus_maps,
+                    labels_synthetic_binary: synthetic_binary_maps,
+                    patches_real: real_images_blur,
+                    labels_real_binary: real_binary_maps
+                    })
 
             print('[%s] Ep [%2d/%2d] %4d/%4d time: %4.2fs, err_main: %.3f, err_d: %.3f, err_def: %.3f, err_bin: %.3f, lr: %.8f' % \
                 (tl.global_flag['mode'], epoch, n_epoch, n_iter, len(train_synthetic_img_list)/batch_size, time.time() - step_time, err_main, err_d, err_def, err_bin, lr))
