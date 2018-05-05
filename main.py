@@ -115,13 +115,13 @@ def train():
             with tf.variable_scope('feature'):
                 loss_synthetic_d_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_synthetic, tf.zeros_like(d_feature_logits_synthetic), name = 'synthetic')
                 loss_real_d_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_real, tf.ones_like(d_feature_logits_real), name = 'real')
-                loss_d_feature = tf.identity((loss_synthetic_d_feature + loss_real_d_feature) * lambda_adv, name = 'total')
+                loss_d_feature = tf.identity((loss_synthetic_d_feature + loss_real_d_feature) / 2. * lambda_adv, name = 'total')
 
             with tf.variable_scope('defocus'):
                 loss_synthetic_d_defocus = tl.cost.sigmoid_cross_entropy(d_defocus_logits_synthetic, tf.zeros_like(d_defocus_logits_synthetic), name = 'synthetic')
                 loss_real_d_defocus = tl.cost.sigmoid_cross_entropy(d_defocus_logits_real, tf.zeros_like(d_defocus_logits_real), name = 'real')
                 loss_actual_d_defocus = tl.cost.sigmoid_cross_entropy(d_defocus_logits_actual, tf.ones_like(d_defocus_logits_actual), name = 'actual')
-                loss_d_defocus = tf.identity((loss_synthetic_d_defocus + loss_real_d_defocus + loss_actual_d_defocus) * lambda_adv, name = 'total')
+                loss_d_defocus = tf.identity((loss_synthetic_d_defocus + loss_real_d_defocus + loss_actual_d_defocus) / 3. * lambda_adv, name = 'total')
 
             loss_d = tf.identity((loss_d_feature + loss_d_defocus)/2., name = 'total')
 
@@ -129,12 +129,12 @@ def train():
             with tf.variable_scope('feature'):
                 loss_synthetic_g_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_synthetic, tf.ones_like(d_feature_logits_synthetic), name = 'synthetic')
                 loss_real_g_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_real, tf.ones_like(d_feature_logits_real), name = 'real')
-                loss_g_feature = tf.identity((loss_synthetic_g_feature + loss_real_g_feature) * lambda_adv, name = 'total')
+                loss_g_feature = tf.identity((loss_synthetic_g_feature + loss_real_g_feature) / 2. * lambda_adv, name = 'total')
 
             with tf.variable_scope('defocus'):
                 loss_synthetic_g_defocus = tl.cost.sigmoid_cross_entropy(d_defocus_logits_synthetic, tf.ones_like(d_defocus_logits_synthetic), name = 'synthetic')
                 loss_real_g_defocus = tl.cost.sigmoid_cross_entropy(d_defocus_logits_real, tf.ones_like(d_defocus_logits_real), name = 'real')
-                loss_g_defocus = tf.identity((loss_synthetic_g_defocus + loss_real_g_defocus) * lambda_adv, name = 'total')
+                loss_g_defocus = tf.identity((loss_synthetic_g_defocus + loss_real_g_defocus) / 2. * lambda_adv, name = 'total')
 
             loss_g = tf.identity((loss_g_feature + loss_g_defocus) / 2., name = 'total')
 
