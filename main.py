@@ -324,53 +324,31 @@ def train():
 
             ## RUN NETWORK
             #discriminator
-            p_d_sum = 0
-            p_f_sum = 0
-            while p_d_sum < 0.5 and p_f_sum < 0.5:
-                err_d, _, d_d_synthetic, d_d_real, d_d_actual, d_f_synthetic, d_f_real = sess.run([loss_d, optim_d, d_defocus_synthetic, d_defocus_real, d_defocus_actual, d_feature_synthetic, d_feature_real], {patches_synthetic: synthetic_images_blur, patches_real: real_images_blur, labels_synthetic_defocus: synthetic_defocus_maps})
-
-                d_d_synthetic = np.round(np.squeeze(d_d_synthetic)).astype(int)
-                d_d_real = np.round(np.squeeze(d_d_real)).astype(int)
-                d_d_actual = np.round(np.squeeze(d_d_actual)).astype(int)
-                p_d_synthetic =  len(d_d_synthetic[np.where(d_d_synthetic == 0)])
-                p_d_real =  len(d_d_real[np.where(d_d_real == 0)])
-                p_d_actual =  len(d_d_actual[np.where(d_d_actual == 1)])
-                p_d_sum = (p_d_synthetic + p_d_real + p_d_actual) / float(len(d_d_synthetic) + len(d_d_real) + len(d_d_actual))
-
-                d_f_synthetic = np.round(np.squeeze(d_f_synthetic)).astype(int)
-                d_f_real = np.round(np.squeeze(d_f_real)).astype(int)
-                p_f_synthetic =  len(d_f_synthetic[np.where(d_f_synthetic == 0)])
-                p_f_real =  len(d_f_real[np.where(d_f_real == 1)])
-                p_f_sum = (p_f_synthetic + p_f_real) / float(len(d_f_synthetic) + len(d_f_real))
+            feed_dict = {patches_synthetic: synthetic_images_blur, patches_real: real_images_blur, labels_synthetic_defocus: synthetic_defocus_maps}
+            err_d = sess.run(loss_d, feed_dict)
+            d_count = 0
+            while err_d > 0.02:
+                err_d, _ = sess.run([loss_d, optim_d], feed_dict)
+                d_count = d_count + 1
+            d_synthetic, d_real, d_actual = sess.run([d_defocus_synthetic, d_defocus_real, d_defocus_actual], feed_dict)
+            d_acc = get_disc_accuracy([d_synthetic, d_real, d_actual], [0, 0, 1])
 
             #generator
-            p_d_sum = 0
-            p_f_sum = 0
-            while p_d_sum < 0.5 and p_f_sum < 0.5:
-                err_main, err_def, err_bin, lr, _, d_d_synthetic, d_d_real, d_f_synthetic, d_f_real = \
-                sess.run([loss_main, loss_defocus, loss_binary, learning_rate, optim_g, d_defocus_synthetic, d_defocus_real, d_feature_synthetic, d_feature_real], 
-                    {patches_synthetic: synthetic_images_blur,
-                    labels_synthetic_defocus: synthetic_defocus_maps,
-                    labels_synthetic_binary: synthetic_binary_maps,
-                    patches_real: real_images_blur,
-                    labels_real_binary: real_binary_maps
-                    })
+            feed_dict = {patches_synthetic: synthetic_images_blur, labels_synthetic_defocus: synthetic_defocus_maps, labels_synthetic_binary: synthetic_binary_maps, patches_real: real_images_blur, labels_real_binary: real_binary_maps}
+            g_count = 0
+            err_g = 0
+            while g_count == 0 or err_g > 0.01:
+                err_g, _ = sess.run([loss_g, optim_main], feed_dict)
+                g_count = g_count + 1
 
-                d_d_synthetic = np.round(np.squeeze(d_d_synthetic)).astype(int)
-                d_d_real = np.round(np.squeeze(d_d_real)).astype(int)
-                p_d_synthetic =  len(d_d_synthetic[np.where(d_d_synthetic == 1)])
-                p_d_real =  len(d_d_real[np.where(d_d_real == 1)])
-                p_d_sum = (p_d_synthetic + p_d_real + p_d_actual) / float(len(d_d_synthetic) + len(d_d_real))
+            #log
+            err_main, err_g, err_d, d_synthetic, d_real, lr = \
+            sess.run([loss_main, loss_g, loss_d, d_defocus_synthetic, d_defocus_real, learning_rate], feed_dict)
+            g_acc = get_disc_accuracy([d_synthetic, d_real], [1, 1])
 
-                d_f_synthetic = np.round(np.squeeze(d_f_synthetic)).astype(int)
-                d_f_real = np.round(np.squeeze(d_f_real)).astype(int)
-                p_f_synthetic =  len(d_f_synthetic[np.where(d_f_synthetic == 1)])
-                p_f_real =  len(d_f_real[np.where(d_f_real == 0)])
-                p_f_sum = (p_f_synthetic + p_f_real) / float(len(d_f_synthetic) + len(d_f_real))
+            print('[%s] Ep [%2d/%2d] %4d/%4d time: %4.2fs, err[main: %.3f, g(acc, count): %.5f(%.5f, %d), d(acc, count): %.5f(%.5f, %d)], lr: %.8f' % \
+                (tl.global_flag['mode'], epoch, n_epoch, n_iter, len(train_synthetic_img_list)/batch_size, time.time() - step_time, err_main, err_g, g_acc, g_count, err_d, d_acc, d_count, lr))
 
-            print('[%s] Ep [%2d/%2d] %4d/%4d time: %4.2fs, err_main: %.3f, err_d: %.3f, err_def: %.3f, err_bin: %.3f, lr: %.8f' % \
-                (tl.global_flag['mode'], epoch, n_epoch, n_iter, len(train_synthetic_img_list)/batch_size, time.time() - step_time, err_main, err_d, err_def, err_bin, lr))
-            
             ## SAVE LOGS
             # save loss & image log
             if global_step % config.TRAIN.write_log_every == 0:
