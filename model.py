@@ -283,7 +283,6 @@ def Binary_Net(input_defocus, is_train=False, reuse=False, scope = 'Binary_Net')
         n = DropoutLayer(n, keep=0.5, is_fix=True, is_train=is_train, name='l3/dr3')
 
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='l4/pad1')
-        n = DropoutLayer(n, keep=0.2, is_fix=True, is_train=is_train, name='l4/dr1')
         n = Conv2d(n, 1, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_sigmoid, name='l4/c1')
         logits = n.outputs
 
