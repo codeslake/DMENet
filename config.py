@@ -30,8 +30,8 @@ config.TRAIN.lambda_adv = 1e-3;
 # config.TRAIN.defocus_map_path = '/data1/junyonglee/blur_sharp_only/defocus_map/'
 # config.TRAIN.synthetic_binary_map_path = '/data1/junyonglee/blur_sharp_only/binary_map/'
 
-offset = '/Mango/Users/JunyongLee/datasets/30_new_better/'
-#offset = '/Mango/Users/JunyongLee/datasets/30_continuous/'
+#offset = '/Mango/Users/JunyongLee/datasets/30_new_better/'
+offset = '/Mango/Users/JunyongLee/datasets/30_continuous/'
 config.TRAIN.synthetic_img_path = offset + 'image/'
 config.TRAIN.defocus_map_path = offset + 'blur_map/'
 config.TRAIN.defocus_map_norm_path = offset + 'blur_map_norm/'
