@@ -137,9 +137,9 @@ def UNet_up(feats, is_train=False, reuse=False, scope = 'unet_up'):
         u0 = n
 
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='uf/pad3')
-        n_1c = Conv2d(n, 1, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_sigmoid, name='uf/1c')
+        n = Conv2d(n, 1, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_sigmoid, name='uf/1c')
 
-        return n.outputs, tf.nn.sigmoid(n_1c.outputs), [u0.outputs, u1.outputs, u2.outputs, u3.outputs, d4.outputs]
+        return n.outputs, tf.nn.sigmoid(n.outputs), [u0.outputs, u1.outputs, u2.outputs, u3.outputs, d4.outputs]
 
 def feature_discriminator(feats, is_train=True, reuse=False, scope = 'feature_discriminator'):
     w_init = tf.contrib.layers.variance_scaling_initializer()
