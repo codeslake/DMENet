@@ -121,7 +121,7 @@ def train():
                 loss_synthetic_d_defocus = tl.cost.sigmoid_cross_entropy(d_defocus_logits_synthetic, tf.zeros_like(d_defocus_logits_synthetic), name = 'synthetic')
                 loss_real_d_defocus = tl.cost.sigmoid_cross_entropy(d_defocus_logits_real, tf.zeros_like(d_defocus_logits_real), name = 'real')
                 loss_actual_d_defocus = tl.cost.sigmoid_cross_entropy(d_defocus_logits_actual, tf.ones_like(d_defocus_logits_actual), name = 'actual')
-                loss_d_defocus = tf.identity((loss_synthetic_d_defocus + loss_real_d_defocus + loss_actual_d_defocus) / 3. * lambda_adv, name = 'total')
+                loss_d_defocus = tf.identity((loss_synthetic_d_defocus + loss_real_d_defocus) / 2. + loss_actual_d_defocus * lambda_adv, name = 'total')
 
             loss_d = tf.identity((loss_d_feature + loss_d_defocus)/2., name = 'total')
 
