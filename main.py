@@ -154,7 +154,7 @@ def train():
     with tf.variable_scope('Optimizer'):
         learning_rate = tf.Variable(lr_init, trainable = False)
         learning_rate_init = tf.Variable(lr_init_init, trainable = False)
-        optim_d = tf.train.AdamOptimizer(learning_rate, beta1 = beta1).minimize(loss_d, var_list = d_vars)
+        optim_d = tf.train.AdamOptimizer(learning_rate * 1e-2, beta1 = beta1).minimize(loss_d, var_list = d_vars)
         optim_main = tf.train.AdamOptimizer(learning_rate, beta1 = beta1).minimize(loss_main, var_list = main_vars)
         optim_init = tf.train.AdamOptimizer(learning_rate_init, beta1 = beta1).minimize(loss_init, var_list = init_vars)
 
@@ -325,25 +325,30 @@ def train():
             ## RUN NETWORK
             #discriminator
             feed_dict = {patches_synthetic: synthetic_images_blur, patches_real: real_images_blur, labels_synthetic_defocus: synthetic_defocus_maps}
-            err_d = sess.run(loss_d, feed_dict)
+            d_synthetic, d_real = sess.run([d_feature_synthetic, d_feature_real], feed_dict)
+            d_acc = get_disc_accuracy([d_synthetic, d_real], [0, 1])
             d_count = 0
-            while err_d > 0.02:
-                err_d, _ = sess.run([loss_d, optim_d], feed_dict)
+            while d_acc < 0.5:
+                _ = sess.run(optim_d, feed_dict)
+                d_synthetic, d_real = sess.run([d_feature_synthetic, d_feature_real], feed_dict)
+                d_acc = get_disc_accuracy([d_synthetic, d_real], [0, 1])
                 d_count = d_count + 1
-            d_synthetic, d_real, d_actual = sess.run([d_defocus_synthetic, d_defocus_real, d_defocus_actual], feed_dict)
-            d_acc = get_disc_accuracy([d_synthetic, d_real, d_actual], [0, 0, 1])
 
             #generator
             feed_dict = {patches_synthetic: synthetic_images_blur, labels_synthetic_defocus: synthetic_defocus_maps, labels_synthetic_binary: synthetic_binary_maps, patches_real: real_images_blur, labels_real_binary: real_binary_maps}
+            d_synthetic, d_real = sess.run([d_feature_synthetic, d_feature_real], feed_dict)
+            g_acc = get_disc_accuracy([d_synthetic, d_real], [1, 1])
             g_count = 0
-            err_g = 0
-            while g_count == 0 or err_g > 0.01:
+            while g_count == 0 or g_acc < 0.6:
                 err_g, _ = sess.run([loss_g, optim_main], feed_dict)
+                d_synthetic, d_real = sess.run([d_feature_synthetic, d_feature_real], feed_dict)
+                g_acc = get_disc_accuracy([d_synthetic, d_real], [1, 1])
                 g_count = g_count + 1
 
             #log
             err_main, err_g, err_d, d_synthetic, d_real, lr = \
-            sess.run([loss_main, loss_g, loss_d, d_defocus_synthetic, d_defocus_real, learning_rate], feed_dict)
+            sess.run([loss_main, loss_g, loss_d, d_feature_synthetic, d_feature_real, learning_rate], feed_dict)
+            d_acc = get_disc_accuracy([d_synthetic, d_real], [0, 1])
             g_acc = get_disc_accuracy([d_synthetic, d_real], [1, 1])
 
             print('[%s] Ep [%2d/%2d] %4d/%4d time: %4.2fs, err[main: %.3f, g(acc, count): %.5f(%.5f, %d), d(acc, count): %.5f(%.5f, %d)], lr: %.8f' % \
