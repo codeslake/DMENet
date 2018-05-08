@@ -134,15 +134,6 @@ def train():
              loss_real_binary = tl.cost.sigmoid_cross_entropy(output_real_binary_logits, labels_real_binary, name = 'real')
              loss_binary = tf.identity(loss_real_binary)
 
-        with tf.variable_scope('total_variation'):
-            tv_loss_synthetic_defocus = lambda_tv_defocus * tf.reduce_sum(tf.image.total_variation(output_synthetic_defocus))
-            tv_loss_real_defocus = lambda_tv_defocus * tf.reduce_sum(tf.image.total_variation(output_real_defocus))
-
-            tv_loss_real_binary = lambda_tv_binary * tf.reduce_sum(tf.image.total_variation(output_real_binary))
-            tv_loss = (tv_loss_real_defocus + tv_loss_synthetic_defocus) / 2. + tv_loss_real_binary
-
-        # loss_main = tf.identity(loss_defocus + loss_binary + loss_g + tv_loss, name = 'total')
-        # loss_init = tf.identity(loss_defocus + tv_loss_synthetic_defocus, name = 'loss_init')
         loss_main = tf.identity(loss_defocus + loss_binary + loss_g, name = 'total')
         loss_init = tf.identity(loss_defocus, name = 'loss_init')
 
@@ -179,9 +170,9 @@ def train():
 
     image_sum_list_init = []
     image_sum_list_init.append(tf.summary.image('1_synthetic_input_init', patches_synthetic))
-    image_sum_list_init.append(tf.summary.image('3_synthetic_defocus_out_init', fix_image(output_synthetic_defocus_test, 1.)))
-    image_sum_list_init.append(tf.summary.image('4_synthetic_defocus_out_norm_init', norm_image(output_synthetic_defocus_test)))
-    image_sum_list_init.append(tf.summary.image('5_synthetic_defocus_gt_init', fix_image(labels_synthetic_defocus, 1.)))
+    image_sum_list_init.append(tf.summary.image('3_synthetic_defocus_out_init', norm_image_tf(output_synthetic_defocus_test)))
+    image_sum_list_init.append(tf.summary.image('4_synthetic_defocus_out_norm_init', norm_image_tf(output_synthetic_defocus_test)))
+    image_sum_list_init.append(tf.summary.image('5_synthetic_defocus_gt_init', norm_image_tf(labels_synthetic_defocus)))
     image_sum_init = tf.summary.merge(image_sum_list_init)
 
     # for train
@@ -192,7 +183,6 @@ def train():
         loss_sum_g_list.append(tf.summary.scalar('3_g_feature', loss_g_feature))
         loss_sum_g_list.append(tf.summary.scalar('4_defocus', loss_defocus))
         loss_sum_g_list.append(tf.summary.scalar('5_binary', loss_binary))
-        #loss_sum_g_list.append(tf.summary.scalar('5_tv', tv_loss))
     loss_sum_g = tf.summary.merge(loss_sum_g_list)
 
     loss_sum_d_list = []
@@ -203,12 +193,12 @@ def train():
 
     image_sum_list = []
     image_sum_list.append(tf.summary.image('1_synthetic_input', patches_synthetic))
-    image_sum_list.append(tf.summary.image('2_synthetic_defocus_out', fix_image(output_synthetic_defocus_test, 1.)))
-    image_sum_list.append(tf.summary.image('3_synthetic_defocus_gt', fix_image(labels_synthetic_defocus, 1.)))
+    image_sum_list.append(tf.summary.image('2_synthetic_defocus_out', norm_image_tf(output_synthetic_defocus_test)))
+    image_sum_list.append(tf.summary.image('3_synthetic_defocus_gt', norm_image_tf(labels_synthetic_defocus)))
     image_sum_list.append(tf.summary.image('4_real_input', patches_real))
-    image_sum_list.append(tf.summary.image('5_real_defocus_out', fix_image(output_real_defocus_test, 1.)))
-    image_sum_list.append(tf.summary.image('6_real_binary_out', fix_image(output_real_binary_test, 1.)))
-    image_sum_list.append(tf.summary.image('7_real_binary_gt', fix_image(labels_real_binary, 1.)))
+    image_sum_list.append(tf.summary.image('5_real_defocus_out', norm_image_tf(output_real_defocus_test)))
+    image_sum_list.append(tf.summary.image('6_real_binary_out', norm_image_tf(output_real_binary_test)))
+    image_sum_list.append(tf.summary.image('7_real_binary_gt', norm_image_tf(labels_real_binary)))
     image_sum = tf.summary.merge(image_sum_list)
 
     ## INITIALIZE SESSION
@@ -355,7 +345,7 @@ def train():
             d_acc = get_disc_accuracy([d_synthetic, d_real], [0, 1])
             g_acc = get_disc_accuracy([d_synthetic, d_real], [1, 0])
 
-            print('[%s] Ep [%2d/%2d] %4d/%4d time: %4.2fs, err[main: %1.2e, g(acc, count): %1.2e(%1.2e, %d), d(acc, count): %1.2e(%1.2e, %d)], lr: %1.2e' % \
+            print('[%s] Ep [%2d/%2d] %4d/%4d time: %4.2fs, err[main: %1.2e, g(acc, #): %1.2e(%1.2f, %d), d(acc, #): %1.2e(%1.2f, %d)], lr: %1.2e' % \
                 (tl.global_flag['mode'], epoch, n_epoch, n_iter, len(train_synthetic_img_list)/batch_size, time.time() - step_time, err_main, err_g, g_acc, g_count, err_d, d_acc, d_count, lr))
 
             ## SAVE LOGS
@@ -373,10 +363,10 @@ def train():
             if global_step != 0 and global_step % config.TRAIN.write_sample_every == 0:
                 synthetic_defocus_out, real_defocus_out, real_binary_out = sess.run([output_synthetic_defocus, output_real_defocus, output_real_binary], {patches_synthetic: synthetic_images_blur, patches_real: real_images_blur, labels_real_binary: real_binary_maps })
                 save_images(synthetic_images_blur, [ni, ni], sample_dir + '/{}_{}_1_synthetic_input.png'.format(epoch, global_step))
-                save_images(synthetic_defocus_out, [ni, ni], sample_dir + '/{}_{}_2_synthetic_defocus_out.png'.format(epoch, global_step))
-                save_images(synthetic_defocus_maps, [ni, ni], sample_dir + '/{}_{}_3_synthetic_defocus_gt.png'.format(epoch, global_step))
+                save_images(norm_image(synthetic_defocus_out), [ni, ni], sample_dir + '/{}_{}_2_synthetic_defocus_out_norm.png'.format(epoch, global_step))
+                save_images(norm_image(synthetic_defocus_maps), [ni, ni], sample_dir + '/{}_{}_3_synthetic_defocus_gt.png'.format(epoch, global_step))
                 save_images(real_images_blur, [ni, ni], sample_dir + '/{}_{}_4_real_input.png'.format(epoch, global_step))
-                save_images(real_defocus_out, [ni, ni], sample_dir + '/{}_{}_5_real_defocus_out.png'.format(epoch, global_step))
+                save_images(norm_image(real_defocus_out), [ni, ni], sample_dir + '/{}_{}_5_real_defocus_out_norm.png'.format(epoch, global_step))
                 save_images(real_binary_out, [ni, ni], sample_dir + '/{}_{}_6_real_binary_out.png'.format(epoch, global_step))
                 save_images(real_binary_maps, [ni, ni], sample_dir + '/{}_{}_7_real_binary_gt.png'.format(epoch, global_step))
 

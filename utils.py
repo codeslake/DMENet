@@ -31,8 +31,9 @@ def get_images(file_name, path, mode):
         image = np.expand_dims(1 - image, axis = 2)
     elif mode is 'DEPTH':
         image = (np.float32(cv2.imread(path + file_name, cv2.IMREAD_UNCHANGED))/10.)[:, :, 1]
+        image = 30. - image
         #image = 1 - (image / 29.)
-        image = 1 - (image / 30.)
+        #image = 1 - (image / 30.)
         image = np.expand_dims(image, axis = 2)
 
     return image
@@ -314,7 +315,7 @@ def remove_file_end_with(path, regex):
 
     for i in np.arange(len(file_paths)):
         os.remove(file_paths[i])
-        
+
 def save_images(images, size, image_path='_temp.png'):
     if len(images.shape) == 3:  # Greyscale [batch, h, w] --> [batch, h, w, 1]
         images = images[:, :, :, np.newaxis]
@@ -329,20 +330,28 @@ def save_images(images, size, image_path='_temp.png'):
         return img
 
     def imsave(images, size, path):
-        return scipy.misc.toimage(merge(images, size), cmin = 0., cmax = 1.).save(path)
+        if images.shape[2] == 1:
+            return scipy.misc.toimage(merge(images, size), cmin = 0., cmax = 1.).save(path)
+        elif images.shape[2]:
+            return scipy.misc.toimage(merge(images, size), cmin = 0., cmax = 255.).save(path)
 
     assert len(images) <= size[0] * size[1], "number of images should be equal or less than size[0] * size[1] {}".format(len(images))
 
     return imsave(images, size, image_path)
 
-def fix_image(image, norm_value):
+def fix_image_tf(image, norm_value):
     return tf.cast(image / norm_value * 255., tf.uint8)
 
-def norm_image(image):
+def norm_image_tf(image):
     image = image - tf.reduce_min(image, axis = [1, 2, 3], keepdims=True)
     image = image / tf.reduce_max(image, axis = [1, 2, 3], keepdims=True)
     return tf.cast(image * 255., tf.uint8)
 
+def norm_image(image):
+    image = image - np.amin(image, axis = (1, 2, 3), keepdims=True)
+    image = image / np.amax(image, axis = (1, 2, 3), keepdims=True)
+    return image
+        
 def entry_stop_gradients(target, mask):
     mask_h = tf.abs(mask-1)
     return tf.stop_gradient(mask_h * target) + mask * target

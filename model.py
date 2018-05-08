@@ -293,7 +293,7 @@ def feature_discriminator(feats, is_train=True, reuse=False, scope = 'feature_di
     w_init = tf.contrib.layers.variance_scaling_initializer()
     w_init_sigmoid = tf.contrib.layers.xavier_initializer()
     b_init = None # tf.constant_initializer(value=0.0)
-    gamma_init=tf.random_normal_initializer(1., 0.02)
+    g_init = None
     
     lrelu = lambda x: tl.act.lrelu(x, 0.2)
     with tf.variable_scope(scope, reuse=reuse):
