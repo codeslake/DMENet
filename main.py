@@ -105,9 +105,9 @@ def train():
             d_feature_logits_synthetic = feature_discriminator(feats_synthetic_down, is_train = True, reuse = False, scope = scope)
             d_feature_logits_real = feature_discriminator(feats_real_down, is_train = True, reuse = True, scope = scope)
         with tf.variable_scope('defocus_map') as scope:
-            d_defocus_logits_synthetic = defocus_discriminator(output_synthetic_defocus, is_train = True, reuse = False, scope = scope)
-            d_defocus_logits_real = defocus_discriminator(output_real_defocus, is_train = True, reuse = True, scope = scope)
-            d_defocus_logits_actual = defocus_discriminator(labels_synthetic_defocus, is_train = True, reuse = True, scope = scope)
+            d_defocus_logits_synthetic, d_defocus_synthetic = defocus_discriminator(output_synthetic_defocus, is_train = True, reuse = False, scope = scope)
+            d_defocus_logits_real, d_defocus_real = defocus_discriminator(output_real_defocus, is_train = True, reuse = True, scope = scope)
+            d_defocus_logits_actual, d_defocus_actual = defocus_discriminator(labels_synthetic_defocus, is_train = True, reuse = True, scope = scope)
 
     ## DEFINE LOSS
     with tf.variable_scope('loss'):
