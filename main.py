@@ -210,8 +210,8 @@ def train():
 
     ## INITIALIZE SESSION
     tl.layers.initialize_global_variables(sess)
+    tl.files.load_and_assign_npz_dict(name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
     if tl.global_flag['is_pretrain']:
-        tl.files.load_and_assign_npz_dict(name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
         print '*****************************************'
         print '           PRE-TRAINING START'
         print '*****************************************'
