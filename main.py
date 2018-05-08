@@ -165,7 +165,6 @@ def train():
     with tf.variable_scope('loss_init'):
         loss_sum_list_init.append(tf.summary.scalar('1_total_loss_init', loss_init))
         loss_sum_list_init.append(tf.summary.scalar('2_defocus_loss_init', loss_defocus))
-        loss_sum_list_init.append(tf.summary.scalar('4_tv_loss_init', tv_loss_synthetic_defocus))
         loss_sum_init = tf.summary.merge(loss_sum_list_init)
 
     image_sum_list_init = []
