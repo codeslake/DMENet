@@ -196,7 +196,7 @@ def feature_discriminator(feats, is_train=True, reuse=False, scope = 'feature_di
         n = DenseLayer(n, n_units=1, act=tf.identity, W_init=w_init_sigmoid, name='hf/dense')
         logits = n.outputs
 
-    return logits
+    return logits, tf.nn.sigmoid(logits)
 
 def defocus_discriminator(t_image, is_train=False, reuse=False, scope='defocus_discriminator'):
     w_init = tf.contrib.layers.variance_scaling_initializer()

@@ -102,8 +102,8 @@ def train():
 
     with tf.variable_scope('discriminator') as scope:
         with tf.variable_scope('feature') as scope:
-            d_feature_logits_synthetic = feature_discriminator(feats_synthetic_down, is_train = True, reuse = False, scope = scope)
-            d_feature_logits_real = feature_discriminator(feats_real_down, is_train = True, reuse = True, scope = scope)
+            d_feature_logits_synthetic, d_feature_synthetic = feature_discriminator(feats_synthetic_down, is_train = True, reuse = False, scope = scope)
+            d_feature_logits_real, d_feature_real = feature_discriminator(feats_real_down, is_train = True, reuse = True, scope = scope)
         with tf.variable_scope('defocus_map') as scope:
             d_defocus_logits_synthetic, d_defocus_synthetic = defocus_discriminator(output_synthetic_defocus, is_train = True, reuse = False, scope = scope)
             d_defocus_logits_real, d_defocus_real = defocus_discriminator(output_real_defocus, is_train = True, reuse = True, scope = scope)
@@ -341,18 +341,49 @@ def train():
 
             ## RUN NETWORK
             #discriminator
-            err_d, _ = sess.run([loss_d, optim_d], {patches_synthetic: synthetic_images_blur, patches_real: real_images_blur, labels_synthetic_defocus: synthetic_defocus_maps})
+            p_d_sum = 0
+            p_f_sum = 0
+            while p_d_sum < 0.5 and p_f_sum < 0.5:
+                err_d, _, d_d_synthetic, d_d_real, d_d_actual, d_f_synthetic, d_f_real = sess.run([loss_d, optim_d, d_defocus_synthetic, d_defocus_real, d_defocus_actual, d_feature_synthetic, d_feature_real], {patches_synthetic: synthetic_images_blur, patches_real: real_images_blur, labels_synthetic_defocus: synthetic_defocus_maps})
+
+                d_d_synthetic = np.round(np.squeeze(d_d_synthetic)).astype(int)
+                d_d_real = np.round(np.squeeze(d_d_real)).astype(int)
+                d_d_actual = np.round(np.squeeze(d_d_actual)).astype(int)
+                p_d_synthetic =  len(d_d_synthetic[np.where(d_d_synthetic == 0)])
+                p_d_real =  len(d_d_real[np.where(d_d_real == 0)])
+                p_d_actual =  len(d_d_actual[np.where(d_d_actual == 1)])
+                p_d_sum = (p_d_synthetic + p_d_real + p_d_actual) / float(len(d_d_synthetic) + len(d_d_real) + len(d_d_actual))
+
+                d_f_synthetic = np.round(np.squeeze(d_f_synthetic)).astype(int)
+                d_f_real = np.round(np.squeeze(d_f_real)).astype(int)
+                p_f_synthetic =  len(d_f_synthetic[np.where(d_f_synthetic == 0)])
+                p_f_real =  len(d_f_real[np.where(d_f_real == 1)])
+                p_f_sum = (p_f_synthetic + p_f_real) / float(len(d_f_synthetic) + len(d_f_real))
 
             #generator
-            for i in np.arange(3):
-                err_main, err_def, err_bin, lr, _ = \
-                sess.run([loss_main, loss_defocus, loss_binary, learning_rate, optim_g], 
+            p_d_sum = 0
+            p_f_sum = 0
+            while p_d_sum < 0.5 and p_f_sum < 0.5:
+                err_main, err_def, err_bin, lr, _, d_d_synthetic, d_d_real, d_f_synthetic, d_f_real = \
+                sess.run([loss_main, loss_defocus, loss_binary, learning_rate, optim_g, d_defocus_synthetic, d_defocus_real, d_feature_synthetic, d_feature_real], 
                     {patches_synthetic: synthetic_images_blur,
                     labels_synthetic_defocus: synthetic_defocus_maps,
                     labels_synthetic_binary: synthetic_binary_maps,
                     patches_real: real_images_blur,
                     labels_real_binary: real_binary_maps
                     })
+
+                d_d_synthetic = np.round(np.squeeze(d_d_synthetic)).astype(int)
+                d_d_real = np.round(np.squeeze(d_d_real)).astype(int)
+                p_d_synthetic =  len(d_d_synthetic[np.where(d_d_synthetic == 1)])
+                p_d_real =  len(d_d_real[np.where(d_d_real == 1)])
+                p_d_sum = (p_d_synthetic + p_d_real + p_d_actual) / float(len(d_d_synthetic) + len(d_d_real))
+
+                d_f_synthetic = np.round(np.squeeze(d_f_synthetic)).astype(int)
+                d_f_real = np.round(np.squeeze(d_f_real)).astype(int)
+                p_f_synthetic =  len(d_f_synthetic[np.where(d_f_synthetic == 1)])
+                p_f_real =  len(d_f_real[np.where(d_f_real == 0)])
+                p_f_sum = (p_f_synthetic + p_f_real) / float(len(d_f_synthetic) + len(d_f_real))
 
             print('[%s] Ep [%2d/%2d] %4d/%4d time: %4.2fs, err_main: %.3f, err_d: %.3f, err_def: %.3f, err_bin: %.3f, lr: %.8f' % \
                 (tl.global_flag['mode'], epoch, n_epoch, n_iter, len(train_synthetic_img_list)/batch_size, time.time() - step_time, err_main, err_d, err_def, err_bin, lr))
@@ -365,11 +396,11 @@ def train():
                 writer_scalar.add_summary(summary_loss_g, global_step)
                 writer_image.add_summary(summary_image, global_step)
             # save checkpoint
-            if global_step % config.TRAIN.write_ckpt_every == 0:
+            if global_step != 0 and global_step % config.TRAIN.write_ckpt_every == 0:
                 shutil.rmtree(ckpt_dir, ignore_errors = True)
                 tl.files.save_ckpt(sess = sess, mode_name = '{}.ckpt'.format(tl.global_flag['mode']), save_dir = ckpt_dir, var_list = save_vars, global_step = global_step, printable = False)
             # save samples
-            if global_step % config.TRAIN.write_sample_every == 0:
+            if global_step != 0 and global_step % config.TRAIN.write_sample_every == 0:
                 synthetic_defocus_out, real_defocus_out, real_binary_out = sess.run([output_synthetic_defocus, output_real_defocus, output_real_binary], {patches_synthetic: synthetic_images_blur, patches_real: real_images_blur, labels_real_binary: real_binary_maps })
                 save_images(synthetic_images_blur, [ni, ni], sample_dir + '/{}_{}_1_synthetic_input.png'.format(epoch, global_step))
                 save_images(synthetic_defocus_out, [ni, ni], sample_dir + '/{}_{}_2_synthetic_defocus_out.png'.format(epoch, global_step))
