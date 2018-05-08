@@ -246,7 +246,7 @@ def train():
                 err_init, lr, _ = \
                         sess.run([loss_init, learning_rate_init, optim_init], {patches_synthetic: synthetic_images_blur, labels_synthetic_defocus: synthetic_defocus_maps})
 
-                print('[%s] Ep [%2d/%2d] %4d/%4d time: %4.2fs, err_init: %.3f, lr: %.8f' % \
+                print('[%s] Ep [%2d/%2d] %4d/%4d time: %4.2fs, err_init: %1.2e, lr: %1.2e' % \
                     (tl.global_flag['mode'], epoch, n_epoch_init, n_iter, len(train_synthetic_img_list)/batch_size_init, time.time() - step_time, err_init, lr))
 
                 if global_step % config.TRAIN.write_log_every == 0:
@@ -351,7 +351,7 @@ def train():
             d_acc = get_disc_accuracy([d_synthetic, d_real], [0, 1])
             g_acc = get_disc_accuracy([d_synthetic, d_real], [1, 1])
 
-            print('[%s] Ep [%2d/%2d] %4d/%4d time: %4.2fs, err[main: %.3f, g(acc, count): %.5f(%.5f, %d), d(acc, count): %.5f(%.5f, %d)], lr: %.8f' % \
+            print('[%s] Ep [%2d/%2d] %4d/%4d time: %4.2fs, err[main: %1.2e, g(acc, count): %1.2e(%1.2e, %d), d(acc, count): %1.2e(%1.2e, %d)], lr: %1.2e' % \
                 (tl.global_flag['mode'], epoch, n_epoch, n_iter, len(train_synthetic_img_list)/batch_size, time.time() - step_time, err_main, err_g, g_acc, g_count, err_d, d_acc, d_count, lr))
 
             ## SAVE LOGS
@@ -382,7 +382,7 @@ def train():
             n_iter += 1
             global_step += 1
             
-        print('[*] Epoch: [%2d/%2d] time: %4.4fs, total_err: %.8f' % (epoch, n_epoch, time.time() - epoch_time, total_loss/n_iter))
+        print('[*] Epoch: [%2d/%2d] time: %4.4fs, total_err: %1.2e' % (epoch, n_epoch, time.time() - epoch_time, total_loss/n_iter))
         # reset image log
         if epoch % config.TRAIN.refresh_image_log_every == 0:
             writer_image.close()
