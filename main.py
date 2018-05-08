@@ -146,7 +146,7 @@ def train():
     ## DEFINE OPTIMIZER
     # variables to save / train
     d_vars = tl.layers.get_variables_with_name('discriminator', True, False)
-    g_vars = tl.layers.get_variables_with_name('defocus_net', True, False)
+    main_vars = tl.layers.get_variables_with_name('defocus_net', True, False)
     init_vars = tl.layers.get_variables_with_name('unet', False, False)
     save_vars = tl.layers.get_variables_with_name('defocus_net', False, False)
 
@@ -155,7 +155,7 @@ def train():
         learning_rate = tf.Variable(lr_init, trainable = False)
         learning_rate_init = tf.Variable(lr_init_init, trainable = False)
         optim_d = tf.train.AdamOptimizer(learning_rate, beta1 = beta1).minimize(loss_d, var_list = d_vars)
-        optim_g = tf.train.AdamOptimizer(learning_rate, beta1 = beta1).minimize(loss_main, var_list = g_vars)
+        optim_main = tf.train.AdamOptimizer(learning_rate, beta1 = beta1).minimize(loss_main, var_list = main_vars)
         optim_init = tf.train.AdamOptimizer(learning_rate_init, beta1 = beta1).minimize(loss_init, var_list = init_vars)
 
     ## DEFINE SUMMARY

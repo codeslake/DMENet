@@ -346,3 +346,12 @@ def entry_stop_gradients(target, mask):
     mask_h = tf.abs(mask-1)
     return tf.stop_gradient(mask_h * target) + mask * target
 
+def get_disc_accuracy(logits, labels):
+    acc = 0.
+    for i in np.arange(len(logits)):
+        tp = 0
+        logits[i] = np.round(np.squeeze(logits[i])).astype(int)
+        temp = logits[i]
+        tp = tp + len(temp[np.where(temp == labels[i])])
+        acc = acc + (tp / float(len(logits[i])))
+    return acc / float(len(labels))
