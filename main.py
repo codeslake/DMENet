@@ -91,8 +91,8 @@ def train():
     with tf.variable_scope('defocus_net') as scope:
         with tf.variable_scope('unet') as scope:
             with tf.variable_scope('unet_down') as scope:
-                feats_synthetic_down = UNet_down(patches_synthetic, is_train = True, reuse = False, scope = scope)
-                feats_real_down = UNet_down(patches_real, is_train = True, reuse = True, scope = scope)
+                feats_synthetic_down = Vgg19_simple_api(patches_synthetic, reuse = False, scope = scope)
+                feats_real_down = Vgg19_simple_api(patches_real, reuse = True, scope = scope)
             with tf.variable_scope('unet_up_defocus_map') as scope:
                 output_synthetic_defocus_logits, output_synthetic_defocus, _ = UNet_up(feats_synthetic_down, is_train = True, reuse = False, scope = scope)
                 _, output_synthetic_defocus_test, _ = UNet_up(feats_synthetic_down, is_train = False, reuse = True, scope = scope)
