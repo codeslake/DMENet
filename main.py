@@ -91,8 +91,8 @@ def train():
     with tf.variable_scope('defocus_net') as scope:
         with tf.variable_scope('unet') as scope:
             with tf.variable_scope('unet_down') as scope:
-                feats_synthetic_down = Vgg19_simple_api(patches_synthetic, reuse = False, scope = scope)
-                feats_real_down = Vgg19_simple_api(patches_real, reuse = True, scope = scope)
+                vgg_net, feats_synthetic_down = Vgg19_simple_api(patches_synthetic, reuse = False, scope = scope)
+                _, feats_real_down = Vgg19_simple_api(patches_real, reuse = True, scope = scope)
             with tf.variable_scope('unet_up_defocus_map') as scope:
                 output_synthetic_defocus_logits, output_synthetic_defocus, _ = UNet_up(feats_synthetic_down, is_train = True, reuse = False, scope = scope)
                 _, output_synthetic_defocus_test, _ = UNet_up(feats_synthetic_down, is_train = False, reuse = True, scope = scope)
@@ -105,8 +105,8 @@ def train():
 
     with tf.variable_scope('discriminator') as scope:
         with tf.variable_scope('feature') as scope:
-            d_feature_logits_synthetic, d_feature_synthetic = feature_discriminator(feats_synthetic_down, is_train = True, reuse = False, scope = scope)
-            d_feature_logits_real, d_feature_real = feature_discriminator(feats_real_down, is_train = True, reuse = True, scope = scope)
+            d_feature_logits_synthetic, d_feature_synthetic = feature_discriminator(feats_synthetic_down[1], is_train = True, reuse = False, scope = scope)
+            d_feature_logits_real, d_feature_real = feature_discriminator(feats_real_down[1], is_train = True, reuse = True, scope = scope)
 
     ## DEFINE LOSS
     with tf.variable_scope('loss'):
@@ -202,6 +202,25 @@ def train():
 
     ## INITIALIZE SESSION
     tl.layers.initialize_global_variables(sess)
+    ## LOAD VGG
+    vgg19_npy_path = "vgg19.npy"
+    if not os.path.isfile(vgg19_npy_path):
+        print("Please download vgg19.npz from : https://github.com/machrisaa/tensorflow-vgg")
+        exit()
+    npz = np.load(vgg19_npy_path, encoding='latin1').item()
+
+    params = []
+    for val in sorted( npz.items() ):
+        if val[0] == 'fc6':
+            break;
+        W = np.asarray(val[1][0])
+        b = np.asarray(val[1][1])
+        print("  Loading %s: %s, %s" % (val[0], W.shape, b.shape))
+        params.extend([W, b])
+    tl.files.assign_params(sess, params, net_vgg)
+    # net_vgg.print_params(False)
+    # net_vgg.print_layers()
+
     tl.files.load_and_assign_npz_dict(name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
     if tl.global_flag['is_pretrain']:
         print '*****************************************'

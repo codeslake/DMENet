@@ -31,9 +31,7 @@ def get_images(file_name, path, mode):
         image = np.expand_dims(1 - image, axis = 2)
     elif mode is 'DEPTH':
         image = (np.float32(cv2.imread(path + file_name, cv2.IMREAD_UNCHANGED))/10.)[:, :, 1]
-        image = 30. - image
-        #image = 1 - (image / 29.)
-        #image = 1 - (image / 30.)
+        image = 1 - image / config.TRAIN.max_coc
         image = np.expand_dims(image, axis = 2)
 
     return image

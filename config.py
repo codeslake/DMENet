@@ -31,7 +31,7 @@ config.TRAIN.lambda_adv = 1e-4
 # config.TRAIN.synthetic_binary_map_path = '/data1/junyonglee/blur_sharp_only/binary_map/'
 
 #offset = '/Mango/Users/JunyongLee/datasets/30_new_better/'
-offset = '/Mango/Users/JunyongLee/datasets/30_continuous/'
+offset = '/Mango/Users/JunyongLee/datasets/15_gaussian/'
 config.TRAIN.synthetic_img_path = offset + 'image/'
 config.TRAIN.defocus_map_path = offset + 'blur_map/'
 config.TRAIN.defocus_map_norm_path = offset + 'blur_map_norm/'
@@ -59,7 +59,7 @@ config.TRAIN.refresh_image_log_every = 50
 # save dir
 config.TRAIN.root_dir = '/data2/junyonglee/sharpness_assessment/'
 
-config.TRAIN.max_coc = 29.;
+config.TRAIN.max_coc = 15.;
 
 def log_config(path, cfg):
     with open(path + '/config.txt', 'w') as f:

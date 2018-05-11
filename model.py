@@ -82,7 +82,7 @@ def Vgg19_simple_api(rgb, reuse, scope):
         network = Conv2d(network, n_filter=512, filter_size=(3, 3), strides=(1, 1), act=tf.nn.relu,padding='VALID', name='conv5_4')
         d4 = network
         
-        return network, [d0.outputs, d1.outputs, d2.outputs, d3.outputs, d4.outputs]
+        return network, [d0.outputs, d4.outputs]
 
 def UNet_up(feats, is_train=False, reuse=False, scope = 'unet_up'):
     w_init_relu = tf.contrib.layers.variance_scaling_initializer()
@@ -92,16 +92,9 @@ def UNet_up(feats, is_train=False, reuse=False, scope = 'unet_up'):
     lrelu = lambda x: tl.act.lrelu(x, 0.2)
     with tf.variable_scope(scope, reuse=reuse) as vs:
         d0 = InputLayer(feats[0], name='d0')
-        d1 = InputLayer(feats[1], name='d1')
-        d2 = InputLayer(feats[2], name='d2')
-        d3 = InputLayer(feats[3], name='d3')
-        if feats[4] != None:
-            d4 = InputLayer(feats[4], name='d4')
-            n = UpSampling2dLayer(d4, (2, 2), is_scale = True, method = 1, align_corners=True, name='u3/u')
-            n = ConcatLayer([n, d3], concat_dim = 3, name='u3/concat')
-        else:
-            n = d3
-            
+        d4 = InputLayer(feats[1], name='d4')
+
+        n = UpSampling2dLayer(d4, (2, 2), is_scale = True, method = 1, align_corners=True, name='u3/u')
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u3/pad1')
         n = Conv2d(n, 256, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u3/c1')
         n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u3/b1')
@@ -114,7 +107,6 @@ def UNet_up(feats, is_train=False, reuse=False, scope = 'unet_up'):
         u3 = n
 
         n = UpSampling2dLayer(n, (2, 2), is_scale = True, method = 1, align_corners=True, name='u2/u')
-        n = ConcatLayer([n, d2], concat_dim = 3, name='u2/concat')
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u2/pad1')
         n = Conv2d(n, 128, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u2/c1')
         n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u2/b1')
@@ -127,7 +119,6 @@ def UNet_up(feats, is_train=False, reuse=False, scope = 'unet_up'):
         u2 = n
 
         n = UpSampling2dLayer(n, (2, 2), is_scale = True, method = 1, align_corners=True, name='u1/u')
-        n = ConcatLayer([n, d1], concat_dim = 3, name='u1/concat')
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u1/pad1')
         n = Conv2d(n, 64, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u1/c1')
         n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u1/b1')
