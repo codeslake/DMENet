@@ -26,6 +26,7 @@ decay_every = config.TRAIN.decay_every
 lambda_tv_defocus = config.TRAIN.lambda_tv_defocus
 lambda_tv_binary = config.TRAIN.lambda_tv_binary
 lambda_adv = config.TRAIN.lambda_adv
+lambda_lr_d= config.TRAIN.lambda_lr_d
 max_coc = config.TRAIN.max_coc
 
 h = config.TRAIN.height
@@ -88,20 +89,17 @@ def train():
         labels_real_binary = tf.placeholder('float32', [None, h, w, 1], name = 'labels_real_binary')
 
     # model
-    with tf.variable_scope('defocus_net') as scope:
-        with tf.variable_scope('unet') as scope:
-            with tf.variable_scope('unet_down') as scope:
-                vgg_net, feats_synthetic_down = Vgg19_simple_api(patches_synthetic, reuse = False, scope = scope)
+    with tf.variable_scope('net') as scope:
+        with tf.variable_scope('defocus_net') as scope:
+            with tf.variable_scope('encoder') as scope:
+                net_vgg, feats_synthetic_down = Vgg19_simple_api(patches_synthetic, reuse = False, scope = scope)
                 _, feats_real_down = Vgg19_simple_api(patches_real, reuse = True, scope = scope)
-            with tf.variable_scope('unet_up_defocus_map') as scope:
+            with tf.variable_scope('decoder') as scope:
                 output_synthetic_defocus_logits, output_synthetic_defocus, _ = UNet_up(feats_synthetic_down, is_train = True, reuse = False, scope = scope)
-                _, output_synthetic_defocus_test, _ = UNet_up(feats_synthetic_down, is_train = False, reuse = True, scope = scope)
                 output_real_defocus_logits, output_real_defocus, _ = UNet_up(feats_real_down, is_train = True, reuse = True, scope = scope)
-                _, output_real_defocus_test, _ = UNet_up(feats_real_down, is_train = False, reuse = True, scope = scope)
         with tf.variable_scope('binary_net') as scope:
             #output_real_binary = entry_stop_gradients(output_real_defocus, labels_real_binary)
             output_real_binary_logits, output_real_binary = Binary_Net(output_real_defocus, is_train = True, reuse = False, scope = scope)
-            _, output_real_binary_test = Binary_Net(output_real_defocus, is_train = False, reuse = True, scope = scope)
 
     with tf.variable_scope('discriminator') as scope:
         with tf.variable_scope('feature') as scope:
@@ -127,7 +125,7 @@ def train():
             loss_g = tf.identity(loss_g_feature, name = 'total')
 
         with tf.variable_scope('defocus'):
-            loss_defocus = tl.cost.mean_squared_error(output_synthetic_defocus, labels_synthetic_defocus, is_mean = True, name = 'synthetic') / 30.
+            loss_defocus = tl.cost.mean_squared_error(output_synthetic_defocus, labels_synthetic_defocus, is_mean = True, name = 'synthetic')
             # loss_defocus = tl.cost.absolute_difference_error(output_synthetic_defocus, labels_synthetic_defocus, is_mean = True)
 
         with tf.variable_scope('binary'):
@@ -141,14 +139,14 @@ def train():
     # variables to save / train
     d_vars = tl.layers.get_variables_with_name('discriminator', True, False)
     main_vars = tl.layers.get_variables_with_name('defocus_net', True, False)
-    init_vars = tl.layers.get_variables_with_name('unet', False, False)
-    save_vars = tl.layers.get_variables_with_name('defocus_net', False, False)
+    init_vars = tl.layers.get_variables_with_name('defocus_net', False, False)
+    save_vars = tl.layers.get_variables_with_name('net', False, False)
 
     # define optimizer
     with tf.variable_scope('Optimizer'):
         learning_rate = tf.Variable(lr_init, trainable = False)
         learning_rate_init = tf.Variable(lr_init_init, trainable = False)
-        optim_d = tf.train.AdamOptimizer(learning_rate * 1e-2, beta1 = beta1).minimize(loss_d, var_list = d_vars)
+        optim_d = tf.train.AdamOptimizer(learning_rate * lambda_lr_d, beta1 = beta1).minimize(loss_d, var_list = d_vars)
         optim_main = tf.train.AdamOptimizer(learning_rate, beta1 = beta1).minimize(loss_main, var_list = main_vars)
         optim_init = tf.train.AdamOptimizer(learning_rate_init, beta1 = beta1).minimize(loss_init, var_list = init_vars)
 
@@ -169,9 +167,9 @@ def train():
 
     image_sum_list_init = []
     image_sum_list_init.append(tf.summary.image('1_synthetic_input_init', patches_synthetic))
-    image_sum_list_init.append(tf.summary.image('3_synthetic_defocus_out_init', norm_image_tf(output_synthetic_defocus_test)))
-    image_sum_list_init.append(tf.summary.image('4_synthetic_defocus_out_norm_init', norm_image_tf(output_synthetic_defocus_test)))
-    image_sum_list_init.append(tf.summary.image('5_synthetic_defocus_gt_init', norm_image_tf(labels_synthetic_defocus)))
+    image_sum_list_init.append(tf.summary.image('3_synthetic_defocus_out_init', fix_image_tf(output_synthetic_defocus, 1)))
+    image_sum_list_init.append(tf.summary.image('4_synthetic_defocus_out_norm_init', fix_image_tf(output_synthetic_defocus, 1)))
+    image_sum_list_init.append(tf.summary.image('5_synthetic_defocus_gt_init', fix_image_tf(labels_synthetic_defocus, 1)))
     image_sum_init = tf.summary.merge(image_sum_list_init)
 
     # for train
@@ -192,12 +190,12 @@ def train():
 
     image_sum_list = []
     image_sum_list.append(tf.summary.image('1_synthetic_input', patches_synthetic))
-    image_sum_list.append(tf.summary.image('2_synthetic_defocus_out', norm_image_tf(output_synthetic_defocus_test)))
-    image_sum_list.append(tf.summary.image('3_synthetic_defocus_gt', norm_image_tf(labels_synthetic_defocus)))
+    image_sum_list.append(tf.summary.image('2_synthetic_defocus_out', fix_image_tf(output_synthetic_defocus, 1)))
+    image_sum_list.append(tf.summary.image('3_synthetic_defocus_gt', fix_image_tf(labels_synthetic_defocus, 1)))
     image_sum_list.append(tf.summary.image('4_real_input', patches_real))
-    image_sum_list.append(tf.summary.image('5_real_defocus_out', norm_image_tf(output_real_defocus_test)))
-    image_sum_list.append(tf.summary.image('6_real_binary_out', norm_image_tf(output_real_binary_test)))
-    image_sum_list.append(tf.summary.image('7_real_binary_gt', norm_image_tf(labels_real_binary)))
+    image_sum_list.append(tf.summary.image('5_real_defocus_out', fix_image_tf(output_real_defocus, 1)))
+    image_sum_list.append(tf.summary.image('6_real_binary_out', fix_image_tf(output_real_binary, 1)))
+    image_sum_list.append(tf.summary.image('7_real_binary_gt', fix_image_tf(labels_real_binary, 1)))
     image_sum = tf.summary.merge(image_sum_list)
 
     ## INITIALIZE SESSION
@@ -337,25 +335,27 @@ def train():
             ## RUN NETWORK
             #discriminator
             feed_dict = {patches_synthetic: synthetic_images_blur, patches_real: real_images_blur, labels_synthetic_defocus: synthetic_defocus_maps}
-            d_synthetic, d_real = sess.run([d_feature_synthetic, d_feature_real], feed_dict)
-            d_acc = get_disc_accuracy([d_synthetic, d_real], [0, 1])
+            # d_synthetic, d_real = sess.run([d_feature_synthetic, d_feature_real], feed_dict)
+            # d_acc = get_disc_accuracy([d_synthetic, d_real], [0, 1])
             d_count = 0
-            while d_acc < 0.5:
-                _ = sess.run(optim_d, feed_dict)
-                d_synthetic, d_real = sess.run([d_feature_synthetic, d_feature_real], feed_dict)
-                d_acc = get_disc_accuracy([d_synthetic, d_real], [0, 1])
-                d_count = d_count + 1
+            # while d_acc < 0.5:
+            #     _ = sess.run(optim_d, feed_dict)
+            #     d_synthetic, d_real = sess.run([d_feature_synthetic, d_feature_real], feed_dict)
+            #     d_acc = get_disc_accuracy([d_synthetic, d_real], [0, 1])
+            #     d_count = d_count + 1
+            _ = sess.run(optim_d, feed_dict)
 
             #generator
             feed_dict = {patches_synthetic: synthetic_images_blur, labels_synthetic_defocus: synthetic_defocus_maps, labels_synthetic_binary: synthetic_binary_maps, patches_real: real_images_blur, labels_real_binary: real_binary_maps}
-            d_synthetic, d_real = sess.run([d_feature_synthetic, d_feature_real], feed_dict)
-            g_acc = get_disc_accuracy([d_synthetic, d_real], [1, 0])
+            # d_synthetic, d_real = sess.run([d_feature_synthetic, d_feature_real], feed_dict)
+            # g_acc = get_disc_accuracy([d_synthetic, d_real], [1, 0])
             g_count = 0
-            while g_count == 0 or g_acc < 0.7:
-                err_g, _ = sess.run([loss_g, optim_main], feed_dict)
-                d_synthetic, d_real = sess.run([d_feature_synthetic, d_feature_real], feed_dict)
-                g_acc = get_disc_accuracy([d_synthetic, d_real], [1, 0])
-                g_count = g_count + 1
+            # while g_count == 0 or g_acc < 0.7:
+            #     err_g, _ = sess.run([loss_g, optim_main], feed_dict)
+            #     d_synthetic, d_real = sess.run([d_feature_synthetic, d_feature_real], feed_dict)
+            #     g_acc = get_disc_accuracy([d_synthetic, d_real], [1, 0])
+            #     g_count = g_count + 1
+            _ = sess.run(optim_main, feed_dict)
 
             #log
             err_main, err_g, err_d, d_synthetic, d_real, lr = \

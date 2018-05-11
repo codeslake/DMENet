@@ -25,6 +25,9 @@ config.TRAIN.lambda_tv_binary = 1e-7
 ## adversarial loss coefficient
 config.TRAIN.lambda_adv = 1e-4
 
+## discriminator lr coefficient
+config.TRAIN.lambda_lr_d = 1e-2
+
 ## train set location
 # config.TRAIN.synthetic_img_path = '/data1/junyonglee/blur_sharp_only/image_dof/'
 # config.TRAIN.defocus_map_path = '/data1/junyonglee/blur_sharp_only/defocus_map/'
