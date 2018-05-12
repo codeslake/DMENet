@@ -23,8 +23,6 @@ n_epoch_init = config.TRAIN.n_epoch_init
 lr_decay = config.TRAIN.lr_decay
 decay_every = config.TRAIN.decay_every
 
-lambda_tv_defocus = config.TRAIN.lambda_tv_defocus
-lambda_tv_binary = config.TRAIN.lambda_tv_binary
 lambda_adv = config.TRAIN.lambda_adv
 lambda_lr_d= config.TRAIN.lambda_lr_d
 max_coc = config.TRAIN.max_coc
@@ -73,7 +71,7 @@ def train():
     ## READ DATASET LIST
     # train_synthetic_img_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.synthetic_img_path, regx = '.*', printable = False)))
     # train_defocus_map_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.defocus_map_path, regx = '.*', printable = False)))
-    train_synthetic_binary_map_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.synthetic_binary_map_path, regx = '.*', printable = False)))
+    # train_synthetic_binary_map_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.synthetic_binary_map_path, regx = '.*', printable = False)))
     
     train_real_img_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.real_img_path, regx = '.*', printable = False)))
     train_real_binary_map_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.real_binary_map_path, regx = '.*', printable = False)))
@@ -95,8 +93,8 @@ def train():
                 net_vgg, feats_synthetic_down = Vgg19_simple_api(patches_synthetic, reuse = False, scope = scope)
                 _, feats_real_down = Vgg19_simple_api(patches_real, reuse = True, scope = scope)
             with tf.variable_scope('decoder') as scope:
-                output_synthetic_defocus_logits, output_synthetic_defocus, _ = UNet_up(feats_synthetic_down, is_train = True, reuse = False, scope = scope)
-                output_real_defocus_logits, output_real_defocus, _ = UNet_up(feats_real_down, is_train = True, reuse = True, scope = scope)
+                output_synthetic_defocus_logits, output_synthetic_defocus = UNet_up(feats_synthetic_down, is_train = True, reuse = False, scope = scope)
+                output_real_defocus_logits, output_real_defocus = UNet_up(feats_real_down, is_train = True, reuse = True, scope = scope)
         with tf.variable_scope('binary_net') as scope:
             #output_real_binary = entry_stop_gradients(output_real_defocus, labels_real_binary)
             output_real_binary_logits, output_real_binary = Binary_Net(output_real_defocus, is_train = True, reuse = False, scope = scope)
@@ -129,8 +127,9 @@ def train():
             # loss_defocus = tl.cost.absolute_difference_error(output_synthetic_defocus, labels_synthetic_defocus, is_mean = True)
 
         with tf.variable_scope('binary'):
-             loss_real_binary = tl.cost.sigmoid_cross_entropy(output_real_binary_logits, labels_real_binary, name = 'real')
-             loss_binary = tf.identity(loss_real_binary)
+             #loss_real_binary = tl.cost.sigmoid_cross_entropy(output_real_binary_logits, labels_real_binary, name = 'real')
+            loss_real_binary = tl.cost.mean_squared_error(output_real_binary_logits, labels_real_binary, is_mean = True, name = 'real')
+            loss_binary = tf.identity(loss_real_binary * 1e-2)
 
         loss_main = tf.identity(loss_defocus + loss_binary + loss_g, name = 'total')
         loss_init = tf.identity(loss_defocus, name = 'loss_init')
@@ -236,10 +235,6 @@ def train():
             np.random.shuffle(shuffle_index)
             train_synthetic_img_list = train_synthetic_img_list[shuffle_index]
             train_defocus_map_list = train_defocus_map_list[shuffle_index]
-
-            shuffle_index = np.arange(len(train_real_img_list))
-            np.random.shuffle(shuffle_index)
-            train_real_img_list = train_real_img_list[shuffle_index]
 
             epoch_time = time.time()
             for idx in range(0, len(train_synthetic_img_list), batch_size_init):
