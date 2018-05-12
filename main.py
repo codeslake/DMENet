@@ -95,7 +95,10 @@ def train():
             with tf.variable_scope('decoder') as scope:
                 output_synthetic_defocus_logits, output_synthetic_defocus = UNet_up(feats_synthetic_down, is_train = True, reuse = False, scope = scope)
                 output_real_defocus_logits, output_real_defocus = UNet_up(feats_real_down, is_train = True, reuse = True, scope = scope)
-        with tf.variable_scope('binary_net') as scope:
+            with tf.variable_scope('binary_net') as scope:
+                #output_real_binary = entry_stop_gradients(output_real_defocus, labels_real_binary)
+                output_real_binary_logits, output_real_binary = Binary_Net(output_real_defocus, is_train = True, reuse = False, scope = scope)
+        with tf.variable_scope('perceptual') as scope:
             #output_real_binary = entry_stop_gradients(output_real_defocus, labels_real_binary)
             output_real_binary_logits, output_real_binary = Binary_Net(output_real_defocus, is_train = True, reuse = False, scope = scope)
 
