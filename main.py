@@ -87,20 +87,21 @@ def train():
         labels_real_binary = tf.placeholder('float32', [None, h, w, 1], name = 'labels_real_binary')
 
     # model
-    with tf.variable_scope('net') as scope:
+    with tf.variable_scope('main_net') as scope:
         with tf.variable_scope('defocus_net') as scope:
             with tf.variable_scope('encoder') as scope:
-                net_vgg, feats_synthetic_down = Vgg19_simple_api(patches_synthetic, reuse = False, scope = scope)
-                _, feats_real_down = Vgg19_simple_api(patches_real, reuse = True, scope = scope)
+                net_vgg, feats_synthetic_down, _ = Vgg19_simple_api(patches_synthetic, reuse = False, scope = scope)
+                _, feats_real_down, _ = Vgg19_simple_api(patches_real, reuse = True, scope = scope)
             with tf.variable_scope('decoder') as scope:
                 output_synthetic_defocus_logits, output_synthetic_defocus = UNet_up(feats_synthetic_down, is_train = True, reuse = False, scope = scope)
                 output_real_defocus_logits, output_real_defocus = UNet_up(feats_real_down, is_train = True, reuse = True, scope = scope)
-            with tf.variable_scope('binary_net') as scope:
-                #output_real_binary = entry_stop_gradients(output_real_defocus, labels_real_binary)
-                output_real_binary_logits, output_real_binary = Binary_Net(output_real_defocus, is_train = True, reuse = False, scope = scope)
-        with tf.variable_scope('perceptual') as scope:
-            #output_real_binary = entry_stop_gradients(output_real_defocus, labels_real_binary)
+        with tf.variable_scope('binary_net') as scope:
             output_real_binary_logits, output_real_binary = Binary_Net(output_real_defocus, is_train = True, reuse = False, scope = scope)
+    with tf.variable_scope('perceptual') as scope:
+        output_synthetic_defocus_3c = tf.concat([output_synthetic_defocus, output_synthetic_defocus, output_synthetic_defocus], axis = 3)
+        net_vgg_perceptual, _, perceptual_synthetic_out = Vgg19_simple_api(output_synthetic_defocus_3c, reuse = False, scope = scope)
+        labels_synthetic_defocus_3c = tf.concat([labels_synthetic_defocus, labels_synthetic_defocus, labels_synthetic_defocus], axis = 3)
+        _, _, perceptual_synthetic_label = Vgg19_simple_api(labels_synthetic_defocus_3c, reuse = True, scope = scope)
 
     with tf.variable_scope('discriminator') as scope:
         with tf.variable_scope('feature') as scope:
@@ -129,20 +130,23 @@ def train():
             loss_defocus = tl.cost.mean_squared_error(output_synthetic_defocus, labels_synthetic_defocus, is_mean = True, name = 'synthetic')
             # loss_defocus = tl.cost.absolute_difference_error(output_synthetic_defocus, labels_synthetic_defocus, is_mean = True)
 
+        with tf.variable_scope('perceptual'):
+            loss_perceptual = tl.cost.mean_squared_error(perceptual_synthetic_out, perceptual_synthetic_label, is_mean = True, name = 'synthetic')
+
         with tf.variable_scope('binary'):
              #loss_real_binary = tl.cost.sigmoid_cross_entropy(output_real_binary_logits, labels_real_binary, name = 'real')
             loss_real_binary = tl.cost.mean_squared_error(output_real_binary, labels_real_binary, is_mean = True, name = 'real')
             loss_binary = tf.identity(loss_real_binary * 1e-2)
 
-        loss_main = tf.identity(loss_defocus + loss_binary + loss_g, name = 'total')
+        loss_main = tf.identity(loss_defocus + loss_binary + loss_perceptual + loss_g, name = 'total')
         loss_init = tf.identity(loss_defocus, name = 'loss_init')
 
     ## DEFINE OPTIMIZER
     # variables to save / train
     d_vars = tl.layers.get_variables_with_name('discriminator', True, False)
-    main_vars = tl.layers.get_variables_with_name('defocus_net', True, False)
+    main_vars = tl.layers.get_variables_with_name('main_net', True, False)
     init_vars = tl.layers.get_variables_with_name('defocus_net', False, False)
-    save_vars = tl.layers.get_variables_with_name('net', False, False)
+    save_vars = tl.layers.get_variables_with_name('main_net', False, False)
 
     # define optimizer
     with tf.variable_scope('Optimizer'):
@@ -181,7 +185,8 @@ def train():
         loss_sum_g_list.append(tf.summary.scalar('2_g', loss_g))
         loss_sum_g_list.append(tf.summary.scalar('3_g_feature', loss_g_feature))
         loss_sum_g_list.append(tf.summary.scalar('4_defocus', loss_defocus))
-        loss_sum_g_list.append(tf.summary.scalar('5_binary', loss_binary))
+        loss_sum_g_list.append(tf.summary.scalar('5_perceptual', loss_perceptual))
+        loss_sum_g_list.append(tf.summary.scalar('6_binary', loss_binary))
     loss_sum_g = tf.summary.merge(loss_sum_g_list)
 
     loss_sum_d_list = []
@@ -218,6 +223,7 @@ def train():
         print("  Loading %s: %s, %s" % (val[0], W.shape, b.shape))
         params.extend([W, b])
     tl.files.assign_params(sess, params, net_vgg)
+    tl.files.assign_params(sess, params, net_vgg_perceptual)
     # net_vgg.print_params(False)
     # net_vgg.print_layers()
 
