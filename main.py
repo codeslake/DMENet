@@ -131,11 +131,11 @@ def train():
             # loss_defocus = tl.cost.absolute_difference_error(output_synthetic_defocus, labels_synthetic_defocus, is_mean = True)
 
         with tf.variable_scope('perceptual'):
-            loss_perceptual = tl.cost.mean_squared_error(perceptual_synthetic_out, perceptual_synthetic_label, is_mean = True, name = 'synthetic')
+            loss_perceptual = tl.cost.mean_squared_error(perceptual_synthetic_out, perceptual_synthetic_label, is_mean = True, name = 'synthetic') * 4e-5
 
         with tf.variable_scope('binary'):
-             #loss_real_binary = tl.cost.sigmoid_cross_entropy(output_real_binary_logits, labels_real_binary, name = 'real')
-            loss_real_binary = tl.cost.mean_squared_error(output_real_binary, labels_real_binary, is_mean = True, name = 'real')
+            loss_real_binary = tl.cost.sigmoid_cross_entropy(output_real_binary_logits, labels_real_binary, name = 'real')
+            #loss_real_binary = tl.cost.mean_squared_error(output_real_binary, labels_real_binary, is_mean = True, name = 'real')
             loss_binary = tf.identity(loss_real_binary * 1e-2)
 
         loss_main = tf.identity(loss_defocus + loss_binary + loss_perceptual + loss_g, name = 'total')
