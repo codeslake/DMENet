@@ -426,16 +426,15 @@ def evaluate():
 
         patches_blurred = tf.placeholder('float32', [1, shape[0], shape[1], 3], name = 'input_patches')
         # define model
-        with tf.variable_scope('defocus_net') as scope:
-            with tf.variable_scope('unet') as scope:
-                with tf.variable_scope('unet_down') as scope:
-                    feats = UNet_down(patches_blurred, is_train = False, reuse = reuse, scope = scope)
-                with tf.variable_scope('unet_up_defocus_map') as scope:
-                    _, output_defocus, _ = UNet_up(feats, is_train = False, reuse = reuse, scope = scope)
-
+        with tf.variable_scope('main_net') as scope:
+            with tf.variable_scope('defocus_net') as scope:
+                with tf.variable_scope('encoder') as scope:
+                    _, feats_down, _ = Vgg19_simple_api(patches_blurred, reuse = reuse, scope = scope)
+                with tf.variable_scope('decoder') as scope:
+                    _, output_defocus = UNet_up(feats_down, is_train = False, reuse = reuse, scope = scope)
             with tf.variable_scope('binary_net') as scope:
                 _, output_binary = Binary_Net(output_defocus, is_train = False, reuse = reuse, scope = scope)
-                        
+
         #save_vars = tl.layers.get_variables_with_name('defocus_net', False, False)
         save_vars = tl.layers.get_variables_with_name('unet', False, False)
 
