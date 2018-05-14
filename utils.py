@@ -328,10 +328,7 @@ def save_images(images, size, image_path='_temp.png'):
         return img
 
     def imsave(images, size, path):
-        if images.shape[2] == 1:
-            return scipy.misc.toimage(merge(images, size), cmin = 0., cmax = 1.).save(path)
-        elif images.shape[2]:
-            return scipy.misc.toimage(merge(images, size), cmin = 0., cmax = 255.).save(path)
+        return scipy.misc.toimage(merge(images, size), cmin = 0., cmax = 1.).save(path)
 
     assert len(images) <= size[0] * size[1], "number of images should be equal or less than size[0] * size[1] {}".format(len(images))
 
