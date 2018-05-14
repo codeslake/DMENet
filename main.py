@@ -431,7 +431,7 @@ def evaluate():
                 with tf.variable_scope('encoder') as scope:
                     _, feats_down, _ = Vgg19_simple_api(patches_blurred, reuse = reuse, scope = scope)
                 with tf.variable_scope('decoder') as scope:
-                    _, output_defocus = UNet_up(feats_down, is_train = False, reuse = reuse, scope = scope)
+                    _, output_defocus, feats_up = UNet_up_test(feats_down, is_train = False, reuse = reuse, scope = scope)
             with tf.variable_scope('binary_net') as scope:
                 _, output_binary = Binary_Net(output_defocus, is_train = False, reuse = reuse, scope = scope)
 
@@ -448,7 +448,7 @@ def evaluate():
         # run network
         print 'processing {} ...'.format(test_blur_img_list[i])
         processing_time = time.time()
-        defocus_map, binary_map = sess.run([output_defocus, output_binary], {patches_blurred: np.expand_dims(test_blur_img, axis = 0)})
+        defocus_map, binary_map, feats_up_out = sess.run([output_defocus, output_binary, feats_up], {patches_blurred: np.expand_dims(test_blur_img, axis = 0)})
         defocus_map = np.squeeze(1 - defocus_map)
         defocus_map_norm = defocus_map - defocus_map.min()
         defocus_map_norm = defocus_map_norm / defocus_map_norm.max()
@@ -461,6 +461,15 @@ def evaluate():
         scipy.misc.toimage(defocus_map_norm, cmin = 0., cmax = 1.).save(sample_dir + '/{}_3_defocus_map_norm_out.png'.format(i))
         scipy.misc.toimage(binary_map, cmin = 0., cmax = 1.).save(sample_dir + '/{}_4_binary_map_out.png'.format(i))
         scipy.misc.toimage(np.squeeze(test_gt_imgs[i]), cmin = 0., cmax = 1.).save(sample_dir + '/{}_5_binary_map_gt.png'.format(i))
+
+        for j in np.arange(len(feats_up_out)):
+            feats_up_out[j] = np.squeeze(feats_up_out[j])
+            feats_up_out[j] = np.transpose(feats_up_out[j], [2, 0, 1])
+        save_images(norm_image(feats_up_out[0], (1, 2)), [23, 23], sample_dir + '/{}_feat_1_u4.png'.format(i))
+        save_images(norm_image(feats_up_out[1], (1, 2)), [16, 16], sample_dir + '/{}_feat_2_u3.png'.format(i))
+        save_images(norm_image(feats_up_out[2], (1, 2)), [12, 12], sample_dir + '/{}_feat_3_u2.png'.format(i))
+        save_images(norm_image(feats_up_out[3], (1, 2)), [8, 8], sample_dir + '/{}_feat_4_u1.png'.format(i))
+        save_images(norm_image(feats_up_out[4], (1, 2)), [6, 6], sample_dir + '/{}_feat_5_u0_init.png'.format(i))
 
         sess.close()
         reuse = True
