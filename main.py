@@ -24,7 +24,8 @@ lr_decay = config.TRAIN.lr_decay
 decay_every = config.TRAIN.decay_every
 
 lambda_adv = config.TRAIN.lambda_adv
-lambda_lr_d= config.TRAIN.lambda_lr_d
+lambda_lr_d = config.TRAIN.lambda_lr_d
+lambda_binary = config.TRAIN.lambda_binary
 max_coc = config.TRAIN.max_coc
 
 h = config.TRAIN.height
@@ -143,7 +144,7 @@ def train():
         with tf.variable_scope('binary'):
             loss_real_binary = tl.cost.sigmoid_cross_entropy(output_real_binary_logits, labels_real_binary, name = 'real')
             #loss_real_binary = tl.cost.mean_squared_error(output_real_binary, labels_real_binary, is_mean = True, name = 'real')
-            loss_binary = tf.identity(loss_real_binary)
+            loss_binary = tf.identity(loss_real_binary * lambda_binary)
 
         loss_main = tf.identity(loss_defocus + loss_binary + loss_perceptual + loss_aux + loss_g, name = 'total')
         loss_init = tf.identity(loss_defocus, name = 'loss_init')
