@@ -85,7 +85,12 @@ def UNet_up(feats, is_train=False, reuse=False, scope = 'unet_up'):
         d0 = InputLayer(feats[0], name='d0')
         d4 = InputLayer(feats[1], name='d4')
 
-        u4 = d4.outputs
+        u4 = d4
+        u4 = PadLayer(u4, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u4_aux/pad1')
+        u4 = Conv2d(u4, 1, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u4_aux/c1')
+        u4 = BatchNormLayer(u4, act=lrelu, is_train = is_train, gamma_init = g_init, name='u4_aux/b1')
+        u4 = u4.outputs
+
         n = UpSampling2dLayer(d4, (2, 2), is_scale = True, method = 1, align_corners=True, name='u3/u')
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u3/pad1')
         n = Conv2d(n, 256, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u3/c1')
@@ -96,6 +101,10 @@ def UNet_up(feats, is_train=False, reuse=False, scope = 'unet_up'):
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u3/pad3')
         n = Conv2d(n, 256, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u3/c3')
         n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u3/b3')
+
+        u3 = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u3_aux/pad1')
+        u3 = Conv2d(u3, 1, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u3_aux/c1')
+        u3 = BatchNormLayer(u3, act=lrelu, is_train = is_train, gamma_init = g_init, name='u3_aux/b1')
         u3 = u3.outputs
 
         n = UpSampling2dLayer(n, (2, 2), is_scale = True, method = 1, align_corners=True, name='u2/u')
@@ -108,6 +117,10 @@ def UNet_up(feats, is_train=False, reuse=False, scope = 'unet_up'):
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u2/pad3')
         n = Conv2d(n, 128, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u2/c3')
         n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u2/b3')
+
+        u2 = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u2_aux/pad1')
+        u2 = Conv2d(u2, 1, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u2_aux/c1')
+        u2 = BatchNormLayer(u2, act=lrelu, is_train = is_train, gamma_init = g_init, name='u2_aux/b1')
         u2 = u2.outputs
 
         n = UpSampling2dLayer(n, (2, 2), is_scale = True, method = 1, align_corners=True, name='u1/u')
@@ -120,6 +133,10 @@ def UNet_up(feats, is_train=False, reuse=False, scope = 'unet_up'):
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u1/pad3')
         n = Conv2d(n, 64, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u1/c3')
         n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u1/b3')
+
+        u1 = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u1_aux/pad1')
+        u1 = Conv2d(u1, 1, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u1_aux/c1')
+        u1 = BatchNormLayer(u1, act=lrelu, is_train = is_train, gamma_init = g_init, name='u1_aux/b1')
         u1 = u1.outputs
 
         n = UpSampling2dLayer(n, (2, 2), is_scale = True, method = 1, align_corners=True, name='u0/u')
@@ -139,7 +156,7 @@ def UNet_up(feats, is_train=False, reuse=False, scope = 'unet_up'):
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='uf/pad3')
         n = Conv2d(n, 1, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_sigmoid, name='uf/1c')
 
-        return n.outputs, tf.nn.sigmoid(n.outputs)
+        return n.outputs, tf.nn.sigmoid(n.outputs), [u4, u3, u2, u1]
 
 def Binary_Net(input_defocus, is_train=False, reuse=False, scope = 'Binary_Net'):
     w_init_relu = tf.contrib.layers.variance_scaling_initializer()

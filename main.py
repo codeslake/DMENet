@@ -93,8 +93,8 @@ def train():
                 net_vgg, feats_synthetic_down, _ = Vgg19_simple_api(patches_synthetic, reuse = False, scope = scope)
                 _, feats_real_down, _ = Vgg19_simple_api(patches_real, reuse = True, scope = scope)
             with tf.variable_scope('decoder') as scope:
-                output_synthetic_defocus_logits, output_synthetic_defocus = UNet_up(feats_synthetic_down, is_train = True, reuse = False, scope = scope)
-                output_real_defocus_logits, output_real_defocus = UNet_up(feats_real_down, is_train = True, reuse = True, scope = scope)
+                output_synthetic_defocus_logits, output_synthetic_defocus, feats_synthetic_up = UNet_up(feats_synthetic_down, is_train = True, reuse = False, scope = scope)
+                output_real_defocus_logits, output_real_defocus, _ = UNet_up(feats_real_down, is_train = True, reuse = True, scope = scope)
         with tf.variable_scope('binary_net') as scope:
             output_real_binary_logits, output_real_binary = Binary_Net(output_real_defocus, is_train = True, reuse = False, scope = scope)
     with tf.variable_scope('perceptual') as scope:
@@ -129,6 +129,13 @@ def train():
         with tf.variable_scope('defocus'):
             loss_defocus = tl.cost.mean_squared_error(output_synthetic_defocus, labels_synthetic_defocus, is_mean = True, name = 'synthetic')
             # loss_defocus = tl.cost.absolute_difference_error(output_synthetic_defocus, labels_synthetic_defocus, is_mean = True)
+        with tf.variable_scope('auxilary'):
+            labels_layer = InputLayer(labels_synthetic_defocus)
+            loss_aux_1 = tl.cost.mean_squared_error(feats_synthetic_up[0], DownSampling2dLayer(labels_layer, (1/16., 1/16.), method = 1, align_corners=True).outputs, is_mean = True, name = 'aux1')
+            loss_aux_2 = tl.cost.mean_squared_error(feats_synthetic_up[1], DownSampling2dLayer(labels_layer, (1/8., 1/8.), method = 1, align_corners=True).outputs, is_mean = True, name = 'aux2')
+            loss_aux_3 = tl.cost.mean_squared_error(feats_synthetic_up[2], DownSampling2dLayer(labels_layer, (1/4., 1/4.), method = 1, align_corners=True).outputs, is_mean = True, name = 'aux3')
+            loss_aux_4 = tl.cost.mean_squared_error(feats_synthetic_up[3], DownSampling2dLayer(labels_layer, (1/2., 1/2.), method = 1, align_corners=True).outputs, is_mean = True, name = 'aux4')
+            loss_aux = loss_aux_1 + loss_aux_2 + loss_aux_3 + loss_aux_4
 
         with tf.variable_scope('perceptual'):
             loss_perceptual = tl.cost.mean_squared_error(perceptual_synthetic_out, perceptual_synthetic_label, is_mean = True, name = 'synthetic') * 4e-5
@@ -138,7 +145,7 @@ def train():
             #loss_real_binary = tl.cost.mean_squared_error(output_real_binary, labels_real_binary, is_mean = True, name = 'real')
             loss_binary = tf.identity(loss_real_binary * 1e-2)
 
-        loss_main = tf.identity(loss_defocus + loss_binary + loss_perceptual + loss_g, name = 'total')
+        loss_main = tf.identity(loss_defocus + loss_binary + loss_perceptual + loss_aux + loss_g, name = 'total')
         loss_init = tf.identity(loss_defocus, name = 'loss_init')
 
     ## DEFINE OPTIMIZER
@@ -186,7 +193,8 @@ def train():
         loss_sum_g_list.append(tf.summary.scalar('3_g_feature', loss_g_feature))
         loss_sum_g_list.append(tf.summary.scalar('4_defocus', loss_defocus))
         loss_sum_g_list.append(tf.summary.scalar('5_perceptual', loss_perceptual))
-        loss_sum_g_list.append(tf.summary.scalar('6_binary', loss_binary))
+        loss_sum_g_list.append(tf.summary.scalar('6_auxilary', loss_aux))
+        loss_sum_g_list.append(tf.summary.scalar('7_binary', loss_binary))
     loss_sum_g = tf.summary.merge(loss_sum_g_list)
 
     loss_sum_d_list = []
