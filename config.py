@@ -36,7 +36,7 @@ config.TRAIN.lambda_binary= 1e-1
 # config.TRAIN.synthetic_binary_map_path = '/data1/junyonglee/blur_sharp_only/binary_map/'
 
 #offset = '/Mango/Users/JunyongLee/datasets/30_new_better/'
-offset = '/Mango/Users/JunyongLee/datasets/15_gaussian/'
+offset = '/Mango/Users/JunyongLee/datasets/15_gaussian_many/'
 config.TRAIN.synthetic_img_path = offset + 'image/'
 config.TRAIN.defocus_map_path = offset + 'blur_map/'
 config.TRAIN.defocus_map_norm_path = offset + 'blur_map_norm/'
