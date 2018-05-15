@@ -8,7 +8,8 @@ config.TEST = edict()
 ## Adam
 config.TRAIN.batch_size = 4
 config.TRAIN.batch_size_init = 8
-config.TRAIN.lr_init = 1e-5
+#config.TRAIN.lr_init = 1e-5
+config.TRAIN.lr_init = 1e-4
 config.TRAIN.lr_init_init = 1e-4
 config.TRAIN.beta1 = 0.5
 
@@ -19,16 +20,19 @@ config.TRAIN.lr_decay = 0.8
 config.TRAIN.decay_every = 100
 
 ## adversarial loss coefficient
-config.TRAIN.lambda_adv = 1e-4
+#config.TRAIN.lambda_adv = 1e-4
+config.TRAIN.lambda_adv = 1
 
 ## discriminator lr coefficient
-config.TRAIN.lambda_lr_d = 1e-2
+#config.TRAIN.lambda_lr_d = 1e-2
+config.TRAIN.lambda_lr_d = 1
 
 ## binary loss coefficient
-config.TRAIN.lambda_binary = 1e-2
+#config.TRAIN.lambda_binary = 1e-2
+config.TRAIN.lambda_binary = 1
 
 ## perceptual loss coefficient
-config.TRAIN.lambda_perceptual = 1.25e-6
+config.TRAIN.lambda_perceptual = 2.5e-6
 
 ## train set location
 # config.TRAIN.synthetic_img_path = '/data1/junyonglee/blur_sharp_only/image_dof/'

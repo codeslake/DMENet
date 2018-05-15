@@ -478,11 +478,11 @@ def evaluate():
         feats_up_out[4] = np.transpose(feats_up_out[4], [2, 0, 1])
         save_images(norm_image(feats_up_out[4], (1, 2)), [8, 8], sample_dir + '/{}_6_feat_5_u0_init.png'.format(i))
 
-        for j in np.arange(len(refine_lists_out) - 1):
-            refine_lists_out[j] = np.squeeze(refine_lists_out[j])
-            refine_lists_out[j] = np.transpose(refine_lists_out[j], [2, 0, 1])
-            save_images(norm_image(refine_lists_out[j], (1, 2)), [8, 8], sample_dir + '/{}_7_refine_{}.png'.format(i, j+1))
-        scipy.misc.toimage(norm_image(np.squeeze(refine_lists_out[7]), (0, 1)), cmin = 0., cmax = 1.).save(sample_dir + '/{}_7_refine_8.png'.format(i))
+        # for j in np.arange(len(refine_lists_out) - 1):
+        #     refine_lists_out[j] = np.squeeze(refine_lists_out[j])
+        #     refine_lists_out[j] = np.transpose(refine_lists_out[j], [2, 0, 1])
+        #     save_images(norm_image(refine_lists_out[j], (1, 2)), [8, 8], sample_dir + '/{}_7_refine_{}.png'.format(i, j+1))
+        # scipy.misc.toimage(norm_image(np.squeeze(refine_lists_out[7]), (0, 1)), cmin = 0., cmax = 1.).save(sample_dir + '/{}_7_refine_8.png'.format(i))
 
         for j in np.arange(len(grn_residual_lists_out)):
             scipy.misc.toimage(norm_image(np.squeeze(grn_residual_lists_out[j]), (0, 1)), cmin = 0., cmax = 1.).save(sample_dir + '/{}_8_grn_residual_{}.png'.format(i, j+1))
