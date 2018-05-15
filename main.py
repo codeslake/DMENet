@@ -93,6 +93,10 @@ def train():
             with tf.variable_scope('encoder') as scope:
                 net_vgg, feats_synthetic_down, _ = Vgg19_simple_api(patches_synthetic, reuse = False, scope = scope)
                 _, feats_real_down, _ = Vgg19_simple_api(patches_real, reuse = True, scope = scope)
+                # with tf.variable_scope('inception_resnet_v2') as scope:
+                #     feats_synthetic_down = inception_resnet_v2(patches_synthetic, reuse = False, scope = scope)
+                #     feats_real_down = inception_resnet_v2(patches_real, reuse = True, scope = scope)
+
             with tf.variable_scope('decoder') as scope:
                 output_synthetic_defocus_logits, output_synthetic_defocus, feats_synthetic_up = UNet_up(feats_synthetic_down, is_train = True, reuse = False, scope = scope)
                 output_real_defocus_logits, output_real_defocus, _ = UNet_up(feats_real_down, is_train = True, reuse = True, scope = scope)
@@ -139,7 +143,7 @@ def train():
             loss_aux = loss_aux_1 + loss_aux_2 + loss_aux_3 + loss_aux_4
 
         with tf.variable_scope('perceptual'):
-            loss_perceptual = tl.cost.mean_squared_error(perceptual_synthetic_out, perceptual_synthetic_label, is_mean = True, name = 'synthetic') * 4e-5
+            loss_perceptual = tl.cost.mean_squared_error(perceptual_synthetic_out, perceptual_synthetic_label, is_mean = True, name = 'synthetic') * 1.25e-6
 
         with tf.variable_scope('binary'):
             loss_real_binary = tl.cost.sigmoid_cross_entropy(output_real_binary_logits, labels_real_binary, name = 'real')
@@ -155,6 +159,7 @@ def train():
     main_vars = tl.layers.get_variables_with_name('main_net', True, False)
     init_vars = tl.layers.get_variables_with_name('defocus_net', False, False)
     save_vars = tl.layers.get_variables_with_name('main_net', False, False)
+    inception_var = tl.layers.get_variables_with_name('inception_resnet_v2', False, False)
 
     # define optimizer
     with tf.variable_scope('Optimizer'):
@@ -231,10 +236,9 @@ def train():
         b = np.asarray(val[1][1])
         print("  Loading %s: %s, %s" % (val[0], W.shape, b.shape))
         params.extend([W, b])
-    tl.files.assign_params(sess, params, net_vgg)
+    #tl.files.assign_params(sess, params, net_vgg)
     tl.files.assign_params(sess, params, net_vgg_perceptual)
-    # net_vgg.print_params(False)
-    # net_vgg.print_layers()
+    #tl.files.load_ckpt(sess = sess, mode_name = 'inception_resnet_v2.ckpt', save_dir = ckpt_dir, var_list = inception_var)
 
     tl.files.load_and_assign_npz_dict(name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
     if tl.global_flag['is_pretrain']:
