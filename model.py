@@ -163,7 +163,6 @@ def UNet_up(feats, is_train=False, reuse=False, scope = 'unet_up'):
             n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u0/pad{}_2'.format(i))
             n = Conv2d(n, 64, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u0/c{}_2'.format(i))
             n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u0/b{}_2'.format(i))
-            #n = ElementwiseLayer([n, n_init], tf.add, name='u0/add{}'.format(i))
 
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='uf/pad3')
         n = Conv2d(n, 1, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_sigmoid, name='uf/1c')
@@ -456,7 +455,6 @@ def UNet_up_test(feats, is_train=False, reuse=False, scope = 'unet_up'):
             n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u0/pad{}_2'.format(i))
             n = Conv2d(n, 64, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u0/c{}_2'.format(i))
             n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u0/b{}_2'.format(i))
-            #n = ElementwiseLayer([n, n_init], tf.add, name='u0/add{}'.format(i))
             refine_lists.append(n.outputs)
 
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='uf/pad3')
