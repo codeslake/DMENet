@@ -164,8 +164,8 @@ def UNet_up(images, feats, is_train=False, reuse=False, scope = 'unet_up'):
             n = Conv2d(n, 64, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u0/c{}_2'.format(i))
             n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u0/b{}_2'.format(i))
 
-        n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='uf/pad3')
-        n = Conv2d(n, 1, (3, 3), (1, 1), act=tf.nn.sigmoid, padding='VALID', W_init=w_init_sigmoid, name='uf/1c')
+        n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='uf/pad1')
+        n = Conv2d(n, 1, (3, 3), (1, 1), act=tf.nn.sigmoid, padding='VALID', W_init=w_init_sigmoid, name='uf/c1')
 
         with tf.variable_scope('GRN') as scope:
             for i in np.arange(5):
@@ -175,7 +175,7 @@ def UNet_up(images, feats, is_train=False, reuse=False, scope = 'unet_up'):
                     reuse_grn = True
 
                 residual = GRN(images, n.outputs, reuse = reuse_grn, scope = scope)
-                n = ElementwiseLayer([n, residual], tf.add, name='grn{}/add'.format(i))
+                n = ElementwiseLayer([n, residual], tf.subtract, name='grn{}/add'.format(i))
 
         return n.outputs, [u4, u3, u2, u1]
 
@@ -196,6 +196,7 @@ def GRN(image, blur_map, is_train=False, reuse=False, scope = 'GRN'):
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='d0/pad2')
         n = Conv2d(n, 16, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='d0/c2')
         n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='d0/b2')
+        d0 = n
 
         n = Conv2d(n, 16, (3, 3), (2, 2), act=None, padding='SAME', W_init=w_init_relu, name='d1/pool1')
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='d1/pad1')
@@ -204,6 +205,7 @@ def GRN(image, blur_map, is_train=False, reuse=False, scope = 'GRN'):
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='d1/pad2')
         n = Conv2d(n, 32, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='d1/c2')
         n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='d1/b2')
+        d1 = n
 
         n = Conv2d(n, 32, (3, 3), (2, 2), act=None, padding='SAME', W_init=w_init_relu, name='d2/pool1')
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='d2/pad1')
@@ -212,6 +214,7 @@ def GRN(image, blur_map, is_train=False, reuse=False, scope = 'GRN'):
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='d2/pad2')
         n = Conv2d(n, 64, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='d2/c2')
         n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='d2/b2')
+        d2 = n
 
         n = Conv2d(n, 64, (3, 3), (2, 2), act=None, padding='SAME', W_init=w_init_relu, name='d3/pool1')
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='d3/pad1')
@@ -220,6 +223,7 @@ def GRN(image, blur_map, is_train=False, reuse=False, scope = 'GRN'):
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='d3/pad2')
         n = Conv2d(n, 128, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='d3/c2')
         n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='d3/b2')
+        d3 = n
 
         n = Conv2d(n, 128, (3, 3), (2, 2), act=None, padding='SAME', W_init=w_init_relu, name='d4/pool1')
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='d4/pad1')
@@ -230,6 +234,7 @@ def GRN(image, blur_map, is_train=False, reuse=False, scope = 'GRN'):
         n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='d4/b2')
 
         n = UpSampling2dLayer(n, (2, 2), is_scale = True, method = 1, align_corners=True, name='u3/u')
+        n = ConcatLayer([n, d3], concat_dim = 3, name='u3_concat')
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u3/pad1')
         n = Conv2d(n, 128, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u3/c1')
         n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u3/b1')
@@ -238,6 +243,7 @@ def GRN(image, blur_map, is_train=False, reuse=False, scope = 'GRN'):
         n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u3/b2')
 
         n = UpSampling2dLayer(n, (2, 2), is_scale = True, method = 1, align_corners=True, name='u2/u')
+        n = ConcatLayer([n, d2], concat_dim = 3, name='u2_concat')
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u2/pad1')
         n = Conv2d(n, 64, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u2/c1')
         n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u2/b1')
@@ -246,6 +252,7 @@ def GRN(image, blur_map, is_train=False, reuse=False, scope = 'GRN'):
         n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u2/b2')
 
         n = UpSampling2dLayer(n, (2, 2), is_scale = True, method = 1, align_corners=True, name='u1/u')
+        n = ConcatLayer([n, d1], concat_dim = 3, name='u1_concat')
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u1/pad1')
         n = Conv2d(n, 32, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u1/c1')
         n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u1/b1')
@@ -254,6 +261,7 @@ def GRN(image, blur_map, is_train=False, reuse=False, scope = 'GRN'):
         n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u1/b2')
 
         n = UpSampling2dLayer(n, (2, 2), is_scale = True, method = 1, align_corners=True, name='u0/u')
+        n = ConcatLayer([n, d0], concat_dim = 3, name='u0_concat')
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u0/pad1')
         n = Conv2d(n, 16, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u0/c1')
         n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u0/b1')
@@ -465,8 +473,7 @@ def defocus_discriminator(t_image, is_train=False, reuse=False, scope='defocus_d
 #         n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='d4/b3')
 
 #         return n.outputs
-
-def UNet_up_test(feats, is_train=False, reuse=False, scope = 'unet_up'):
+def UNet_up_test(images, feats, is_train=False, reuse=False, scope = 'unet_up'):
     w_init_relu = tf.contrib.layers.variance_scaling_initializer()
     w_init_sigmoid = tf.contrib.layers.xavier_initializer()
     #g_init = tf.random_normal_initializer(1., 0.02)
@@ -558,7 +565,22 @@ def UNet_up_test(feats, is_train=False, reuse=False, scope = 'unet_up'):
             n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u0/b{}_2'.format(i))
             refine_lists.append(n.outputs)
 
-        n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='uf/pad3')
-        n = Conv2d(n, 1, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_sigmoid, name='uf/1c')
+        n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='uf/pad1')
+        n = Conv2d(n, 1, (3, 3), (1, 1), act=tf.nn.sigmoid, padding='VALID', W_init=w_init_sigmoid, name='uf/c1')
+        refine_lists.append(n.outputs)
 
-        return n.outputs, tf.nn.sigmoid(n.outputs), [u4, u3, u2, u1, u0_init], refine_lists
+        with tf.variable_scope('GRN') as scope:
+            grn_residual_lists = []
+            grn_sum_lists = []
+            for i in np.arange(5):
+                if i == 0 and reuse == False:
+                    reuse_grn = False
+                else:
+                    reuse_grn = True
+
+                residual = GRN(images, n.outputs, reuse = reuse_grn, scope = scope)
+                grn_residual_lists.append(residual.outputs)
+                n = ElementwiseLayer([n, residual], tf.subtract, name='grn{}/add'.format(i))
+                grn_sum_lists.append(n.outputs)
+
+        return n.outputs, [u4, u3, u2, u1, u0_init], refine_lists, grn_residual_lists, grn_sum_lists
