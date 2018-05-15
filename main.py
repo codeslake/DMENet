@@ -144,7 +144,7 @@ def train():
             loss_aux = tf.identity(loss_aux_1 + loss_aux_2 + loss_aux_3 + loss_aux_4, name = 'total')
 
         with tf.variable_scope('perceptual'):
-            loss_synthetic_perceptual = tl.cost.mean_squared_error(perceptual_synthetic_out, perceptual_synthetic_label, is_mean = True, name = 'synthetic') * 1.25e-6
+            loss_synthetic_perceptual = tl.cost.mean_squared_error(perceptual_synthetic_out, perceptual_synthetic_label, is_mean = True, name = 'synthetic')
             loss_perceptual = tf.identity(loss_synthetic_perceptual * lambda_perceptual, name = 'total')
 
         with tf.variable_scope('binary'):
