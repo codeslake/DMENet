@@ -14,7 +14,7 @@ config.TRAIN.beta1 = 0.5
 
 # learning rate
 config.TRAIN.n_epoch = 10000
-config.TRAIN.n_epoch_init = 1
+config.TRAIN.n_epoch_init = 10000
 config.TRAIN.lr_decay = 0.8
 config.TRAIN.decay_every = 100
 
@@ -26,6 +26,9 @@ config.TRAIN.lambda_lr_d = 1e-2
 
 ## binary loss coefficient
 config.TRAIN.lambda_binary = 1e-2
+
+## perceptual loss coefficient
+config.TRAIN.lambda_perceptual = 1.25e-6
 
 ## train set location
 # config.TRAIN.synthetic_img_path = '/data1/junyonglee/blur_sharp_only/image_dof/'
@@ -58,7 +61,7 @@ config.TRAIN.write_log_every = 5
 config.TRAIN.write_ckpt_every = 300
 config.TRAIN.write_sample_every = 1000
 # every epoch
-config.TRAIN.refresh_image_log_every = 50
+config.TRAIN.refresh_image_log_every = 20
 
 # save dir
 config.TRAIN.root_dir = '/data2/junyonglee/sharpness_assessment/'
