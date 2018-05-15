@@ -1,7 +1,7 @@
 # data
 *.sublime*
 samples/*
-model/*
+models/*
 
 # trash
 .dropbox
