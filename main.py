@@ -447,7 +447,7 @@ def evaluate():
                 _, output_binary = Binary_Net(output_defocus, is_train = False, reuse = reuse, scope = scope)
 
         #save_vars = tl.layers.get_variables_with_name('defocus_net', False, False)
-        save_vars = tl.layers.get_variables_with_name('unet', False, False)
+        save_vars = tl.layers.get_variables_with_name('main_net', False, False)
 
         # init session
         sess = tf.Session(config = tf.ConfigProto(allow_soft_placement = True, log_device_placement = False))
@@ -473,24 +473,16 @@ def evaluate():
         scipy.misc.toimage(binary_map, cmin = 0., cmax = 1.).save(sample_dir + '/{}_4_binary_map_out.png'.format(i))
         scipy.misc.toimage(np.squeeze(test_gt_imgs[i]), cmin = 0., cmax = 1.).save(sample_dir + '/{}_5_binary_map_gt.png'.format(i))
 
-        scipy.misc.toimage(np.squeeze(feats_up_out[0]), cmin = 0., cmax = 1.).save(sample_dir + '/{}_feat_1_u4.png'.format(i))
-        scipy.misc.toimage(np.squeeze(feats_up_out[1]), cmin = 0., cmax = 1.).save(sample_dir + '/{}_feat_2_u3.png'.format(i))
-        scipy.misc.toimage(np.squeeze(feats_up_out[2]), cmin = 0., cmax = 1.).save(sample_dir + '/{}_feat_3_u2.png'.format(i))
-        scipy.misc.toimage(np.squeeze(feats_up_out[3]), cmin = 0., cmax = 1.).save(sample_dir + '/{}_feat_4_u1.png'.format(i))
+        for j in np.arange(len(feats_up_out) - 1):
+            scipy.misc.toimage(norm_image(np.squeeze(feats_up_out[j]), (0, 1)), cmin = 0., cmax = 1.).save(sample_dir + '/{}_feat_{}.png'.format(i, j+1))
         feats_up_out[4] = np.squeeze(feats_up_out[4])
         feats_up_out[4] = np.transpose(feats_up_out[4], [2, 0, 1])
-        save_images(norm_image(feats_up_out[4], (1, 2)), [6, 6], sample_dir + '/{}_feat_5_u0_init.png'.format(i))
+        save_images(norm_image(feats_up_out[4], (1, 2)), [8, 8], sample_dir + '/{}_feat_5_u0_init.png'.format(i))
 
         for j in np.arange(len(refine_lists_out)):
             refine_lists_out[j] = np.squeeze(refine_lists_out[j])
             refine_lists_out[j] = np.transpose(refine_lists_out[j], [2, 0, 1])
-        save_images(norm_image(refine_lists_out[0], (1, 2)), [6, 6], sample_dir + '/{}_refine_1.png'.format(i))
-        save_images(norm_image(refine_lists_out[1], (1, 2)), [6, 6], sample_dir + '/{}_refine_2.png'.format(i))
-        save_images(norm_image(refine_lists_out[2], (1, 2)), [6, 6], sample_dir + '/{}_refine_3.png'.format(i))
-        save_images(norm_image(refine_lists_out[3], (1, 2)), [6, 6], sample_dir + '/{}_refine_4.png'.format(i))
-        save_images(norm_image(refine_lists_out[4], (1, 2)), [6, 6], sample_dir + '/{}_refine_5.png'.format(i))
-        save_images(norm_image(refine_lists_out[5], (1, 2)), [6, 6], sample_dir + '/{}_refine_6.png'.format(i))
-        save_images(norm_image(refine_lists_out[6], (1, 2)), [6, 6], sample_dir + '/{}_refine_7.png'.format(i))
+            save_images(norm_image(refine_lists_out[j], (1, 2)), [8, 8], sample_dir + '/{}_refine_{}.png'.format(i, j+1))
 
         sess.close()
         reuse = True
