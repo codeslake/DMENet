@@ -107,7 +107,7 @@ def UNet_up(feats, is_train=False, reuse=False, scope = 'unet_up'):
 
         u3 = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u3_aux/pad1')
         u3 = Conv2d(u3, 128, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u3_aux/c1')
-        u3 = BatchNormLayer(u3, act=relu, is_train = is_train, gamma_init = g_init, name='u3_aux/b1')
+        u3 = BatchNormLayer(u3, act=lrelu, is_train = is_train, gamma_init = g_init, name='u3_aux/b1')
         u3 = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u3_aux/pad2')
         u3 = Conv2d(u3, 1, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_sigmoid, name='u3_aux/c2')
         u3 = BatchNormLayer(u3, act=tf.nn.sigmoid, is_train = is_train, gamma_init = g_init, name='u3_aux/b2')
@@ -145,7 +145,7 @@ def UNet_up(feats, is_train=False, reuse=False, scope = 'unet_up'):
 
         u1 = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u1_aux/pad1')
         u1 = Conv2d(u1, 32, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u1_aux/c1')
-        u1 = BatchNormLayer(u1, act=relu, is_train = is_train, gamma_init = g_init, name='u1_aux/b1')
+        u1 = BatchNormLayer(u1, act=lrelu, is_train = is_train, gamma_init = g_init, name='u1_aux/b1')
         u1 = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u1_aux/pad2')
         u1 = Conv2d(u1, 1, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_sigmoid, name='u1_aux/c2')
         u1 = BatchNormLayer(u1, act=tf.nn.sigmoid, is_train = is_train, gamma_init = g_init, name='u1_aux/b2')
