@@ -89,21 +89,20 @@ def train():
 
     # model
     with tf.variable_scope('main_net') as scope:
-        with tf.variable_scope('save_net') as scope:
-            with tf.variable_scope('defocus_net') as scope:
-                with tf.variable_scope('encoder') as scope:
-                    net_vgg, feats_synthetic_down, _ = Vgg19_simple_api(patches_synthetic, reuse = False, scope = scope)
-                    _, feats_real_down, _ = Vgg19_simple_api(patches_real, reuse = True, scope = scope)
-                with tf.variable_scope('decoder') as scope:
-                    output_synthetic_defocus_logits, output_synthetic_defocus, feats_synthetic_up = UNet_up(feats_synthetic_down, is_train = True, reuse = False, scope = scope)
-                    output_real_defocus_logits, output_real_defocus, _ = UNet_up(feats_real_down, is_train = True, reuse = True, scope = scope)
-            with tf.variable_scope('binary_net') as scope:
-                output_real_binary_logits, output_real_binary = Binary_Net(output_real_defocus, is_train = True, reuse = False, scope = scope)
-        with tf.variable_scope('perceptual') as scope:
-            output_synthetic_defocus_3c = tf.concat([output_synthetic_defocus, output_synthetic_defocus, output_synthetic_defocus], axis = 3)
-            net_vgg_perceptual, _, perceptual_synthetic_out = Vgg19_simple_api(output_synthetic_defocus_3c, reuse = False, scope = scope)
-            labels_synthetic_defocus_3c = tf.concat([labels_synthetic_defocus, labels_synthetic_defocus, labels_synthetic_defocus], axis = 3)
-            _, _, perceptual_synthetic_label = Vgg19_simple_api(labels_synthetic_defocus_3c, reuse = True, scope = scope)
+        with tf.variable_scope('defocus_net') as scope:
+            with tf.variable_scope('encoder') as scope:
+                net_vgg, feats_synthetic_down, _ = Vgg19_simple_api(patches_synthetic, reuse = False, scope = scope)
+                _, feats_real_down, _ = Vgg19_simple_api(patches_real, reuse = True, scope = scope)
+            with tf.variable_scope('decoder') as scope:
+                output_synthetic_defocus_logits, output_synthetic_defocus, feats_synthetic_up = UNet_up(feats_synthetic_down, is_train = True, reuse = False, scope = scope)
+                output_real_defocus_logits, output_real_defocus, _ = UNet_up(feats_real_down, is_train = True, reuse = True, scope = scope)
+        with tf.variable_scope('binary_net') as scope:
+            output_real_binary_logits, output_real_binary = Binary_Net(output_real_defocus, is_train = True, reuse = False, scope = scope)
+    with tf.variable_scope('perceptual') as scope:
+        output_synthetic_defocus_3c = tf.concat([output_synthetic_defocus, output_synthetic_defocus, output_synthetic_defocus], axis = 3)
+        net_vgg_perceptual, _, perceptual_synthetic_out = Vgg19_simple_api(output_synthetic_defocus_3c, reuse = False, scope = scope)
+        labels_synthetic_defocus_3c = tf.concat([labels_synthetic_defocus, labels_synthetic_defocus, labels_synthetic_defocus], axis = 3)
+        _, _, perceptual_synthetic_label = Vgg19_simple_api(labels_synthetic_defocus_3c, reuse = True, scope = scope)
 
     with tf.variable_scope('discriminator') as scope:
         with tf.variable_scope('feature') as scope:
@@ -155,7 +154,7 @@ def train():
     d_vars = tl.layers.get_variables_with_name('discriminator', True, False)
     main_vars = tl.layers.get_variables_with_name('main_net', True, False)
     init_vars = tl.layers.get_variables_with_name('defocus_net', False, False)
-    save_vars = tl.layers.get_variables_with_name('save_net', False, False)
+    save_vars = tl.layers.get_variables_with_name('main_net', False, False)
 
     # define optimizer
     with tf.variable_scope('Optimizer'):
