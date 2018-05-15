@@ -474,7 +474,7 @@ def evaluate():
         scipy.misc.toimage(np.squeeze(test_gt_imgs[i]), cmin = 0., cmax = 1.).save(sample_dir + '/{}_5_binary_map_gt.png'.format(i))
 
         for j in np.arange(len(feats_up_out) - 1):
-            scipy.misc.toimage(norm_image(np.squeeze(feats_up_out[j]), (0, 1)), cmin = 0., cmax = 1.).save(sample_dir + '/{}_feat_{}.png'.format(i, j+1))
+            scipy.misc.toimage(np.squeeze(feats_up_out[j]), cmin = 0., cmax = 1.).save(sample_dir + '/{}_feat_{}.png'.format(i, j+1))
         feats_up_out[4] = np.squeeze(feats_up_out[4])
         feats_up_out[4] = np.transpose(feats_up_out[4], [2, 0, 1])
         save_images(norm_image(feats_up_out[4], (1, 2)), [8, 8], sample_dir + '/{}_feat_5_u0_init.png'.format(i))
