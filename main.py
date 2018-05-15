@@ -1,6 +1,7 @@
 from config import config, log_config
 from utils import *
 from model import *
+from inception_resnet_v2 import *
 
 import tensorflow as tf
 import tensorlayer as tl

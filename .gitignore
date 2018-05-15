@@ -2,6 +2,7 @@
 *.sublime*
 samples/*
 models/*
+inception_resnet*.ckpt
 
 # trash
 .dropbox
