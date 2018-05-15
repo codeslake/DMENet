@@ -95,8 +95,8 @@ def train():
                 net_vgg, feats_synthetic_down, _ = Vgg19_simple_api(patches_synthetic, reuse = False, scope = scope)
                 _, feats_real_down, _ = Vgg19_simple_api(patches_real, reuse = True, scope = scope)
             with tf.variable_scope('decoder') as scope:
-                output_synthetic_defocus_logits, output_synthetic_defocus, feats_synthetic_up = UNet_up(feats_synthetic_down, is_train = True, reuse = False, scope = scope)
-                output_real_defocus_logits, output_real_defocus, _ = UNet_up(feats_real_down, is_train = True, reuse = True, scope = scope)
+                output_synthetic_defocus, feats_synthetic_up = UNet_up(patches_synthetic, feats_synthetic_down, is_train = True, reuse = False, scope = scope)
+                output_real_defocus, _ = UNet_up(patches_real, feats_real_down, is_train = True, reuse = True, scope = scope)
         with tf.variable_scope('binary_net') as scope:
             output_real_binary_logits, output_real_binary = Binary_Net(output_real_defocus, is_train = True, reuse = False, scope = scope)
     with tf.variable_scope('perceptual') as scope:
