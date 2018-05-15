@@ -26,7 +26,6 @@ decay_every = config.TRAIN.decay_every
 lambda_adv = config.TRAIN.lambda_adv
 lambda_lr_d = config.TRAIN.lambda_lr_d
 lambda_binary = config.TRAIN.lambda_binary
-max_coc = config.TRAIN.max_coc
 
 h = config.TRAIN.height
 w = config.TRAIN.width
@@ -471,13 +470,12 @@ def evaluate():
         scipy.misc.toimage(binary_map, cmin = 0., cmax = 1.).save(sample_dir + '/{}_4_binary_map_out.png'.format(i))
         scipy.misc.toimage(np.squeeze(test_gt_imgs[i]), cmin = 0., cmax = 1.).save(sample_dir + '/{}_5_binary_map_gt.png'.format(i))
 
-        for j in np.arange(len(feats_up_out)):
-            feats_up_out[j] = np.squeeze(feats_up_out[j])
-            feats_up_out[j] = np.transpose(feats_up_out[j], [2, 0, 1])
-        save_images(norm_image(feats_up_out[0], (1, 2)), [23, 23], sample_dir + '/{}_feat_1_u4.png'.format(i))
-        save_images(norm_image(feats_up_out[1], (1, 2)), [16, 16], sample_dir + '/{}_feat_2_u3.png'.format(i))
-        save_images(norm_image(feats_up_out[2], (1, 2)), [12, 12], sample_dir + '/{}_feat_3_u2.png'.format(i))
-        save_images(norm_image(feats_up_out[3], (1, 2)), [8, 8], sample_dir + '/{}_feat_4_u1.png'.format(i))
+        scipy.misc.toimage(np.squeeze(feats_up_out[0]), cmin = 0., cmax = 1.).save(sample_dir + '/{}_feat_1_u4.png'.format(i))
+        scipy.misc.toimage(np.squeeze(feats_up_out[1]), cmin = 0., cmax = 1.).save(sample_dir + '/{}_feat_2_u3.png'.format(i))
+        scipy.misc.toimage(np.squeeze(feats_up_out[2]), cmin = 0., cmax = 1.).save(sample_dir + '/{}_feat_3_u2.png'.format(i))
+        scipy.misc.toimage(np.squeeze(feats_up_out[3]), cmin = 0., cmax = 1.).save(sample_dir + '/{}_feat_4_u1.png'.format(i))
+        feats_up_out[4] = np.squeeze(feats_up_out[4])
+        feats_up_out[4] = np.transpose(feats_up_out[4], [2, 0, 1])
         save_images(norm_image(feats_up_out[4], (1, 2)), [6, 6], sample_dir + '/{}_feat_5_u0_init.png'.format(i))
 
         for j in np.arange(len(refine_lists_out)):

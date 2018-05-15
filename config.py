@@ -8,7 +8,7 @@ config.TEST = edict()
 ## Adam
 config.TRAIN.batch_size = 4
 config.TRAIN.batch_size_init = 8
-config.TRAIN.lr_init = 1e-5
+config.TRAIN.lr_init = 1e-4
 config.TRAIN.lr_init_init = 1e-4
 config.TRAIN.beta1 = 0.5
 
@@ -18,16 +18,13 @@ config.TRAIN.n_epoch_init = 1
 config.TRAIN.lr_decay = 0.8
 config.TRAIN.decay_every = 100
 
-## total_variation
-config.TRAIN.lambda_tv_defocus = 1e-9
-config.TRAIN.lambda_tv_binary = 1e-7
-
 ## adversarial loss coefficient
-config.TRAIN.lambda_adv = 1e-4
+config.TRAIN.lambda_adv = 1e-3
 
 ## discriminator lr coefficient
 config.TRAIN.lambda_lr_d = 1e-2
 
+## binary loss coefficient
 config.TRAIN.lambda_binary= 1e-1
 
 ## train set location
