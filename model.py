@@ -4,6 +4,7 @@ import numpy as np
 from tensorlayer.layers import *
 
 def Vgg19_simple_api(rgb, reuse, scope):
+    w_init_sigmoid = tf.contrib.layers.xavier_initializer()
     VGG_MEAN = [103.939, 116.779, 123.68]
     with tf.variable_scope(scope, reuse=reuse) as vs:
         rgb_scaled = rgb * 255.0
@@ -72,8 +73,14 @@ def Vgg19_simple_api(rgb, reuse, scope):
         network = PadLayer(network, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='pad5_4')
         network = Conv2d(network, n_filter=512, filter_size=(3, 3), strides=(1, 1), act=tf.nn.relu,padding='VALID', name='conv5_4')
         d4 = network
+
+        logits = PadLayer(network, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='pad_logits_1')
+        logits = Conv2d(logits, n_filter=32, filter_size=(3, 3), strides=(1, 1), act=tf.nn.relu,padding='VALID', name='conv_logits_1')
+        logits = PadLayer(network, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='pad_logits_1')
+        logits = Conv2d(logits, n_filter=1, filter_size=(3, 3), strides=(1, 1), act=None,padding='VALID', W_init = w_init_sigmoid, name='conv_logits_1')
         
-        return network, [d0.outputs, d4.outputs], d1.outputs
+        #network, features for defocusNet, feature for perceptual loss, logits for classification 
+        return network, [d0.outputs, d4.outputs], d2.outputs, logits.outputs
 
 def UNet_up(images, feats, is_train=False, reuse=False, scope = 'unet_up'):
     w_init_relu = tf.contrib.layers.variance_scaling_initializer()
@@ -179,116 +186,7 @@ def UNet_up(images, feats, is_train=False, reuse=False, scope = 'unet_up'):
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='uf/pad3')#pad1
         n = Conv2d(n, 1, (3, 3), (1, 1), act=tf.nn.sigmoid, padding='VALID', W_init=w_init_sigmoid, name='uf/c3')#c1
 
-        #with tf.variable_scope('GRN') as scope:
-        #    for i in np.arange(5):
-        #        if i == 0 and reuse == False:
-        #            reuse_grn = False
-        #        else:
-        #            reuse_grn = True
-
-        #        residual = GRN(images, n.outputs, reuse = reuse_grn, scope = scope)
-        #        n = ElementwiseLayer([n, residual], tf.subtract, name='grn{}/add'.format(i))
-
         return n.outputs, [u4, u3, u2, u1]
-
-def GRN(image, blur_map, is_train=False, reuse=False, scope = 'GRN'):
-    w_init_relu = tf.contrib.layers.variance_scaling_initializer()
-    w_init_sigmoid = tf.contrib.layers.xavier_initializer()
-    #g_init = tf.random_normal_initializer(1., 0.02)
-    g_init = None
-    lrelu = lambda x: tl.act.lrelu(x, 0.2)
-    with tf.variable_scope(scope, reuse=reuse) as vs:
-        image_n = InputLayer(image, name='image')
-        blur_map_n = InputLayer(blur_map, name='blur_map')
-
-        n = ConcatLayer([image_n, blur_map_n], concat_dim = 3, name='d0/concat')
-        n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='d0/pad1')
-        n = Conv2d(n, 16, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='d0/c1')
-        n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='d0/b1')
-        n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='d0/pad2')
-        n = Conv2d(n, 16, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='d0/c2')
-        n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='d0/b2')
-        d0 = n
-
-        n = Conv2d(n, 16, (3, 3), (2, 2), act=None, padding='SAME', W_init=w_init_relu, name='d1/pool1')
-        n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='d1/pad1')
-        n = Conv2d(n, 32, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='d1/c1')
-        n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='d1/b1')
-        n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='d1/pad2')
-        n = Conv2d(n, 32, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='d1/c2')
-        n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='d1/b2')
-        d1 = n
-
-        n = Conv2d(n, 32, (3, 3), (2, 2), act=None, padding='SAME', W_init=w_init_relu, name='d2/pool1')
-        n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='d2/pad1')
-        n = Conv2d(n, 64, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='d2/c1')
-        n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='d2/b1')
-        n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='d2/pad2')
-        n = Conv2d(n, 64, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='d2/c2')
-        n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='d2/b2')
-        d2 = n
-
-        n = Conv2d(n, 64, (3, 3), (2, 2), act=None, padding='SAME', W_init=w_init_relu, name='d3/pool1')
-        n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='d3/pad1')
-        n = Conv2d(n, 128, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='d3/c1')
-        n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='d3/b1')
-        n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='d3/pad2')
-        n = Conv2d(n, 128, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='d3/c2')
-        n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='d3/b2')
-        d3 = n
-
-        n = Conv2d(n, 128, (3, 3), (2, 2), act=None, padding='SAME', W_init=w_init_relu, name='d4/pool1')
-        n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='d4/pad1')
-        n = Conv2d(n, 256, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='d4/c1')
-        n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='d4/b1')
-        n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='d4/pad2')
-        n = Conv2d(n, 256, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='d4/c2')
-        n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='d4/b2')
-
-        n = UpSampling2dLayer(n, (2, 2), is_scale = True, method = 1, align_corners=True, name='u3/u')
-        n = ConcatLayer([n, d3], concat_dim = 3, name='u3_concat')
-        n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u3/pad1')
-        n = Conv2d(n, 128, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u3/c1')
-        n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u3/b1')
-        n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u3/pad2')
-        n = Conv2d(n, 128, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u3/c2')
-        n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u3/b2')
-
-        n = UpSampling2dLayer(n, (2, 2), is_scale = True, method = 1, align_corners=True, name='u2/u')
-        n = ConcatLayer([n, d2], concat_dim = 3, name='u2_concat')
-        n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u2/pad1')
-        n = Conv2d(n, 64, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u2/c1')
-        n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u2/b1')
-        n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u2/pad3')
-        n = Conv2d(n, 64, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u2/c2')
-        n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u2/b2')
-
-        n = UpSampling2dLayer(n, (2, 2), is_scale = True, method = 1, align_corners=True, name='u1/u')
-        n = ConcatLayer([n, d1], concat_dim = 3, name='u1_concat')
-        n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u1/pad1')
-        n = Conv2d(n, 32, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u1/c1')
-        n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u1/b1')
-        n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u1/pad2')
-        n = Conv2d(n, 32, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u1/c2')
-        n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u1/b2')
-
-        n = UpSampling2dLayer(n, (2, 2), is_scale = True, method = 1, align_corners=True, name='u0/u')
-        n = ConcatLayer([n, d0], concat_dim = 3, name='u0_concat')
-        n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u0/pad1')
-        n = Conv2d(n, 16, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u0/c1')
-        n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u0/b1')
-        n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u0/pad2')
-        n = Conv2d(n, 16, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u0/c2')
-        n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u0/b2')
-
-        n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='uf/pad1')
-        n = Conv2d(n, 16, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='uf/c1')
-        n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='uf/b1')
-        n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='uf/pad2')
-        n = Conv2d(n, 1, (3, 3), (1, 1), act=tf.nn.sigmoid, padding='VALID', W_init=w_init_sigmoid, name='uf/c2')
-
-        return n
-
 
 def Binary_Net(input_defocus, is_train=False, reuse=False, scope = 'Binary_Net'):
     w_init_relu = tf.contrib.layers.variance_scaling_initializer()
