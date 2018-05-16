@@ -73,7 +73,7 @@ def Vgg19_simple_api(rgb, reuse, scope):
         network = Conv2d(network, n_filter=512, filter_size=(3, 3), strides=(1, 1), act=tf.nn.relu,padding='VALID', name='conv5_4')
         d4 = network
         
-        return network, [d0.outputs, d4.outputs], d2.outputs
+        return network, [d0.outputs, d4.outputs], d1.outputs
 
 def UNet_up(images, feats, is_train=False, reuse=False, scope = 'unet_up'):
     w_init_relu = tf.contrib.layers.variance_scaling_initializer()
