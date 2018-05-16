@@ -77,7 +77,7 @@ def Vgg19_simple_api(rgb, reuse, scope):
         # for classification
         logits = PadLayer(network, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='pad_logits_1')
         logits = Conv2d(logits, n_filter=32, filter_size=(3, 3), strides=(1, 1), act=tf.nn.relu,padding='VALID', name='conv_logits_1')
-        logits = PadLayer(network, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='pad_logits_2')
+        logits = PadLayer(logits, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='pad_logits_2')
         logits = Conv2d(logits, n_filter=1, filter_size=(3, 3), strides=(1, 1), act=None,padding='VALID', W_init = w_init_sigmoid, name='conv_logits_2')
         
         #network, features for defocusNet, feature for perceptual loss, logits for classification 
@@ -166,7 +166,7 @@ def UNet_up(images, feats, is_train=False, reuse=False, scope = 'unet_up'):
         n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u0/b_init')
 
         for i in np.arange(7):
-            n_res = n#
+            n_res = n
             n_res = Conv2d(n_res, 64, (1, 1), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u0/c_res{}'.format(i))#
             n_res = BatchNormLayer(n_res, act=lrelu, is_train = is_train, gamma_init = g_init, name='u0/b_res{}'.format(i))#
 
