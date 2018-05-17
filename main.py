@@ -447,9 +447,9 @@ def evaluate():
         with tf.variable_scope('main_net') as scope:
             with tf.variable_scope('defocus_net') as scope:
                 with tf.variable_scope('encoder') as scope:
-                    _, feats_down, _, _ = Vgg19_simple_api(patches_blurred, reuse = reuse, scope = scope)
+                    _, feats, _, _, feats_down = Vgg19_simple_api(patches_blurred, reuse = reuse, scope = scope)
                 with tf.variable_scope('decoder') as scope:
-                    output_defocus, feats_up, refine_lists = UNet_up(patches_blurred, feats_down, is_train = False, reuse = reuse, scope = scope)
+                    output_defocus, feats_up, refine_lists = UNet_up(patches_blurred, feats, is_train = False, reuse = reuse, scope = scope)
             with tf.variable_scope('binary_net') as scope:
                 _, output_binary = Binary_Net(output_defocus, is_train = False, reuse = reuse, scope = scope)
 
@@ -466,7 +466,7 @@ def evaluate():
         # run network
         print 'processing {} ...'.format(test_blur_img_list[i])
         processing_time = time.time()
-        defocus_map, binary_map, feats_up_out, refine_lists_out = sess.run([output_defocus, output_binary, feats_up, refine_lists], {patches_blurred: np.expand_dims(test_blur_img, axis = 0)})
+        defocus_map, binary_map, feats_down_out, feats_up_out, refine_lists_out = sess.run([output_defocus, output_binary, feats_down, feats_up, refine_lists], {patches_blurred: np.expand_dims(test_blur_img, axis = 0)})
         defocus_map = np.squeeze(1 - defocus_map)
         defocus_map_norm = defocus_map - defocus_map.min()
         defocus_map_norm = defocus_map_norm / defocus_map_norm.max()
@@ -480,13 +480,20 @@ def evaluate():
         scipy.misc.toimage(binary_map, cmin = 0., cmax = 1.).save(sample_dir + '/{}_4_binary_map_out.png'.format(i))
         scipy.misc.toimage(np.squeeze(1 - test_gt_imgs[i]), cmin = 0., cmax = 1.).save(sample_dir + '/{}_5_binary_map_gt.png'.format(i))
 
+        for j in np.arange(len(feats_down_out)):
+            feats_down_out[j] = np.squeeze(feats_down_out[j])
+            feats_down_out[j] = np.transpose(feats_down_out[j], [2, 0, 1])
+            ni = len(feats_down_out[j])
+            ni = int(np.ceil(np.sqrt(ni)))
+            save_images(norm_image(feats_down_out[j], (1, 2)), [ni, ni], sample_dir + '/{}_6_feats_down_{}.png'.format(i, j+1))
+
         for j in np.arange(len(feats_up_out)):
-            scipy.misc.toimage(np.squeeze(feats_up_out[j]), cmin = 0., cmax = 1.).save(sample_dir + '/{}_6_feat_{}.png'.format(i, j+1))
+            scipy.misc.toimage(np.squeeze(feats_up_out[j]), cmin = 0., cmax = 1.).save(sample_dir + '/{}_7_feat_up_{}.png'.format(i, j+1))
 
         for j in np.arange(len(refine_lists_out)):
             refine_lists_out[j] = np.squeeze(refine_lists_out[j])
             refine_lists_out[j] = np.transpose(refine_lists_out[j], [2, 0, 1])
-            save_images(norm_image(refine_lists_out[j], (1, 2)), [8, 8], sample_dir + '/{}_7_refine_{}.png'.format(i, j+1))
+            save_images(norm_image(refine_lists_out[j], (1, 2)), [8, 8], sample_dir + '/{}_8_refine_{}.png'.format(i, j+1))
 
         sess.close()
         reuse = True

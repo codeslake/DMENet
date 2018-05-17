@@ -81,7 +81,7 @@ def Vgg19_simple_api(rgb, reuse, scope):
         logits = Conv2d(logits, n_filter=1, filter_size=(3, 3), strides=(1, 1), act=None,padding='VALID', W_init = w_init_sigmoid, name='conv_logits_2')
         
         #network, features for defocusNet, feature for perceptual loss, logits for classification 
-        return network, [d0.outputs, d4.outputs], d2.outputs, logits.outputs
+        return network, [d0.outputs, d4.outputs], d2.outputs, logits.outputs, [d0.outputs, d1.outputs, d2.outputs, d3.outputs, d4.outputs]
 
 def UNet_up(images, feats, is_train=False, reuse=False, scope = 'unet_up'):
     w_init_relu = tf.contrib.layers.variance_scaling_initializer()
