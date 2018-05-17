@@ -95,15 +95,15 @@ def train():
                 net_vgg, feats_synthetic_down, _, _ = Vgg19_simple_api(patches_synthetic, reuse = False, scope = scope)
                 _, feats_real_down, _, _ = Vgg19_simple_api(patches_real, reuse = True, scope = scope)
             with tf.variable_scope('decoder') as scope:
-                output_synthetic_defocus, feats_synthetic_up = UNet_up(patches_synthetic, feats_synthetic_down, is_train = True, reuse = False, scope = scope)
-                output_real_defocus, _ = UNet_up(patches_real, feats_real_down, is_train = True, reuse = True, scope = scope)
+                output_synthetic_defocus, feats_synthetic_up, _ = UNet_up(patches_synthetic, feats_synthetic_down, is_train = True, reuse = False, scope = scope)
+                output_real_defocus, _, _ = UNet_up(patches_real, feats_real_down, is_train = True, reuse = True, scope = scope)
         with tf.variable_scope('binary_net') as scope:
             output_real_binary_logits, output_real_binary = Binary_Net(output_real_defocus, is_train = True, reuse = False, scope = scope)
 
     with tf.variable_scope('discriminator') as scope:
         with tf.variable_scope('feature') as scope:
-            d_feature_logits_synthetic, d_feature_synthetic = feature_discriminator(feats_synthetic_down[1], is_train = True, reuse = False, scope = scope)
-            d_feature_logits_real, d_feature_real = feature_discriminator(feats_real_down[1], is_train = True, reuse = True, scope = scope)
+            d_feature_logits_synthetic, d_feature_synthetic = feature_discriminator(feats_synthetic_down[4], is_train = True, reuse = False, scope = scope)
+            d_feature_logits_real, d_feature_real = feature_discriminator(feats_real_down[4], is_train = True, reuse = True, scope = scope)
         with tf.variable_scope('perceptual') as scope:
             output_synthetic_defocus_3c = tf.concat([output_synthetic_defocus, output_synthetic_defocus, output_synthetic_defocus], axis = 3)
             net_vgg_perceptual, _, perceptual_synthetic_out, logits_perceptual_out = Vgg19_simple_api(output_synthetic_defocus_3c, reuse = False, scope = scope)
