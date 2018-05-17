@@ -29,12 +29,9 @@ config.TRAIN.lambda_lr_d = 1e-2
 config.TRAIN.lambda_binary = 1e-2
 
 ## perceptual loss coefficient
-#config.TRAIN.lambda_perceptual = 2.5e-6
-#config.TRAIN.lambda_perceptual = 1e-7
 config.TRAIN.lambda_perceptual = 1e-6
 
 ## perceptual classification loss coefficient
-#config.TRAIN.lambda_perceptual_c = 5/16.
 config.TRAIN.lambda_perceptual_c = 1e-4
 
 ## train set location
