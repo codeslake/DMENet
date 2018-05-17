@@ -165,6 +165,8 @@ def UNet_up(images, feats, is_train=False, reuse=False, scope = 'unet_up'):
         n = Conv2d(n, 64, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u0/c_init')
         n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u0/b_init')
 
+        refine_lists = []
+        refine_lists.append(n.outputs)
         for i in np.arange(7):
             n_res = n
             n_res = Conv2d(n_res, 64, (1, 1), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u0/c_res{}'.format(i))#
@@ -177,6 +179,7 @@ def UNet_up(images, feats, is_train=False, reuse=False, scope = 'unet_up'):
             n = Conv2d(n, 64, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u0/c{}_2'.format(i))
             n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u0/b{}_2'.format(i))
             n = ElementwiseLayer([n, n_res], tf.add, name='u0/add{}'.format(i))#
+            refine_lists.append(n.outputs)
 
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='uf/pad1')#
         n = Conv2d(n, 64, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='uf/c1')#
@@ -187,7 +190,7 @@ def UNet_up(images, feats, is_train=False, reuse=False, scope = 'unet_up'):
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='uf/pad3')#pad1
         n = Conv2d(n, 1, (3, 3), (1, 1), act=tf.nn.sigmoid, padding='VALID', W_init=w_init_sigmoid, name='uf/c3')#c1
 
-        return n.outputs, [u4, u3, u2, u1]
+        return n.outputs, [u4, u3, u2, u1], refine_lists
 
 def Binary_Net(input_defocus, is_train=False, reuse=False, scope = 'Binary_Net'):
     w_init_relu = tf.contrib.layers.variance_scaling_initializer()

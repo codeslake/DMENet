@@ -447,9 +447,9 @@ def evaluate():
         with tf.variable_scope('main_net') as scope:
             with tf.variable_scope('defocus_net') as scope:
                 with tf.variable_scope('encoder') as scope:
-                    _, feats_down, _ = Vgg19_simple_api(patches_blurred, reuse = reuse, scope = scope)
+                    _, feats_down, _, _ = Vgg19_simple_api(patches_blurred, reuse = reuse, scope = scope)
                 with tf.variable_scope('decoder') as scope:
-                    output_defocus, feats_up, refine_lists, grn_residual_lists, grn_sum_lists = UNet_up_test(patches_blurred, feats_down, is_train = False, reuse = reuse, scope = scope)
+                    output_defocus, feats_up, refine_lists = UNet_up(patches_blurred, feats_down, is_train = False, reuse = reuse, scope = scope)
             with tf.variable_scope('binary_net') as scope:
                 _, output_binary = Binary_Net(output_defocus, is_train = False, reuse = reuse, scope = scope)
 
@@ -466,7 +466,7 @@ def evaluate():
         # run network
         print 'processing {} ...'.format(test_blur_img_list[i])
         processing_time = time.time()
-        defocus_map, binary_map, feats_up_out, refine_lists_out, grn_residual_lists_out, grn_sum_lists_out = sess.run([output_defocus, output_binary, feats_up, refine_lists, grn_residual_lists, grn_sum_lists], {patches_blurred: np.expand_dims(test_blur_img, axis = 0)})
+        defocus_map, binary_map, feats_up_out, refine_lists_out = sess.run([output_defocus, output_binary, feats_up, refine_lists], {patches_blurred: np.expand_dims(test_blur_img, axis = 0)})
         defocus_map = np.squeeze(1 - defocus_map)
         defocus_map_norm = defocus_map - defocus_map.min()
         defocus_map_norm = defocus_map_norm / defocus_map_norm.max()
@@ -478,25 +478,15 @@ def evaluate():
         scipy.misc.toimage(defocus_map, cmin = 0., cmax = 1.).save(sample_dir + '/{}_2_defocus_map_out.png'.format(i))
         scipy.misc.toimage(defocus_map_norm, cmin = 0., cmax = 1.).save(sample_dir + '/{}_3_defocus_map_norm_out.png'.format(i))
         scipy.misc.toimage(binary_map, cmin = 0., cmax = 1.).save(sample_dir + '/{}_4_binary_map_out.png'.format(i))
-        scipy.misc.toimage(np.squeeze(test_gt_imgs[i]), cmin = 0., cmax = 1.).save(sample_dir + '/{}_5_binary_map_gt.png'.format(i))
+        scipy.misc.toimage(np.squeeze(1 - test_gt_imgs[i]), cmin = 0., cmax = 1.).save(sample_dir + '/{}_5_binary_map_gt.png'.format(i))
 
-        for j in np.arange(len(feats_up_out) - 1):
+        for j in np.arange(len(feats_up_out)):
             scipy.misc.toimage(np.squeeze(feats_up_out[j]), cmin = 0., cmax = 1.).save(sample_dir + '/{}_6_feat_{}.png'.format(i, j+1))
-        feats_up_out[4] = np.squeeze(feats_up_out[4])
-        feats_up_out[4] = np.transpose(feats_up_out[4], [2, 0, 1])
-        save_images(norm_image(feats_up_out[4], (1, 2)), [8, 8], sample_dir + '/{}_6_feat_5_u0_init.png'.format(i))
 
-        # for j in np.arange(len(refine_lists_out) - 1):
-        #     refine_lists_out[j] = np.squeeze(refine_lists_out[j])
-        #     refine_lists_out[j] = np.transpose(refine_lists_out[j], [2, 0, 1])
-        #     save_images(norm_image(refine_lists_out[j], (1, 2)), [8, 8], sample_dir + '/{}_7_refine_{}.png'.format(i, j+1))
-        # scipy.misc.toimage(norm_image(np.squeeze(refine_lists_out[7]), (0, 1)), cmin = 0., cmax = 1.).save(sample_dir + '/{}_7_refine_8.png'.format(i))
-
-        for j in np.arange(len(grn_residual_lists_out)):
-            scipy.misc.toimage(norm_image(np.squeeze(grn_residual_lists_out[j]), (0, 1)), cmin = 0., cmax = 1.).save(sample_dir + '/{}_8_grn_residual_{}.png'.format(i, j+1))
-
-        for j in np.arange(len(grn_sum_lists_out)):
-            scipy.misc.toimage(norm_image(np.squeeze(grn_sum_lists_out[j]), (0, 1)), cmin = 0., cmax = 1.).save(sample_dir + '/{}_9_grn_sum_{}.png'.format(i, j+1))
+        for j in np.arange(len(refine_lists_out)):
+            refine_lists_out[j] = np.squeeze(refine_lists_out[j])
+            refine_lists_out[j] = np.transpose(refine_lists_out[j], [2, 0, 1])
+            save_images(norm_image(refine_lists_out[j], (1, 2)), [8, 8], sample_dir + '/{}_7_refine_{}.png'.format(i, j+1))
 
         sess.close()
         reuse = True
