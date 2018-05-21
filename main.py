@@ -95,15 +95,15 @@ def train():
                 net_vgg, feats_synthetic_down, _, _ = Vgg19_simple_api(patches_synthetic, reuse = False, scope = scope)
                 _, feats_real_down, _, _ = Vgg19_simple_api(patches_real, reuse = True, scope = scope)
             with tf.variable_scope('decoder') as scope:
-                output_synthetic_defocus, feats_synthetic_up, _ = UNet_up(patches_synthetic, feats_synthetic_down, is_train = True, reuse = False, scope = scope)
-                output_real_defocus, _, _ = UNet_up(patches_real, feats_real_down, is_train = True, reuse = True, scope = scope)
+                output_synthetic_defocus, feats_synthetic_up_aux, feats_synthetic_da, _ = UNet_up(patches_synthetic, feats_synthetic_down, is_train = True, reuse = False, scope = scope)
+                output_real_defocus, _, feats_real_da, _ = UNet_up(patches_real, feats_real_down, is_train = True, reuse = True, scope = scope)
         with tf.variable_scope('binary_net') as scope:
             output_real_binary_logits, output_real_binary = Binary_Net(output_real_defocus, is_train = True, reuse = False, scope = scope)
 
     with tf.variable_scope('discriminator') as scope:
         with tf.variable_scope('feature') as scope:
-            d_feature_logits_synthetic, d_feature_synthetic = feature_discriminator(feats_synthetic_down[4], is_train = True, reuse = False, scope = scope)
-            d_feature_logits_real, d_feature_real = feature_discriminator(feats_real_down[4], is_train = True, reuse = True, scope = scope)
+            d_feature_logits_synthetic, d_feature_synthetic = feature_discriminator(feats_synthetic_da, is_train = True, reuse = False, scope = scope)
+            d_feature_logits_real, d_feature_real = feature_discriminator(feats_real_da, is_train = True, reuse = True, scope = scope)
         with tf.variable_scope('perceptual') as scope:
             output_synthetic_defocus_3c = tf.concat([output_synthetic_defocus, output_synthetic_defocus, output_synthetic_defocus], axis = 3)
             net_vgg_perceptual, _, perceptual_synthetic_out, logits_perceptual_out = Vgg19_simple_api(output_synthetic_defocus_3c, reuse = False, scope = scope)
@@ -114,8 +114,8 @@ def train():
     with tf.variable_scope('loss'):
         with tf.variable_scope('discriminator'):
             with tf.variable_scope('feature'):
-                loss_synthetic_d_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_synthetic, tf.zeros_like(d_feature_logits_synthetic), name = 'synthetic')
-                loss_real_d_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_real, tf.ones_like(d_feature_logits_real), name = 'real')
+                loss_synthetic_d_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_synthetic, tf.ones_like(d_feature_logits_synthetic), name = 'synthetic')
+                loss_real_d_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_real, tf.zeros_like(d_feature_logits_real), name = 'real')
                 loss_d_feature = tf.identity((loss_synthetic_d_feature + loss_real_d_feature) / 2. * lambda_adv, name = 'total')
 
             with tf.variable_scope('perceptual'):
@@ -127,9 +127,11 @@ def train():
 
         with tf.variable_scope('generator'):
             with tf.variable_scope('feature'):
-                loss_synthetic_g_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_synthetic, tf.ones_like(d_feature_logits_synthetic), name = 'synthetic')
-                loss_real_g_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_real, tf.zeros_like(d_feature_logits_real), name = 'real')
-                loss_g_feature = tf.identity((loss_synthetic_g_feature + loss_real_g_feature) / 2., name = 'total')
+                #loss_synthetic_g_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_synthetic, tf.zeros_like(d_feature_logits_synthetic), name = 'synthetic')
+                #loss_real_g_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_real, tf.ones_like(d_feature_logits_real), name = 'real')
+                #loss_g_feature = tf.identity((loss_synthetic_g_feature + loss_real_g_feature) / 2., name = 'total')
+                loss_real_g_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_real, tf.ones_like(d_feature_logits_real), name = 'real')
+                loss_g_feature = tf.identity(loss_real_g_feature, name = 'total')
 
             loss_g = tf.identity(loss_g_feature * lambda_adv, name = 'total')
 
@@ -138,15 +140,16 @@ def train():
             # loss_defocus = tl.cost.absolute_difference_error(output_synthetic_defocus, labels_synthetic_defocus, is_mean = True)
         with tf.variable_scope('auxilary'):
             labels_layer = InputLayer(labels_synthetic_defocus)
-            loss_aux_1 = tl.cost.mean_squared_error(feats_synthetic_up[0],
+            loss_aux_1 = tl.cost.mean_squared_error(feats_synthetic_up_aux[0],
                 DownSampling2dLayer(labels_layer, (1/16., 1/16.), method = 1, align_corners=True).outputs, is_mean = True, name = 'aux1')
-            loss_aux_2 = tl.cost.mean_squared_error(feats_synthetic_up[1],
+            loss_aux_2 = tl.cost.mean_squared_error(feats_synthetic_up_aux[1],
                 DownSampling2dLayer(labels_layer, (1/8., 1/8.), method = 1, align_corners=True).outputs, is_mean = True, name = 'aux2')
-            loss_aux_3 = tl.cost.mean_squared_error(feats_synthetic_up[2],
+            loss_aux_3 = tl.cost.mean_squared_error(feats_synthetic_up_aux[2],
                 DownSampling2dLayer(labels_layer, (1/4., 1/4.), method = 1, align_corners=True).outputs, is_mean = True, name = 'aux3')
-            loss_aux_4 = tl.cost.mean_squared_error(feats_synthetic_up[3],
+            loss_aux_4 = tl.cost.mean_squared_error(feats_synthetic_up_aux[3],
                 DownSampling2dLayer(labels_layer, (1/2., 1/2.), method = 1, align_corners=True).outputs, is_mean = True, name = 'aux4')
-            loss_aux = tf.identity(loss_aux_1 + loss_aux_2 + loss_aux_3 + loss_aux_4, name = 'total')
+            loss_aux_5 = tl.cost.mean_squared_error(feats_synthetic_up_aux[4], labels_synthetic_defocus, is_mean = True, name = 'aux5')
+            loss_aux = tf.identity(loss_aux_1 + loss_aux_2 + loss_aux_3 + loss_aux_4 + loss_aux_5, name = 'total')
 
         with tf.variable_scope('perceptual'):
             loss_synthetic_perceptual = tl.cost.mean_squared_error(perceptual_synthetic_out, perceptual_synthetic_label, is_mean = True, name = 'synthetic')
@@ -273,7 +276,7 @@ def train():
                 synthetic_defocus_maps = read_all_imgs(train_defocus_map_list[b_idx], path = config.TRAIN.defocus_map_path, mode = 'DEPTH')
 
                 synthetic_images_blur, synthetic_defocus_maps = \
-                         crop_pair_with_different_shape_images_2(synthetic_images_blur, synthetic_defocus_maps, [h, w])
+                         crop_pair_with_different_shape_images_2(synthetic_images_blur, synthetic_defocus_maps, [h, w], is_gaussian_noise = True)
                
                 err_init, lr, _ = \
                         sess.run([loss_init, learning_rate_init, optim_init], {patches_synthetic: synthetic_images_blur, labels_synthetic_defocus: synthetic_defocus_maps})
@@ -346,7 +349,7 @@ def train():
             synthetic_defocus_maps = read_all_imgs(train_defocus_map_list[b_idx], path = config.TRAIN.defocus_map_path, mode = 'DEPTH')
             synthetic_binary_maps = read_all_imgs(train_synthetic_binary_map_list[b_idx], path = config.TRAIN.synthetic_binary_map_path, mode = 'GRAY')
 
-            synthetic_images_blur, synthetic_defocus_maps, synthetic_binary_maps = crop_pair_with_different_shape_images_3(synthetic_images_blur, synthetic_defocus_maps, synthetic_binary_maps, [h, w])
+            synthetic_images_blur, synthetic_defocus_maps, synthetic_binary_maps = crop_pair_with_different_shape_images_3(synthetic_images_blur, synthetic_defocus_maps, synthetic_binary_maps, [h, w], is_gaussian_noise = True)
 
             # read real data #
             b_idx = (idx % len(train_real_img_list) + np.arange(batch_size)) % len(train_real_img_list)
@@ -447,9 +450,9 @@ def evaluate():
         with tf.variable_scope('main_net') as scope:
             with tf.variable_scope('defocus_net') as scope:
                 with tf.variable_scope('encoder') as scope:
-                    _, feats, _, _, feats_down = Vgg19_simple_api(patches_blurred, reuse = reuse, scope = scope)
+                    _, feats_down, _, _ = Vgg19_simple_api(patches_blurred, reuse = reuse, scope = scope)
                 with tf.variable_scope('decoder') as scope:
-                    output_defocus, feats_up, refine_lists = UNet_up(patches_blurred, feats, is_train = False, reuse = reuse, scope = scope)
+                    output_defocus, feats_up, _, refine_lists = UNet_up(patches_blurred, feats_down, is_train = False, reuse = reuse, scope = scope)
             with tf.variable_scope('binary_net') as scope:
                 _, output_binary = Binary_Net(output_defocus, is_train = False, reuse = reuse, scope = scope)
 

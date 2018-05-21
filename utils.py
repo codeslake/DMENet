@@ -168,7 +168,7 @@ def refine_image(img):
     
     return img[0 : h - h % 16, 0 : w - w % 16]
 
-def random_crop(images, resize_shape):
+def random_crop(images, resize_shape, is_gaussian_noise = False):
     images_list = None
     h, w = resize_shape[:2]
     
@@ -180,17 +180,23 @@ def random_crop(images, resize_shape):
             ratio = resize_shape[shape.argmin()]/float(shape.min())
             resize_w = int(math.floor(shape[1] * ratio)) + 1
             resize_h = int(math.floor(shape[0] * ratio)) + 1
-            
             image = cv2.resize(image, (resize_w, resize_h))
 
+        if is_gaussian_noise:
+            image = add_gaussian_noise(image)
+
         cropped_image = tl.prepro.crop(image, wrg=w, hrg=h, is_random=True)
-        image = np.expand_dims(cropped_image, axis=0)
+        augmented_image = random_flip(cropped_image)
+        angles = np.array([1, 2, 3, 4])
+        angle = np.random.choice(angles)
+        augmented_image = random_rotation(augmented_image, angle)
+        image = np.expand_dims(augmented_image, axis=0)
         
         images_list = np.copy(image) if i == 0 else np.concatenate((images_list, image), axis = 0)
 
     return images_list
 
-def crop_pair_with_different_shape_images_2(images, labels, resize_shape):
+def crop_pair_with_different_shape_images_2(images, labels, resize_shape, is_gaussian_noise = False):
     images_list = None
     labels_list = None
     h, w = resize_shape[:2]
@@ -204,21 +210,28 @@ def crop_pair_with_different_shape_images_2(images, labels, resize_shape):
             ratio = resize_shape[shape.argmin()]/float(shape.min())
             resize_w = int(math.floor(shape[1] * ratio)) + 1
             resize_h = int(math.floor(shape[0] * ratio)) + 1
-            
             image = cv2.resize(image, (resize_w, resize_h))
             label = np.expand_dims(cv2.resize(label[:, :, 0], (resize_w, resize_h)), axis = 2)
 
+        if is_gaussian_noise:
+            image = add_gaussian_noise(image)
+
         concatenated_images = np.concatenate((image, label), axis = 2)
         cropped_images = tl.prepro.crop(concatenated_images, wrg=w, hrg=h, is_random=True)
-        image = np.expand_dims(cropped_images[:, :, 0:3], axis=0)
-        label = np.expand_dims(np.expand_dims(cropped_images[:, :, 3], axis=3), axis=0)
+        augmented_images = random_flip(cropped_images)
+        angles = np.array([1, 2, 3, 4])
+        angle = np.random.choice(angles)
+        augmented_images = random_rotation(augmented_images, angle)
+
+        image = np.expand_dims(augmented_images[:, :, 0:3], axis=0)
+        label = np.expand_dims(np.expand_dims(augmented_images[:, :, 3], axis=3), axis=0)
         
         images_list = np.copy(image) if i == 0 else np.concatenate((images_list, image), axis = 0)
         labels_list = np.copy(label) if i == 0 else np.concatenate((labels_list, label), axis = 0)
 
     return images_list, labels_list
 
-def crop_pair_with_different_shape_images_3(images, labels, labels2, resize_shape):
+def crop_pair_with_different_shape_images_3(images, labels, labels2, resize_shape, is_gaussian_noise = False):
     images_list = None
     labels_list = None
     labels2_list = None
@@ -234,16 +247,22 @@ def crop_pair_with_different_shape_images_3(images, labels, labels2, resize_shap
             ratio = resize_shape[shape.argmin()]/float(shape.min())
             resize_w = int(math.floor(shape[1] * ratio)) + 1
             resize_h = int(math.floor(shape[0] * ratio)) + 1
-            
             image = cv2.resize(image, (resize_w, resize_h))
             label = np.expand_dims(cv2.resize(label[:, :, 0], (resize_w, resize_h)), axis = 2)
             label2 = np.expand_dims(cv2.resize(label2[:, :, 0], (resize_w, resize_h)), axis = 2)
 
+        if is_gaussian_noise:
+            image = add_gaussian_noise(image)
+
         concatenated_images = np.concatenate((image, label, label2), axis = 2)
         cropped_images = tl.prepro.crop(concatenated_images, wrg=w, hrg=h, is_random=True)
-        image = np.expand_dims(cropped_images[:, :, :3], axis=0)
-        label = np.expand_dims(np.expand_dims(cropped_images[:, :, 3], axis=3), axis=0)
-        label2 = np.expand_dims(np.expand_dims(cropped_images[:, :, 4], axis=3), axis=0)
+        augmented_images = random_flip(cropped_images)
+        angles = np.array([1, 2, 3, 4])
+        angle = np.random.choice(angles)
+        augmented_images = random_rotation(augmented_images, angle)
+        image = np.expand_dims(augmented_images[:, :, :3], axis=0)
+        label = np.expand_dims(np.expand_dims(augmented_images[:, :, 3], axis=3), axis=0)
+        label2 = np.expand_dims(np.expand_dims(augmented_images[:, :, 4], axis=3), axis=0)
         
         images_list = np.copy(image) if i == 0 else np.concatenate((images_list, image), axis = 0)
         labels_list = np.copy(label) if i == 0 else np.concatenate((labels_list, label), axis = 0)
@@ -251,7 +270,7 @@ def crop_pair_with_different_shape_images_3(images, labels, labels2, resize_shap
 
     return images_list, labels_list, labels2_list
 
-def crop_pair_with_different_shape_images_4(images, labels, labels2, labels3, resize_shape):
+def crop_pair_with_different_shape_images_4(images, labels, labels2, labels3, resize_shape, is_gaussian_noise = False):
     images_list = None
     labels_list = None
     labels2_list = None
@@ -269,18 +288,25 @@ def crop_pair_with_different_shape_images_4(images, labels, labels2, labels3, re
             ratio = resize_shape[shape.argmin()]/float(shape.min())
             resize_w = int(math.floor(shape[1] * ratio)) + 1
             resize_h = int(math.floor(shape[0] * ratio)) + 1
-            
             image = cv2.resize(image, (resize_w, resize_h))
             label = np.expand_dims(cv2.resize(label[:, :, 0], (resize_w, resize_h)), axis = 2)
             label2 = np.expand_dims(cv2.resize(label2[:, :, 0], (resize_w, resize_h)), axis = 2)
             label3 = np.expand_dims(cv2.resize(label3[:, :, 0], (resize_w, resize_h)), axis = 2)
+                
+        if is_gaussian_noise:
+            image = add_gaussian_noise(image)
 
         concatenated_images = np.concatenate((image, label, label2, label3), axis = 2)
         cropped_images = tl.prepro.crop(concatenated_images, wrg=w, hrg=h, is_random=True)
-        image = np.expand_dims(cropped_images[:, :, :3], axis=0)
-        label = np.expand_dims(np.expand_dims(cropped_images[:, :, 3], axis=3), axis=0)
-        label2 = np.expand_dims(np.expand_dims(cropped_images[:, :, 4], axis=3), axis=0)
-        label3 = np.expand_dims(np.expand_dims(cropped_images[:, :, 5], axis=3), axis=0)
+
+        augmented_images = random_flip(cropped_images)
+        angles = np.array([1, 2, 3, 4])
+        angle = np.random.choice(angles)
+        augmented_images = random_rotation(augmented_images, angle)
+        image = np.expand_dims(augmented_images[:, :, :3], axis=0)
+        label = np.expand_dims(np.expand_dims(augmented_images[:, :, 3], axis=3), axis=0)
+        label2 = np.expand_dims(np.expand_dims(augmented_images[:, :, 4], axis=3), axis=0)
+        label3 = np.expand_dims(np.expand_dims(augmented_images[:, :, 5], axis=3), axis=0)
         
         images_list = np.copy(image) if i == 0 else np.concatenate((images_list, image), axis = 0)
         labels_list = np.copy(label) if i == 0 else np.concatenate((labels_list, label), axis = 0)
@@ -288,6 +314,41 @@ def crop_pair_with_different_shape_images_4(images, labels, labels2, labels3, re
         labels3_list = np.copy(label3) if i == 0 else np.concatenate((labels3_list, label3), axis = 0)
 
     return images_list, labels_list, labels2_list, labels3_list
+
+def add_gaussian_noise(image):
+    # noise_sigma = 0.01
+    # h = image.shape[0]
+    # w = image.shape[1]
+    # noise = np.random.randn(h, w) * noise_sigma
+
+    # noisy_image = np.zeros(image.shape, np.float64)
+    # if len(image.shape) == 2:
+    #     noisy_image = image + noise
+    # else:
+    #     noisy_image[:,:,0] = image[:,:,0] + noise
+    #     noisy_image[:,:,1] = image[:,:,1] + noise
+    #     noisy_image[:,:,2] = image[:,:,2] + noise
+
+    # """
+    # print('min,max = ', np.min(noisy_image), np.max(noisy_image))
+    # print('type = ', type(noisy_image[0][0][0]))
+    # """
+
+    # return noisy_image
+    return image
+
+def random_flip(images):
+    flipped_images = tl.prepro.flip_axis(images, axis=0, is_random=True)
+
+    return flipped_images
+
+def random_rotation(images, angle):
+    if angle != 4:
+        rotated_images = np.rot90(images, angle)
+    else:
+        rotated_images = images
+
+    return rotated_images
 
 def get_binary_maps(maps):
     continuous_maps = maps

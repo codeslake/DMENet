@@ -23,7 +23,8 @@ config.TRAIN.decay_every = 100
 config.TRAIN.lambda_adv = 1e-3
 
 ## discriminator lr coefficient
-config.TRAIN.lambda_lr_d = 1e-2
+#config.TRAIN.lambda_lr_d = 1e-2
+config.TRAIN.lambda_lr_d = 1
 
 ## binary loss coefficient
 config.TRAIN.lambda_binary = 1e-2
