@@ -69,7 +69,8 @@ config.TRAIN.write_sample_every = 1000
 config.TRAIN.refresh_image_log_every = 20
 
 # save dir
-config.TRAIN.root_dir = '/data2/junyonglee/sharpness_assessment/'
+#config.TRAIN.root_dir = '/data2/junyonglee/sharpness_assessment/'
+config.TRAIN.root_dir = '/Jarvis/logs/junyonglee/sharpness_assessment/'
 
 config.TRAIN.max_coc = 15.;
 
