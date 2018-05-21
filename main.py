@@ -118,12 +118,7 @@ def train():
                 loss_real_d_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_real, tf.zeros_like(d_feature_logits_real), name = 'real')
                 loss_d_feature = tf.identity((loss_synthetic_d_feature + loss_real_d_feature) / 2. * lambda_adv, name = 'total')
 
-            with tf.variable_scope('perceptual'):
-                loss_out_d_perceptual = tl.cost.sigmoid_cross_entropy(logits_perceptual_out, tf.zeros_like(logits_perceptual_out), name = 'out')
-                loss_label_d_perceptual = tl.cost.sigmoid_cross_entropy(logits_perceptual_label, tf.ones_like(logits_perceptual_label), name = 'label')
-                loss_d_percetpcual = tf.identity((loss_out_d_perceptual + loss_label_d_perceptual) * lambda_perceptual_c, name = 'total')
-
-            loss_d = tf.identity(loss_d_feature + loss_d_percetpcual, name = 'total')
+            loss_d = tf.identity(loss_d_feature, name = 'total')
 
         with tf.variable_scope('generator'):
             with tf.variable_scope('feature'):
@@ -213,9 +208,7 @@ def train():
 
     loss_sum_d_list = []
     with tf.variable_scope('loss_discriminator'):
-        loss_sum_d_list.append(tf.summary.scalar('1_total', loss_d))
-        loss_sum_d_list.append(tf.summary.scalar('2_d_feature', loss_d_feature))
-        loss_sum_d_list.append(tf.summary.scalar('3_d_perceptual', loss_d_percetpcual))
+        loss_sum_d_list.append(tf.summary.scalar('1_d', loss_d_feature))
     loss_sum_d = tf.summary.merge(loss_sum_d_list)
 
     image_sum_list = []
