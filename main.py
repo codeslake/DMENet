@@ -192,9 +192,8 @@ def train():
 
     image_sum_list_init = []
     image_sum_list_init.append(tf.summary.image('1_synthetic_input_init', patches_synthetic))
-    image_sum_list_init.append(tf.summary.image('3_synthetic_defocus_out_init', fix_image_tf(output_synthetic_defocus, 1)))
-    image_sum_list_init.append(tf.summary.image('4_synthetic_defocus_out_norm_init', fix_image_tf(output_synthetic_defocus, 1)))
-    image_sum_list_init.append(tf.summary.image('5_synthetic_defocus_gt_init', fix_image_tf(labels_synthetic_defocus, 1)))
+    image_sum_list_init.append(tf.summary.image('2_synthetic_defocus_out_init', fix_image_tf(output_synthetic_defocus, 1)))
+    image_sum_list_init.append(tf.summary.image('3_synthetic_defocus_gt_init', fix_image_tf(labels_synthetic_defocus, 1)))
     image_sum_init = tf.summary.merge(image_sum_list_init)
 
     # for train
