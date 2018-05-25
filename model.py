@@ -77,9 +77,9 @@ def Vgg19_simple_api(rgb, reuse, scope):
         d4 = network
 
         # for classification
-        network_rg = InputLayer(reduce_gradient(network.outputs, 1e-2), 'gradient_reduced')
-        logits = PadLayer(network_rg, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='pad6_1')
-        #logits = PadLayer(network, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='pad6_1')
+        # network_rg = InputLayer(reduce_gradient(network.outputs, 1e-2), 'gradient_reduced')
+        # logits = PadLayer(network_rg, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='pad6_1')
+        logits = PadLayer(network, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='pad6_1')
         logits = Conv2d(logits, n_filter=64, filter_size=(3, 3), strides=(1, 1), act=tf.nn.relu,padding='VALID', name='conv6_1')
         logits = FlattenLayer(logits, name='flatten')
         logits = DenseLayer(logits, n_units=512, act=tf.nn.relu, W_init = w_init_relu, name='c_logits_1')
