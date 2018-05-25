@@ -76,7 +76,7 @@ def Vgg19_simple_api(rgb, reuse, scope):
 
         # for classification
         logits = PadLayer(network, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='pad_logits_1')
-        logits = Conv2d(logits, n_filter=32, filter_size=(3, 3), strides=(1, 1), act=tf.nn.relu,padding='VALID', name='conv_logits_1')
+        logits = Conv2d(logits, n_filter=512, filter_size=(3, 3), strides=(1, 1), act=tf.nn.relu,padding='VALID', name='conv_logits_1')
         logits = PadLayer(logits, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='pad_logits_2')
         logits = Conv2d(logits, n_filter=1, filter_size=(3, 3), strides=(1, 1), act=None,padding='VALID', W_init = w_init_sigmoid, name='conv_logits_2')
         
