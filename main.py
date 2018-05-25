@@ -163,7 +163,8 @@ def train():
     d_vars = tl.layers.get_variables_with_name('discriminator', True, False)
     main_vars = tl.layers.get_variables_with_name('main_net', True, False)
     init_vars = tl.layers.get_variables_with_name('defocus_net', False, False)
-    save_vars = tl.layers.get_variables_with_name('main_net', False, False)
+
+    save_vars = tl.layers.get_variables_with_name('main_net', False, False) + tl.layers.get_variables_with_name('discriminator', False, False)
 
     # define optimizer
     with tf.variable_scope('Optimizer'):
