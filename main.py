@@ -162,9 +162,10 @@ def train():
     # variables to save / train
     d_vars = tl.layers.get_variables_with_name('discriminator', True, False)
     main_vars = tl.layers.get_variables_with_name('main_net', True, False)
-    init_vars = tl.layers.get_variables_with_name('defocus_net', False, False)
-
     save_vars = tl.layers.get_variables_with_name('main_net', False, False) + tl.layers.get_variables_with_name('discriminator', False, False)
+
+    init_vars = tl.layers.get_variables_with_name('defocus_net', True, False)
+    save_init_vars = tl.layers.get_variables_with_name('defocus_net', False, False)
 
     # define optimizer
     with tf.variable_scope('Optimizer'):
@@ -293,7 +294,7 @@ def train():
                 writer_image_init.reopen()
 
             if epoch % 5:
-                tl.files.save_npz_dict(init_vars, name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
+                tl.files.save_npz_dict(save_init_vars, name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
 
         tl.files.save_npz_dict(init_vars, name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
         writer_image_init.close()
