@@ -116,7 +116,7 @@ def train():
             with tf.variable_scope('feature'):
                 loss_synthetic_d_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_synthetic, tf.ones_like(d_feature_logits_synthetic), name = 'synthetic')
                 loss_real_d_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_real, tf.zeros_like(d_feature_logits_real), name = 'real')
-                loss_d_feature = tf.identity((loss_synthetic_d_feature + loss_real_d_feature) / 2. * lambda_adv, name = 'total')
+                loss_d_feature = tf.identity((loss_synthetic_d_feature + loss_real_d_feature) * lambda_adv, name = 'total')
 
             loss_d = tf.identity(loss_d_feature, name = 'total')
 
@@ -124,7 +124,7 @@ def train():
             with tf.variable_scope('feature'):
                 #loss_synthetic_g_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_synthetic, tf.zeros_like(d_feature_logits_synthetic), name = 'synthetic')
                 #loss_real_g_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_real, tf.ones_like(d_feature_logits_real), name = 'real')
-                #loss_g_feature = tf.identity((loss_synthetic_g_feature + loss_real_g_feature) / 2., name = 'total')
+                #loss_g_feature = tf.identity((loss_synthetic_g_feature + loss_real_g_feature), name = 'total')
                 loss_real_g_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_real, tf.ones_like(d_feature_logits_real), name = 'real')
                 loss_g_feature = tf.identity(loss_real_g_feature, name = 'total')
 
