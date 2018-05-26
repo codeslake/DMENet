@@ -292,10 +292,9 @@ def train():
                 remove_file_end_with(log_dir_image_init, '*.image_log')
                 writer_image_init.reopen()
 
-            if epoch % 5:
+            if epoch % 2 or epoch == n_epoch_init - 1:
                 tl.files.save_npz_dict(save_init_vars, name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
 
-        tl.files.save_npz_dict(init_vars, name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
         writer_image_init.close()
         writer_scalar_init.close()
 
@@ -395,7 +394,8 @@ def train():
             # save checkpoint
             if global_step != 0 and global_step % config.TRAIN.write_ckpt_every == 0:
                 shutil.rmtree(ckpt_dir, ignore_errors = True)
-                tl.files.save_ckpt(sess = sess, mode_name = '{}.ckpt'.format(tl.global_flag['mode']), save_dir = ckpt_dir, var_list = save_vars, global_step = global_step, printable = False)
+                #tl.files.save_ckpt(sess = sess, mode_name = '{}.ckpt'.format(tl.global_flag['mode']), save_dir = ckpt_dir, var_list = save_vars, global_step = global_step, printable = False)
+                tl.files.save_npz_dict(save_vars, name = ckpt_dir + '/{}.npz'.format(tl.global_flag['mode']), sess = sess)
             # save samples
             if global_step != 0 and global_step % config.TRAIN.write_sample_every == 0:
                 synthetic_defocus_out, real_defocus_out, real_binary_out = sess.run([output_synthetic_defocus, output_real_defocus, output_real_binary], {patches_synthetic: synthetic_images_blur, patches_real: real_images_blur, labels_real_binary: real_binary_maps })
