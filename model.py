@@ -175,7 +175,7 @@ def UNet_up(images, feats, is_train=False, reuse=False, scope = 'unet_up'):
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u0/pad_init')
         n = Conv2d(n, 64, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u0/c_init')
         n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u0/b_init')
-        gan_feat = n.outputs
+        #gan_feat = n.outputs
 
         u0 = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u0_aux/pad1')
         u0 = Conv2d(u0, 32, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u0_aux/c1')
@@ -188,9 +188,9 @@ def UNet_up(images, feats, is_train=False, reuse=False, scope = 'unet_up'):
         refine_lists = []
         refine_lists.append(n.outputs)
         for i in np.arange(7):
-            # n_res = n
-            # n_res = Conv2d(n_res, 64, (1, 1), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u0/c_res{}'.format(i))#
-            # n_res = BatchNormLayer(n_res, act=lrelu, is_train = is_train, gamma_init = g_init, name='u0/b_res{}'.format(i))#
+            n_res = n
+            n_res = Conv2d(n_res, 64, (1, 1), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u0/c_res{}'.format(i))#
+            n_res = BatchNormLayer(n_res, act=lrelu, is_train = is_train, gamma_init = g_init, name='u0/b_res{}'.format(i))#
 
             n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u0/pad{}_1'.format(i))
             n = Conv2d(n, 64, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u0/c{}_1'.format(i))
@@ -198,7 +198,7 @@ def UNet_up(images, feats, is_train=False, reuse=False, scope = 'unet_up'):
             n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u0/pad{}_2'.format(i))
             n = Conv2d(n, 64, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u0/c{}_2'.format(i))
             n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u0/b{}_2'.format(i))
-            #n = ElementwiseLayer([n, n_res], tf.add, name='u0/add{}'.format(i))#
+            n = ElementwiseLayer([n, n_res], tf.add, name='u0/add{}'.format(i))#
             refine_lists.append(n.outputs)
 
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='uf/pad1')#
@@ -208,9 +208,10 @@ def UNet_up(images, feats, is_train=False, reuse=False, scope = 'unet_up'):
         n = Conv2d(n, 32, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='uf/c2')#
         n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='uf/b2')#
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='uf/pad3')#pad1
-        n = Conv2d(n, 1, (3, 3), (1, 1), act=tf.nn.sigmoid, padding='VALID', W_init=w_init_sigmoid, name='uf/c3')#c1
+        n = Conv2d(n, 1, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_sigmoid, name='uf/c3')#c1
+        gan_feat = n.outputs
 
-        return n.outputs, [u4, u3, u2, u1, u0], gan_feat, refine_lists
+        return tf.nn.sigmoid(n.outputs), [u4, u3, u2, u1, u0], gan_feat, refine_lists
 
 def feature_discriminator(feats, is_train=True, reuse=False, scope = 'feature_discriminator'):
     w_init = tf.contrib.layers.variance_scaling_initializer()
