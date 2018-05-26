@@ -33,7 +33,7 @@ config.TRAIN.lambda_binary = 5e-2
 
 ## perceptual loss coefficient
 #config.TRAIN.lambda_perceptual = 1e-6
-config.TRAIN.lambda_perceptual = 1e-5
+config.TRAIN.lambda_perceptual = 1e-7
 
 ## train set location
 # config.TRAIN.synthetic_img_path = '/data1/junyonglee/blur_sharp_only/image_dof/'
