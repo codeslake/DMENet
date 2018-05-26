@@ -27,7 +27,6 @@ lambda_adv = config.TRAIN.lambda_adv
 lambda_lr_d = config.TRAIN.lambda_lr_d
 lambda_binary = config.TRAIN.lambda_binary
 lambda_perceptual = config.TRAIN.lambda_perceptual
-lambda_perceptual_c = config.TRAIN.lambda_perceptual_c
 
 h = config.TRAIN.height
 w = config.TRAIN.width
