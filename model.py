@@ -4,7 +4,7 @@ import numpy as np
 from tensorlayer.layers import *
 from reduce_gradient import reduce_gradient
 
-def Vgg19_simple_api(rgb, reuse, scope):
+def Vgg19_simple_api(rgb, reuse, scope, is_test = False):
     w_init_relu = tf.contrib.layers.variance_scaling_initializer()
     w_init_sigmoid = tf.contrib.layers.xavier_initializer()
     VGG_MEAN = [103.939, 116.779, 123.68]
@@ -76,17 +76,20 @@ def Vgg19_simple_api(rgb, reuse, scope):
         network = Conv2d(network, n_filter=512, filter_size=(3, 3), strides=(1, 1), act=tf.nn.relu,padding='VALID', name='conv5_4')
         d4 = network
 
-        # for classification
-        # network_rg = InputLayer(reduce_gradient(network.outputs, 1e-2), 'gradient_reduced')
-        # logits = PadLayer(network_rg, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='pad6_1')
-        logits = PadLayer(network, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='pad6_1')
-        logits = Conv2d(logits, n_filter=64, filter_size=(3, 3), strides=(1, 1), act=tf.nn.relu,padding='VALID', name='conv6_1')
-        logits = FlattenLayer(logits, name='flatten')
-        logits = DenseLayer(logits, n_units=512, act=tf.nn.relu, W_init = w_init_relu, name='c_logits_1')
-        logits = DenseLayer(logits, n_units=1, act=tf.identity, W_init = w_init_sigmoid, name='c_logits_2')
-        
-        #network, features for defocusNet, feature for perceptual loss, logits for classification 
-        return network, [d0.outputs, d1.outputs, d2.outputs, d3.outputs, d4.outputs], d2.outputs, logits.outputs
+        if is_test == False:
+            # for classification
+            # network_rg = InputLayer(reduce_gradient(network.outputs, 1e-2), 'gradient_reduced')
+            # logits = PadLayer(network_rg, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='pad6_1')
+            logits = PadLayer(network, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='pad6_1')
+            logits = Conv2d(logits, n_filter=64, filter_size=(3, 3), strides=(1, 1), act=tf.nn.relu,padding='VALID', name='conv6_1')
+            logits = FlattenLayer(logits, name='flatten')
+            logits = DenseLayer(logits, n_units=512, act=tf.nn.relu, W_init = w_init_relu, name='c_logits_1')
+            logits = DenseLayer(logits, n_units=1, act=tf.identity, W_init = w_init_sigmoid, name='c_logits_2')
+            
+            #network, features for defocusNet, feature for perceptual loss, logits for classification 
+            return network, [d0.outputs, d1.outputs, d2.outputs, d3.outputs, d4.outputs], d2.outputs, logits.outputs
+        else:
+            return [d0.outputs, d1.outputs, d2.outputs, d3.outputs, d4.outputs]
 
 def UNet_up(images, feats, is_train=False, reuse=False, scope = 'unet_up'):
     w_init_relu = tf.contrib.layers.variance_scaling_initializer()
