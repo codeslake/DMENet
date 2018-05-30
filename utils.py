@@ -171,6 +171,7 @@ def refine_image(img):
 def random_crop(images, resize_shape, is_gaussian_noise = False):
     images_list = None
     h, w = resize_shape[:2]
+    max_size_limit = 800
     
     for i in np.arange(len(images)):
         image = np.copy(images[i])
@@ -178,6 +179,12 @@ def random_crop(images, resize_shape, is_gaussian_noise = False):
         
         if shape.min() <= h:
             ratio = resize_shape[shape.argmin()]/float(shape.min())
+            resize_w = int(math.floor(shape[1] * ratio)) + 1
+            resize_h = int(math.floor(shape[0] * ratio)) + 1
+            image = cv2.resize(image, (resize_w, resize_h))
+
+        if shape.min() > max_size_limit:
+            ratio = max_size_limit/float(shape.min())
             resize_w = int(math.floor(shape[1] * ratio)) + 1
             resize_h = int(math.floor(shape[0] * ratio)) + 1
             image = cv2.resize(image, (resize_w, resize_h))
@@ -200,6 +207,7 @@ def crop_pair_with_different_shape_images_2(images, labels, resize_shape, is_gau
     images_list = None
     labels_list = None
     h, w = resize_shape[:2]
+    max_size_limit = 800
     
     for i in np.arange(len(images)):
         image = np.copy(images[i])
@@ -208,6 +216,13 @@ def crop_pair_with_different_shape_images_2(images, labels, resize_shape, is_gau
         
         if shape.min() <= h:
             ratio = resize_shape[shape.argmin()]/float(shape.min())
+            resize_w = int(math.floor(shape[1] * ratio)) + 1
+            resize_h = int(math.floor(shape[0] * ratio)) + 1
+            image = cv2.resize(image, (resize_w, resize_h))
+            label = np.expand_dims(cv2.resize(label[:, :, 0], (resize_w, resize_h)), axis = 2)
+
+        if shape.min() > max_size_limit:
+            ratio = max_size_limit/float(shape.min())
             resize_w = int(math.floor(shape[1] * ratio)) + 1
             resize_h = int(math.floor(shape[0] * ratio)) + 1
             image = cv2.resize(image, (resize_w, resize_h))
@@ -236,6 +251,7 @@ def crop_pair_with_different_shape_images_3(images, labels, labels2, resize_shap
     labels_list = None
     labels2_list = None
     h, w = resize_shape[:2]
+    max_size_limit = 800
     
     for i in np.arange(len(images)):
         image = np.copy(images[i])
@@ -245,6 +261,14 @@ def crop_pair_with_different_shape_images_3(images, labels, labels2, resize_shap
         
         if shape.min() <= h:
             ratio = resize_shape[shape.argmin()]/float(shape.min())
+            resize_w = int(math.floor(shape[1] * ratio)) + 1
+            resize_h = int(math.floor(shape[0] * ratio)) + 1
+            image = cv2.resize(image, (resize_w, resize_h))
+            label = np.expand_dims(cv2.resize(label[:, :, 0], (resize_w, resize_h)), axis = 2)
+            label2 = np.expand_dims(cv2.resize(label2[:, :, 0], (resize_w, resize_h)), axis = 2)
+
+        if shape.min() > max_size_limit:
+            ratio = max_size_limit/float(shape.min())
             resize_w = int(math.floor(shape[1] * ratio)) + 1
             resize_h = int(math.floor(shape[0] * ratio)) + 1
             image = cv2.resize(image, (resize_w, resize_h))
@@ -276,6 +300,7 @@ def crop_pair_with_different_shape_images_4(images, labels, labels2, labels3, re
     labels2_list = None
     labels3_list = None
     h, w = resize_shape[:2]
+    max_size_limit = 800
     
     for i in np.arange(len(images)):
         image = np.copy(images[i])
@@ -286,6 +311,15 @@ def crop_pair_with_different_shape_images_4(images, labels, labels2, labels3, re
         
         if shape.min() <= h:
             ratio = resize_shape[shape.argmin()]/float(shape.min())
+            resize_w = int(math.floor(shape[1] * ratio)) + 1
+            resize_h = int(math.floor(shape[0] * ratio)) + 1
+            image = cv2.resize(image, (resize_w, resize_h))
+            label = np.expand_dims(cv2.resize(label[:, :, 0], (resize_w, resize_h)), axis = 2)
+            label2 = np.expand_dims(cv2.resize(label2[:, :, 0], (resize_w, resize_h)), axis = 2)
+            label3 = np.expand_dims(cv2.resize(label3[:, :, 0], (resize_w, resize_h)), axis = 2)
+            
+        if shape.min() > max_size_limit:
+            ratio = max_size_limit/float(shape.min())
             resize_w = int(math.floor(shape[1] * ratio)) + 1
             resize_h = int(math.floor(shape[0] * ratio)) + 1
             image = cv2.resize(image, (resize_w, resize_h))
@@ -314,7 +348,6 @@ def crop_pair_with_different_shape_images_4(images, labels, labels2, labels3, re
         labels3_list = np.copy(label3) if i == 0 else np.concatenate((labels3_list, label3), axis = 0)
 
     return images_list, labels_list, labels2_list, labels3_list
-
 def add_gaussian_noise(image):
     # noise_sigma = 0.01
     # h = image.shape[0]

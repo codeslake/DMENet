@@ -76,6 +76,7 @@ def train():
     
     train_real_img_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.real_img_path, regx = '.*', printable = False)))
     train_real_binary_map_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.real_binary_map_path, regx = '.*', printable = False)))
+    train_real_img_no_label_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.real_img_no_label_path, regx = '.*', printable = False)))
 
     ## DEFINE MODEL
     # input
@@ -86,6 +87,7 @@ def train():
 
         patches_real = tf.placeholder('float32', [None, h, w, 3], name = 'input_real')
         labels_real_binary = tf.placeholder('float32', [None, h, w, 1], name = 'labels_real_binary')
+        patches_real_no_label = tf.placeholder('float32', [None, h, w, 3], name = 'input_real_no_label')
 
     # model
     with tf.variable_scope('main_net') as scope:
@@ -93,9 +95,11 @@ def train():
             with tf.variable_scope('encoder') as scope:
                 net_vgg, feats_synthetic_down, _, _ = Vgg19_simple_api(patches_synthetic, reuse = False, scope = scope)
                 _, feats_real_down, _, _ = Vgg19_simple_api(patches_real, reuse = True, scope = scope)
+                _, feats_real_no_label_down, _, _ = Vgg19_simple_api(patches_real_no_label, reuse = True, scope = scope)
             with tf.variable_scope('decoder') as scope:
                 output_synthetic_defocus, feats_synthetic_up_aux, feats_synthetic_da, _ = UNet_up(patches_synthetic, feats_synthetic_down, is_train = True, reuse = False, scope = scope)
                 output_real_defocus, _, feats_real_da, _ = UNet_up(patches_real, feats_real_down, is_train = True, reuse = True, scope = scope)
+                output_real_no_label_defocus, _, feats_real_no_label_da, _ = UNet_up(patches_real_no_label, feats_real_down, is_train = True, reuse = True, scope = scope)
         with tf.variable_scope('binary_net') as scope:
             output_real_binary_logits, output_real_binary = Binary_Net(output_real_defocus, is_train = True, reuse = False, scope = scope)
 
@@ -103,6 +107,7 @@ def train():
         with tf.variable_scope('feature') as scope:
             d_feature_logits_synthetic, d_feature_synthetic = feature_discriminator(feats_synthetic_da, is_train = True, reuse = False, scope = scope)
             d_feature_logits_real, d_feature_real = feature_discriminator(feats_real_da, is_train = True, reuse = True, scope = scope)
+            d_feature_logits_real_no_label, d_feature_real_no_label = feature_discriminator(feats_real_no_label_da, is_train = True, reuse = True, scope = scope)
         with tf.variable_scope('perceptual') as scope:
             output_synthetic_defocus_3c = tf.concat([output_synthetic_defocus, output_synthetic_defocus, output_synthetic_defocus], axis = 3)
             net_vgg_perceptual, _, perceptual_synthetic_out, logits_perceptual_out = Vgg19_simple_api(output_synthetic_defocus_3c, reuse = False, scope = scope)
@@ -115,7 +120,8 @@ def train():
             with tf.variable_scope('feature'):
                 loss_synthetic_d_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_synthetic, tf.ones_like(d_feature_logits_synthetic), name = 'synthetic')
                 loss_real_d_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_real, tf.zeros_like(d_feature_logits_real), name = 'real')
-                loss_d_feature = tf.identity((loss_synthetic_d_feature + loss_real_d_feature) * lambda_adv, name = 'total')
+                loss_real_no_label_d_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_real_no_label, tf.zeros_like(d_feature_logits_real_no_label), name = 'real')
+                loss_d_feature = tf.identity((2 * loss_synthetic_d_feature + loss_real_d_feature + loss_real_no_label_d_feature) / 2. * lambda_adv, name = 'total')
 
             loss_d = tf.identity(loss_d_feature, name = 'total')
 
@@ -125,7 +131,8 @@ def train():
                 #loss_real_g_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_real, tf.ones_like(d_feature_logits_real), name = 'real')
                 #loss_g_feature = tf.identity((loss_synthetic_g_feature + loss_real_g_feature), name = 'total')
                 loss_real_g_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_real, tf.ones_like(d_feature_logits_real), name = 'real')
-                loss_g_feature = tf.identity(loss_real_g_feature, name = 'total')
+                loss_real_no_label_g_feature = tl.cost.sigmoid_cross_entropy(d_feature_logits_real_no_label, tf.ones_like(d_feature_logits_real_no_label), name = 'real')
+                loss_g_feature = tf.identity((loss_real_g_feature + loss_real_no_label_g_feature) / 2., name = 'total')
 
             loss_g = tf.identity(loss_g_feature * lambda_adv, name = 'total')
 
@@ -323,6 +330,10 @@ def train():
         train_real_img_list = train_real_img_list[shuffle_index]
         train_real_binary_map_list = train_real_binary_map_list[shuffle_index]
 
+        shuffle_index = np.arange(len(train_real_img_no_label_list))
+        np.random.shuffle(shuffle_index)
+        train_real_img_no_label_list = train_real_img_no_label_list[shuffle_index]
+
         # update learning rate
         if epoch != 0 and (epoch % decay_every == 0):
             new_lr_decay = lr_decay ** (epoch // decay_every)
@@ -348,6 +359,8 @@ def train():
             real_images_blur = read_all_imgs(train_real_img_list[b_idx], path = config.TRAIN.real_img_path, mode = 'RGB')
             real_binary_maps = read_all_imgs(train_real_binary_map_list[b_idx], path = config.TRAIN.real_binary_map_path, mode = 'GRAY')
             real_images_blur, real_binary_maps = crop_pair_with_different_shape_images_2(real_images_blur, real_binary_maps, [h, w])
+            real_images_no_label_blur = read_all_imgs(train_real_img_no_label_list[b_idx], path = config.TRAIN.real_img_no_label_path, mode = 'RGB')
+            real_images_no_label_blur = random_crop(real_images_no_label_blur, [h, w])
 
             ## RUN NETWORK
             #discriminator
@@ -363,7 +376,7 @@ def train():
             _ = sess.run(optim_d, feed_dict)
 
             #generator
-            feed_dict = {patches_synthetic: synthetic_images_blur, labels_synthetic_defocus: synthetic_defocus_maps, labels_synthetic_binary: synthetic_binary_maps, patches_real: real_images_blur, labels_real_binary: real_binary_maps}
+            feed_dict = {patches_synthetic: synthetic_images_blur, labels_synthetic_defocus: synthetic_defocus_maps, labels_synthetic_binary: synthetic_binary_maps, patches_real: real_images_blur, labels_real_binary: real_binary_maps, patches_real_no_label: real_images_no_label_blur}
             # d_synthetic, d_real = sess.run([d_feature_synthetic, d_feature_real], feed_dict)
             # g_acc = get_disc_accuracy([d_synthetic, d_real], [1, 0])
             g_count = 0
@@ -386,7 +399,7 @@ def train():
             ## SAVE LOGS
             # save loss & image log
             if global_step % config.TRAIN.write_log_every == 0:
-                summary_loss_g, summary_loss_d, summary_image  = sess.run([loss_sum_g, loss_sum_d, image_sum], {patches_synthetic: synthetic_images_blur, labels_synthetic_defocus: synthetic_defocus_maps, patches_real: real_images_blur, labels_synthetic_binary: synthetic_binary_maps, labels_real_binary: real_binary_maps})
+                summary_loss_g, summary_loss_d, summary_image  = sess.run([loss_sum_g, loss_sum_d, image_sum], {patches_synthetic: synthetic_images_blur, labels_synthetic_defocus: synthetic_defocus_maps, patches_real: real_images_blur, labels_synthetic_binary: synthetic_binary_maps, labels_real_binary: real_binary_maps, patches_real_no_label: real_images_no_label_blur})
                 writer_scalar.add_summary(summary_loss_d, global_step)
                 writer_scalar.add_summary(summary_loss_g, global_step)
                 writer_image.add_summary(summary_image, global_step)

@@ -47,9 +47,9 @@ config.TRAIN.defocus_map_path = offset + '15_gaussian_many/blur_map/'
 config.TRAIN.defocus_map_norm_path = offset + '15_gaussian_many/blur_map_norm/'
 config.TRAIN.synthetic_binary_map_path = offset + '15_gaussian_many/blur_map_binary/'
 
-offset = '/data1/junyonglee'
-config.TRAIN.real_img_path = offset + 'BlurDetection/train/image/'
-config.TRAIN.real_binary_map_path = offset + 'BlurDetection/train/gt/'
+config.TRAIN.real_img_no_label_path = '/data1/junyonglee/dof_real/'
+config.TRAIN.real_img_path = '/data1/junyonglee/BlurDetection/train/image/'
+config.TRAIN.real_binary_map_path = '/data1/junyonglee/BlurDetection/train/gt/'
 
 ## test set location
 offset = '/Mango/Users/JunyongLee/hub/datasets/'
