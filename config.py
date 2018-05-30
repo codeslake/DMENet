@@ -41,18 +41,20 @@ config.TRAIN.lambda_perceptual = 1e-7
 # config.TRAIN.synthetic_binary_map_path = '/data1/junyonglee/blur_sharp_only/binary_map/'
 
 #offset = '/Mango/Users/JunyongLee/datasets/30_new_better/'
-offset = '/Mango/Users/JunyongLee/hub/datasets/15_gaussian_many/'
-config.TRAIN.synthetic_img_path = offset + 'image/'
-config.TRAIN.defocus_map_path = offset + 'blur_map/'
-config.TRAIN.defocus_map_norm_path = offset + 'blur_map_norm/'
-config.TRAIN.synthetic_binary_map_path = offset + 'blur_map_binary/'
+offset = '/Mango/Users/JunyongLee/hub/datasets/'
+config.TRAIN.synthetic_img_path = offset + '15_gaussian_many/image/'
+config.TRAIN.defocus_map_path = offset + '15_gaussian_many/blur_map/'
+config.TRAIN.defocus_map_norm_path = offset + '15_gaussian_many/blur_map_norm/'
+config.TRAIN.synthetic_binary_map_path = offset + '15_gaussian_many/blur_map_binary/'
 
-config.TRAIN.real_img_path = '/data1/junyonglee/BlurDetection/train/image/'
-config.TRAIN.real_binary_map_path = '/data1/junyonglee/BlurDetection/train/gt/'
+offset = '/data1/junyonglee'
+config.TRAIN.real_img_path = offset + 'BlurDetection/train/image/'
+config.TRAIN.real_binary_map_path = offset + 'BlurDetection/train/gt/'
 
 ## test set location
-config.TEST.real_img_path = '/data1/junyonglee/BlurDetection/test/image/'
-config.TEST.real_binary_map_path = '/data1/junyonglee/BlurDetection/test/gt/'
+offset = '/Mango/Users/JunyongLee/hub/datasets/'
+config.TEST.real_img_path = offset + 'BlurDetection/test/image/'
+config.TEST.real_binary_map_path = offset + 'BlurDetection/test/gt/'
 
 ## train image size
 config.TRAIN.height = 240
