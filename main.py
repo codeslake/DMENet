@@ -463,6 +463,8 @@ def evaluate():
         processing_time = time.time()
         defocus_map, binary_map, feats_down_out, feats_up_out, refine_lists_out = sess.run([output_defocus, output_binary, feats_down, feats_up, refine_lists], {patches_blurred: np.expand_dims(test_blur_img, axis = 0)})
         defocus_map = np.squeeze(1 - defocus_map)
+        defocus_map = (defocus_map * 15 - 1) / 2. / 7.
+
         defocus_map_norm = defocus_map - defocus_map.min()
         defocus_map_norm = defocus_map_norm / defocus_map_norm.max()
         binary_map = np.squeeze(1 - binary_map)
