@@ -99,7 +99,7 @@ def train():
             with tf.variable_scope('decoder') as scope:
                 output_synthetic_defocus, feats_synthetic_up_aux, feats_synthetic_da, _ = UNet_up(patches_synthetic, feats_synthetic_down, is_train = True, reuse = False, scope = scope)
                 output_real_defocus, _, feats_real_da, _ = UNet_up(patches_real, feats_real_down, is_train = True, reuse = True, scope = scope)
-                output_real_no_label_defocus, _, feats_real_no_label_da, _ = UNet_up(patches_real_no_label, feats_real_down, is_train = True, reuse = True, scope = scope)
+                output_real_no_label_defocus, _, feats_real_no_label_da, _ = UNet_up(patches_real_no_label, feats_real_no_label_down, is_train = True, reuse = True, scope = scope)
         with tf.variable_scope('binary_net') as scope:
             output_real_binary_logits, output_real_binary = Binary_Net(output_real_defocus, is_train = True, reuse = False, scope = scope)
 
@@ -227,6 +227,7 @@ def train():
     image_sum_list.append(tf.summary.image('6_real_binary_out', fix_image_tf(output_real_binary, 1)))
     image_sum_list.append(tf.summary.image('7_real_binary_gt', fix_image_tf(labels_real_binary, 1)))
     image_sum_list.append(tf.summary.image('8_real_binary_gt_no_label', patches_real_no_label))
+    image_sum_list.append(tf.summary.image('5_real_defocus_out_no_label', fix_image_tf(output_real_no_label_defocus, 1)))
     image_sum = tf.summary.merge(image_sum_list)
 
     ## INITIALIZE SESSION
