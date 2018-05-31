@@ -438,7 +438,7 @@ def evaluate():
     date = datetime.datetime.now().strftime('%Y_%m_%d/%H-%M')
     # directories
     mode_dir = config.TRAIN.root_dir + '{}'.format(tl.global_flag['mode'])
-    ckpt_dir = mode_dir + '/checkpoint'
+    ckpt_dir = mode_dir + '/fixed_ckpt'
     sample_dir = mode_dir + '/samples/1_test/{}'.format(date)
     
     # input
@@ -510,6 +510,85 @@ def evaluate():
 
         sess.close()
         reuse = True
+        
+def get_accuracy():
+    print 'Evaluation Start'
+    date = datetime.datetime.now().strftime('%Y_%m_%d/%H-%M')
+    # directories
+    mode_dir = config.TRAIN.root_dir + '{}'.format(tl.global_flag['mode'])
+    ckpt_dir = mode_dir + '/fixed'
+    sample_dir = mode_dir + '/samples/2_acc/{}'.format(date)
+    
+    # input
+    test_blur_img_list = np.array(sorted(tl.files.load_file_list(path = config.TEST.real_img_path, regx = '.*', printable = False)))
+    test_gt_list = np.array(sorted(tl.files.load_file_list(path = config.TEST.real_binary_map_path, regx = '.*', printable = False)))
+    
+    test_blur_imgs = read_all_imgs(test_blur_img_list, path = config.TEST.real_img_path, mode = 'RGB')
+    test_gt_imgs = read_all_imgs(test_gt_list, path = config.TEST.real_binary_map_path, mode = 'GRAY')
+    
+    reuse = False
+    sum_acc = 0
+    for i in np.arange(len(test_blur_imgs)):
+        test_blur_img = np.copy(test_blur_imgs[i])
+        test_blur_img = refine_image(test_blur_img)
+
+        test_gt_img = np.copy(test_gt_imgs[i])
+        test_gt_img = np.squeeze(refine_image(1 - test_gt_img))
+
+        shape = test_blur_img.shape
+        patches_blurred = tf.placeholder('float32', [1, shape[0], shape[1], 3], name = 'input_patches')
+        # define model
+        with tf.variable_scope('main_net') as scope:
+            with tf.variable_scope('defocus_net') as scope:
+                with tf.variable_scope('encoder') as scope:
+                    feats_down = Vgg19_simple_api(patches_blurred, reuse = reuse, scope = scope, is_test = True)
+                with tf.variable_scope('decoder') as scope:
+                    output_defocus, feats_up, _, refine_lists = UNet_up(patches_blurred, feats_down, is_train = False, reuse = reuse, scope = scope)
+
+        # init session
+        sess = tf.Session(config = tf.ConfigProto(allow_soft_placement = True, log_device_placement = False))
+        tl.layers.initialize_global_variables(sess)
+
+        # load checkpoint
+        tl.files.load_and_assign_npz_dict(name = ckpt_dir + '/{}.npz'.format(tl.global_flag['mode']), sess = sess)
+
+        # run network
+        print 'processing {} ...'.format(test_blur_img_list[i])
+        processing_time = time.time()
+        defocus_map, feats_down_out, feats_up_out, refine_lists_out = sess.run([output_defocus, feats_down, feats_up, refine_lists], {patches_blurred: np.expand_dims(test_blur_img, axis = 0)})
+        defocus_map = np.squeeze(1 - defocus_map)
+        defocus_map = defocus_map * 15.
+        defocus_map[np.where(defocus_map <= 1)] = 0.
+        defocus_map[np.where(defocus_map > 1)] = ((defocus_map[np.where(defocus_map > 1)] - 1) / 2.) / 7.
+        print 'processing {} ... Done [{:.3f}s]'.format(test_blur_img_list[i], time.time() - processing_time)
+
+        # thresholding
+        alpha = 0.3
+        thres = alpha * defocus_map.max() + (1 - alpha) * defocus_map.min()
+        binary_map = np.copy(defocus_map).astype(bool)
+        binary_map[np.where(defocus_map <= thres)] = False
+        binary_map[np.where(defocus_map > thres)] = True
+
+        # accuracy
+        gt_bool = test_gt_img.astype(bool)
+        intersection = np.logical_xor(binary_map, gt_bool).astype(int)
+        intersection = 1 - intersection
+        accuracy = float(np.sum(intersection)) / float(shape[0] * shape[1])
+        sum_acc = sum_acc + accuracy
+
+        # tl.files.exists_or_mkdir(sample_dir, verbose = False)
+        # scipy.misc.toimage(test_blur_img, cmin = 0., cmax = 1.).save(sample_dir + '/{}_1_input.png'.format(i))
+        # scipy.misc.toimage(defocus_map, cmin = 0., cmax = 1.).save(sample_dir + '/{}_2_defocus_map_out.png'.format(i))
+        # scipy.misc.toimage(binary_map.astype(int), cmin = 0., cmax = 1.).save(sample_dir + '/{}_3_binary_map_out.png'.format(i))
+        # scipy.misc.toimage(test_gt_img, cmin = 0., cmax = 1.).save(sample_dir + '/{}_4_binary_map_gt.png'.format(i))
+        # scipy.misc.toimage(intersection, cmin = 0., cmax = 1.).save(sample_dir + '/{}_5_intersection.png'.format(i))
+        print '{}/{}:acc={}'.format(i, len(test_blur_imgs), accuracy)
+
+        sess.close()
+        reuse = True
+    total_acc = sum_acc / float(len(test_blur_imgs))
+    print 'total accuracy: {}'.forat(total_acc)
+
 
 if __name__ == '__main__':
     import argparse
@@ -519,6 +598,7 @@ if __name__ == '__main__':
     parser.add_argument('--is_train', type = str , default = 'true', help = 'whether to train or not')
     parser.add_argument('--is_pretrain', type = str , default = 'false', help = 'whether to pretrain or not')
     parser.add_argument('--delete_log', type = str , default = 'false', help = 'whether to delete log or not')
+    parser.add_argument('--is_acc', type = str , default = 'false', help = 'whether to train or not')
 
     args = parser.parse_args()
 
@@ -527,8 +607,12 @@ if __name__ == '__main__':
     tl.global_flag['is_pretrain'] = t_or_f(args.is_pretrain)
     tl.global_flag['delete_log'] = t_or_f(args.delete_log)
     
+    tl.global_flag['is_acc'] = t_or_f(args.is_acc)
 
     if tl.global_flag['is_train']:
         train()
+    elif tl.global_flag['is_acc']:
+        get_accuracy()
     else:
         evaluate()
+
