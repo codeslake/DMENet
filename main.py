@@ -366,7 +366,7 @@ def train():
 
             ## RUN NETWORK
             #discriminator
-            feed_dict = {patches_synthetic: synthetic_images_blur, patches_real: real_images_blur, labels_synthetic_defocus: synthetic_defocus_maps}
+            feed_dict = {patches_synthetic: synthetic_images_blur, patches_real: real_images_blur, labels_synthetic_defocus: synthetic_defocus_maps, patches_real_no_label: real_images_no_label_blur}
             # d_synthetic, d_real = sess.run([d_feature_synthetic, d_feature_real], feed_dict)
             # d_acc = get_disc_accuracy([d_synthetic, d_real], [0, 1])
             d_count = 0
