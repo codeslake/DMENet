@@ -6,7 +6,7 @@ config.TRAIN = edict()
 config.TEST = edict()
 
 ## Adam
-config.TRAIN.batch_size = 4
+config.TRAIN.batch_size = 3
 config.TRAIN.batch_size_init = 8
 #config.TRAIN.lr_init = 1e-5
 config.TRAIN.lr_init = 1e-4
@@ -65,7 +65,7 @@ config.TRAIN.width = 240
 ## log & checkpoint & samples
 # every global step
 config.TRAIN.write_log_every = 5
-config.TRAIN.write_ckpt_every = 300
+config.TRAIN.write_ckpt_every = 1000
 config.TRAIN.write_sample_every = 1000
 # every epoch
 config.TRAIN.refresh_image_log_every = 20
