@@ -87,7 +87,7 @@ def Vgg19_simple_api(rgb, reuse, scope, is_test = False):
             logits = DenseLayer(logits, n_units=1, act=tf.identity, W_init = w_init_sigmoid, name='c_logits_2')
             
             #network, features for defocusNet, feature for perceptual loss, logits for classification 
-            return network, [d0.outputs, d1.outputs, d2.outputs, d3.outputs, d4.outputs], d2.outputs, logits.outputs
+            return network, [d0.outputs, d1.outputs, d2.outputs, d3.outputs, d4.outputs], d3.outputs, logits.outputs
         else:
             return [d0.outputs, d1.outputs, d2.outputs, d3.outputs, d4.outputs]
 

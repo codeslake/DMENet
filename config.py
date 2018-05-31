@@ -33,7 +33,7 @@ config.TRAIN.lambda_binary = 5e-2
 
 ## perceptual loss coefficient
 #config.TRAIN.lambda_perceptual = 1e-6
-config.TRAIN.lambda_perceptual = 1e-7
+config.TRAIN.lambda_perceptual = 1e-4
 
 ## train set location
 # config.TRAIN.synthetic_img_path = '/data1/junyonglee/blur_sharp_only/image_dof/'
@@ -48,11 +48,12 @@ config.TRAIN.defocus_map_norm_path = offset + '15_gaussian_many/blur_map_norm/'
 config.TRAIN.synthetic_binary_map_path = offset + '15_gaussian_many/blur_map_binary/'
 
 config.TRAIN.real_img_no_label_path = '/data1/junyonglee/dof_real/'
-config.TRAIN.real_img_path = '/data1/junyonglee/BlurDetection/train/image/'
-config.TRAIN.real_binary_map_path = '/data1/junyonglee/BlurDetection/train/gt/'
 
 ## test set location
 offset = '/Mango/Users/JunyongLee/hub/datasets/'
+config.TRAIN.real_img_path = offset + 'BlurDetection/train/image/'
+config.TRAIN.real_binary_map_path = offset + 'BlurDetection/train/gt/'
+
 config.TEST.real_img_path = offset + 'BlurDetection/test/image/'
 config.TEST.real_binary_map_path = offset + 'BlurDetection/test/gt/'
 
