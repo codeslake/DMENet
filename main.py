@@ -478,12 +478,13 @@ def evaluate():
         processing_time = time.time()
         defocus_map, binary_map, feats_down_out, feats_up_out, refine_lists_out = sess.run([output_defocus, output_binary, feats_down, feats_up, refine_lists], {patches_blurred: np.expand_dims(test_blur_img, axis = 0)})
         defocus_map = np.squeeze(1 - defocus_map)
-        defocus_map = defocus_map * 15.
-        defocus_map[np.where(defocus_map < 1)] = 0.
-        defocus_map[np.where(defocus_map >= 1)] = ((defocus_map[np.where(defocus_map > 1)] - 1) / 2.) / 7.
-
         defocus_map_norm = defocus_map - defocus_map.min()
         defocus_map_norm = defocus_map_norm / defocus_map_norm.max()
+
+        defocus_map = defocus_map * 15.
+        defocus_map[np.where(defocus_map < 1)] = 0.
+        defocus_map[np.where(defocus_map >= 1)] = ((defocus_map[np.where(defocus_map >= 1)] - 1) / 2.) / 7.
+
         binary_map = np.squeeze(1 - binary_map)
         print 'processing {} ... Done [{:.3f}s]'.format(test_blur_img_list[i], time.time() - processing_time)
         
@@ -492,7 +493,7 @@ def evaluate():
         scipy.misc.toimage(defocus_map, cmin = 0., cmax = 1.).save(sample_dir + '/{}_2_defocus_map_out.png'.format(i))
         scipy.misc.toimage(defocus_map_norm, cmin = 0., cmax = 1.).save(sample_dir + '/{}_3_defocus_map_norm_out.png'.format(i))
         scipy.misc.toimage(binary_map, cmin = 0., cmax = 1.).save(sample_dir + '/{}_4_binary_map_out.png'.format(i))
-        scipy.misc.toimage(np.squeeze(1 - test_gt_imgs[i]), cmin = 0., cmax = 1.).save(sample_dir + '/{}_5_binary_map_gt.png'.format(i))
+        scipy.misc.toimage(np.squeeze(1 - refine_image(test_gt_imgs[i])), cmin = 0., cmax = 1.).save(sample_dir + '/{}_5_binary_map_gt.png'.format(i))
 
         # for j in np.arange(len(feats_down_out)):
         #     feats_down_out[j] = np.squeeze(feats_down_out[j])
