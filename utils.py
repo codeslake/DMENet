@@ -33,7 +33,7 @@ def get_images(file_name, path, mode):
         image = (np.float32(cv2.imread(path + file_name, cv2.IMREAD_UNCHANGED))/10.)[:, :, 1]
         image[np.where(image < 1)] = 1
         image = (image - 1) / 2. # 7
-        image = image / 7.
+        image = 1 - image / 7.
         image = np.expand_dims(image, axis = 2)
 
     return image
