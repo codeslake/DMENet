@@ -558,9 +558,9 @@ def get_accuracy():
         processing_time = time.time()
         defocus_map, feats_down_out, feats_up_out, refine_lists_out = sess.run([output_defocus, feats_down, feats_up, refine_lists], {patches_blurred: np.expand_dims(test_blur_img, axis = 0)})
         defocus_map = np.squeeze(1 - defocus_map)
-        defocus_map = defocus_map * 15.
-        defocus_map[np.where(defocus_map <= 1)] = 0.
-        defocus_map[np.where(defocus_map > 1)] = ((defocus_map[np.where(defocus_map > 1)] - 1) / 2.) / 7.
+        # defocus_map = defocus_map * 15.
+        # defocus_map[np.where(defocus_map <= 1)] = 0.
+        # defocus_map[np.where(defocus_map > 1)] = ((defocus_map[np.where(defocus_map > 1)] - 1) / 2.) / 7.
         print 'processing {} ... Done [{:.3f}s]'.format(test_blur_img_list[i], time.time() - processing_time)
 
         # thresholding
