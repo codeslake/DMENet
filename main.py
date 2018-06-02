@@ -481,9 +481,9 @@ def evaluate():
         defocus_map_norm = defocus_map - defocus_map.min()
         defocus_map_norm = defocus_map_norm / defocus_map_norm.max()
 
-        defocus_map = defocus_map * 15.
-        defocus_map[np.where(defocus_map < 1)] = 0.
-        defocus_map[np.where(defocus_map >= 1)] = ((defocus_map[np.where(defocus_map >= 1)] - 1) / 2.) / 7.
+        # defocus_map = defocus_map * 15.
+        # defocus_map[np.where(defocus_map < 1)] = 0.
+        # defocus_map[np.where(defocus_map >= 1)] = ((defocus_map[np.where(defocus_map >= 1)] - 1) / 2.) / 7.
 
         binary_map = np.squeeze(1 - binary_map)
         print 'processing {} ... Done [{:.3f}s]'.format(test_blur_img_list[i], time.time() - processing_time)
