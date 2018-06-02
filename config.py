@@ -29,7 +29,7 @@ config.TRAIN.lambda_lr_d = 1
 
 ## binary loss coefficient
 #config.TRAIN.lambda_binary = 1e-2
-config.TRAIN.lambda_binary = 1e-3
+config.TRAIN.lambda_binary = 2e-2
 
 ## perceptual loss coefficient
 #config.TRAIN.lambda_perceptual = 1e-6
