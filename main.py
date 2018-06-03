@@ -465,7 +465,7 @@ def evaluate():
                 with tf.variable_scope('decoder') as scope:
                     output_defocus, feats_up, _, refine_lists = UNet_up(patches_blurred, feats_down, is_train = False, reuse = False, scope = scope)
             with tf.variable_scope('binary_net') as scope:
-                _, output_binary = Binary_Net(output_defocus, is_train = False, reuse = reuse, scope = scope)
+                _, output_binary = Binary_Net(output_defocus, is_train = False, reuse = False, scope = scope)
 
         # init session
         sess = tf.Session(config = tf.ConfigProto(allow_soft_placement = True, log_device_placement = False))
