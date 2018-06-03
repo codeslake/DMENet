@@ -451,6 +451,7 @@ def evaluate():
     
     reuse = False
     for i in np.arange(len(test_blur_imgs)):
+        tf.reset_default_graph()
         test_blur_img = np.copy(test_blur_imgs[i])
         test_blur_img = refine_image(test_blur_img)
         shape = test_blur_img.shape
@@ -460,9 +461,9 @@ def evaluate():
         with tf.variable_scope('main_net') as scope:
             with tf.variable_scope('defocus_net') as scope:
                 with tf.variable_scope('encoder') as scope:
-                    feats_down = Vgg19_simple_api(patches_blurred, reuse = reuse, scope = scope, is_test = True)
+                    feats_down = Vgg19_simple_api(patches_blurred, reuse = False, scope = scope, is_test = True)
                 with tf.variable_scope('decoder') as scope:
-                    output_defocus, feats_up, _, refine_lists = UNet_up(patches_blurred, feats_down, is_train = False, reuse = reuse, scope = scope)
+                    output_defocus, feats_up, _, refine_lists = UNet_up(patches_blurred, feats_down, is_train = False, reuse = False, scope = scope)
             with tf.variable_scope('binary_net') as scope:
                 _, output_binary = Binary_Net(output_defocus, is_train = False, reuse = reuse, scope = scope)
 
