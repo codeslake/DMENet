@@ -1,25 +1,37 @@
-SYNDOF (Synthetic Defocus Blur Image Generator)
-Matlab implementation of defocus image generation
+Deep Defocus Map Estimation
+Tensorflow implementation of deep defocus map estimation
 
 <img src="./assets/figure.png" width="700">
 
 ## Prerequisites
--   matlab
+-   python 2.7
+-   tensorflow 1.8.0
 
 ## A typical top-level directory layout
     .
     ├── data                        # directory for input images
     ├── result                      # directory for output images
-    ├── generate_blur_by_depth.m    # main function for SYNDOF
-    ├── blur_by_depth.m
-    ├── depth_read.m
+    ├── main.py                     # main function for SYNDOF
+    ├── model.py                     # main function for SYNDOF
+    ├── config.py
+    ├── utils.py
     └── README.md
 
 ## Getting Started
--   On matlab console, type
+To train the network,
 ```bash
-generate_blur_by_depth(29, false, false, 0) # max_coc, is_random_gen, is_gpu, gpu_num
+python main.py --is_train True --mode [model name]
 ```
+To test the network,
+```bash
+python main.py --is_train False --mode [model name]
+```
+other options
+```bash
+--is_pretrain : ([True/False], pretrain the network with MSE loss first)
+--delete_log : ([True/False], deletes checkpoint, summaries before start training)
+```
+modify config.py for more options
 
 ## License ##
 This software is being made available under the terms in the [LICENSE](LICENSE) file.
