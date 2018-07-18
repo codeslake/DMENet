@@ -1,7 +1,8 @@
 Deep Defocus Map Estimation
+
 Tensorflow implementation of deep defocus map estimation
 
-<img src="./assets/figure.png" width="700">
+<img src="./assets/figure.png" width="800">
 
 ## Prerequisites
 -   python 2.7
