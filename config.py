@@ -54,8 +54,10 @@ offset = '/Mango/Users/JunyongLee/hub/datasets/'
 config.TRAIN.real_img_path = offset + 'BlurDetection/train/image/'
 config.TRAIN.real_binary_map_path = offset + 'BlurDetection/train/gt/'
 
-config.TEST.real_img_path = offset + 'BlurDetection/test/image/'
-config.TEST.real_binary_map_path = offset + 'BlurDetection/test/gt/'
+#config.TEST.real_img_path = offset + 'BlurDetection/test/image/'
+#config.TEST.real_binary_map_path = offset + 'BlurDetection/test/gt/'
+config.TEST.real_img_path = offset + 'test/out/image/'
+config.TEST.real_binary_map_path = offset + 'test/out/blur_map_norm/'
 
 ## train image size
 config.TRAIN.height = 240
