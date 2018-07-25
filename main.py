@@ -449,6 +449,7 @@ def evaluate():
     test_blur_imgs = read_all_imgs(test_blur_img_list, path = config.TEST.real_img_path, mode = 'RGB')
     test_gt_imgs = read_all_imgs(test_gt_list, path = config.TEST.real_binary_map_path, mode = 'GRAY')
     
+    avg_time = 0.;
     reuse = False
     for i in np.arange(len(test_blur_imgs)):
         tf.reset_default_graph()
@@ -474,8 +475,9 @@ def evaluate():
 
         # run network
         print 'processing {} ...'.format(test_blur_img_list[i])
-        processing_time = time.time()
+        tic = time.time()
         defocus_map, feats_down_out, feats_up_out, refine_lists_out = sess.run([output_defocus, feats_down, feats_up, refine_lists], {patches_blurred: np.expand_dims(test_blur_img, axis = 0)})
+        toc = time.time()
         defocus_map = np.squeeze(1 - defocus_map)
         defocus_map_norm = defocus_map - defocus_map.min()
         defocus_map_norm = defocus_map_norm / defocus_map_norm.max()
@@ -484,7 +486,8 @@ def evaluate():
         # defocus_map[np.where(defocus_map < 1)] = 0.
         # defocus_map[np.where(defocus_map >= 1)] = ((defocus_map[np.where(defocus_map >= 1)] - 1) / 2.) / 7.
 
-        print 'processing {} ... Done [{:.3f}s]'.format(test_blur_img_list[i], time.time() - processing_time)
+        print 'processing {} ... Done [{:.3f}s]'.format(test_blur_img_list[i], toc - tic)
+        avg_time = avg_time + (toc - tic)
         
         tl.files.exists_or_mkdir(sample_dir, verbose = False)
         tl.files.exists_or_mkdir(sample_dir + '/image')
@@ -517,6 +520,8 @@ def evaluate():
 
         sess.close()
         reuse = True
+    avg_time = avg_time / len(test_blur_imgs)
+    print('averge time: {:.3f}s'.format(avg_time))
         
 def get_accuracy():
     print 'Evaluation Start'
