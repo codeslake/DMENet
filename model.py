@@ -8,7 +8,7 @@ def Vgg19_simple_api(rgb, reuse, scope, is_test = False):
     w_init_relu = tf.contrib.layers.variance_scaling_initializer()
     w_init_sigmoid = tf.contrib.layers.xavier_initializer()
     VGG_MEAN = [103.939, 116.779, 123.68]
-    with tf.variable_scope(scope, reuse=reuse) as vs:
+    with tf.variable_scope(scope, reuse = reuse):
         rgb_scaled = rgb * 255.0
         if tf.__version__ <= '0.11':
             red, green, blue = tf.split(3, 3, rgb_scaled)
@@ -97,7 +97,7 @@ def UNet_up(images, feats, is_train=False, reuse=False, scope = 'unet_up'):
     #g_init = tf.random_normal_initializer(1., 0.02)
     g_init = None
     lrelu = lambda x: tl.act.lrelu(x, 0.2)
-    with tf.variable_scope(scope, reuse=reuse) as vs:
+    with tf.variable_scope(scope, reuse=reuse):
         d0 = InputLayer(feats[0], name='d0')
         d1 = InputLayer(feats[1], name='d1')
         d2 = InputLayer(feats[2], name='d2')
@@ -138,7 +138,7 @@ def UNet_up(images, feats, is_train=False, reuse=False, scope = 'unet_up'):
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u2/pad1')
         n = Conv2d(n, 128, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u2/c1')
         n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u2/b1')
-        n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u2/pad3')
+        n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u2/pad2')
         n = Conv2d(n, 128, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u2/c2')
         n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='u2/b2')
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u2/pad3')
@@ -252,7 +252,7 @@ def Binary_Net(input_defocus, is_train=False, reuse=False, scope = 'Binary_Net')
     #g_init = tf.random_normal_initializer(1., 0.02)
     g_init = None
     lrelu = lambda x: tl.act.lrelu(x, 0.2)
-    with tf.variable_scope(scope, reuse=reuse) as vs:
+    with tf.variable_scope(scope, reuse=reuse):
         n = InputLayer(input_defocus, name='input_defocus')
         
         n = Conv2d(n, 64, (1, 1), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='l1/c1')

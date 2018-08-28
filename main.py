@@ -10,6 +10,7 @@ import matplotlib
 import datetime
 import time
 import shutil
+
 from flip_gradient import flip_gradient            
 
 batch_size = config.TRAIN.batch_size
@@ -83,7 +84,6 @@ def train():
     with tf.variable_scope('input'):
         patches_synthetic = tf.placeholder('float32', [None, h, w, 3], name = 'input_synthetic')
         labels_synthetic_defocus = tf.placeholder('float32', [None, h, w, 1], name = 'labels_synthetic_defocus')
-        labels_synthetic_binary = tf.placeholder('float32', [None, h, w, 1], name = 'labels_synthetic_binary')
 
         patches_real = tf.placeholder('float32', [None, h, w, 3], name = 'input_real')
         labels_real_binary = tf.placeholder('float32', [None, h, w, 1], name = 'labels_real_binary')
@@ -252,9 +252,9 @@ def train():
 
     tl.files.load_and_assign_npz_dict(name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
     if tl.global_flag['is_pretrain']:
-        print '*****************************************'
-        print '           PRE-TRAINING START'
-        print '*****************************************'
+        print('*****************************************')
+        print('           PRE-TRAINING START')
+        print('*****************************************')
         global_step = 0
         for epoch in range(0, n_epoch_init):
             total_loss_init, n_iter = 0, 0
@@ -307,9 +307,9 @@ def train():
         writer_scalar_init.close()
 
     ## START TRAINING
-    print '*****************************************'
-    print '             TRAINING START'
-    print '*****************************************'
+    print('*****************************************')
+    print('             TRAINING START')
+    print('*****************************************')
     global_step = 0
     for epoch in range(0, n_epoch + 1):
         total_loss, n_iter = 0, 0
@@ -317,7 +317,6 @@ def train():
         # reload synthetic datasets
         train_synthetic_img_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.synthetic_img_path, regx = '.*', printable = False)))
         train_defocus_map_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.defocus_map_path, regx = '.*', printable = False)))
-        train_synthetic_binary_map_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.synthetic_binary_map_path, regx = '.*', printable = False)))
 
         # shuffle datasets
         shuffle_index = np.arange(len(train_synthetic_img_list))
@@ -325,7 +324,6 @@ def train():
 
         train_synthetic_img_list = train_synthetic_img_list[shuffle_index]
         train_defocus_map_list = train_defocus_map_list[shuffle_index]
-        train_synthetic_binary_map_list = train_synthetic_binary_map_list[shuffle_index]
         
         shuffle_index = np.arange(len(train_real_img_list))
         np.random.shuffle(shuffle_index)
@@ -352,9 +350,8 @@ def train():
             b_idx = (idx + np.arange(batch_size)) % len(train_synthetic_img_list)
             synthetic_images_blur = read_all_imgs(train_synthetic_img_list[b_idx], path = config.TRAIN.synthetic_img_path, mode = 'RGB')
             synthetic_defocus_maps = read_all_imgs(train_defocus_map_list[b_idx], path = config.TRAIN.defocus_map_path, mode = 'DEPTH')
-            synthetic_binary_maps = read_all_imgs(train_synthetic_binary_map_list[b_idx], path = config.TRAIN.synthetic_binary_map_path, mode = 'GRAY')
 
-            synthetic_images_blur, synthetic_defocus_maps, synthetic_binary_maps = crop_pair_with_different_shape_images_3(synthetic_images_blur, synthetic_defocus_maps, synthetic_binary_maps, [h, w], is_gaussian_noise = True)
+            synthetic_images_blur, synthetic_defocus_maps = crop_pair_with_different_shape_images_2(synthetic_images_blur, synthetic_defocus_maps, [h, w], is_gaussian_noise = tl.global_flag['is_noise'])
 
             # read real data #
             b_idx = (idx % len(train_real_img_list) + np.arange(batch_size)) % len(train_real_img_list)
@@ -378,7 +375,7 @@ def train():
             _ = sess.run(optim_d, feed_dict)
 
             #generator
-            feed_dict = {patches_synthetic: synthetic_images_blur, labels_synthetic_defocus: synthetic_defocus_maps, labels_synthetic_binary: synthetic_binary_maps, patches_real: real_images_blur, labels_real_binary: real_binary_maps, patches_real_no_label: real_images_no_label_blur}
+            feed_dict = {patches_synthetic: synthetic_images_blur, labels_synthetic_defocus: synthetic_defocus_maps, patches_real: real_images_blur, labels_real_binary: real_binary_maps, patches_real_no_label: real_images_no_label_blur}
             # d_synthetic, d_real = sess.run([d_feature_synthetic, d_feature_real], feed_dict)
             # g_acc = get_disc_accuracy([d_synthetic, d_real], [1, 0])
             g_count = 0
@@ -401,7 +398,7 @@ def train():
             ## SAVE LOGS
             # save loss & image log
             if global_step % config.TRAIN.write_log_every == 0:
-                summary_loss_g, summary_loss_d, summary_image  = sess.run([loss_sum_g, loss_sum_d, image_sum], {patches_synthetic: synthetic_images_blur, labels_synthetic_defocus: synthetic_defocus_maps, patches_real: real_images_blur, labels_synthetic_binary: synthetic_binary_maps, labels_real_binary: real_binary_maps, patches_real_no_label: real_images_no_label_blur})
+                summary_loss_g, summary_loss_d, summary_image  = sess.run([loss_sum_g, loss_sum_d, image_sum], {patches_synthetic: synthetic_images_blur, labels_synthetic_defocus: synthetic_defocus_maps, patches_real: real_images_blur, labels_real_binary: real_binary_maps, patches_real_no_label: real_images_no_label_blur})
                 writer_scalar.add_summary(summary_loss_d, global_step)
                 writer_scalar.add_summary(summary_loss_g, global_step)
                 writer_image.add_summary(summary_image, global_step)
@@ -435,7 +432,7 @@ def train():
             writer_image.reopen()
 
 def evaluate():
-    print 'Evaluation Start'
+    print('Evaluation Start')
     date = datetime.datetime.now().strftime('%Y_%m_%d/%H-%M')
     # directories
     mode_dir = config.TRAIN.root_dir + '{}'.format(tl.global_flag['mode'])
@@ -474,7 +471,7 @@ def evaluate():
         tl.files.load_and_assign_npz_dict(name = ckpt_dir + '/{}.npz'.format(tl.global_flag['mode']), sess = sess)
 
         # run network
-        print 'processing {} ...'.format(test_blur_img_list[i])
+        print('processing {} ...'.format(test_blur_img_list[i]))
         tic = time.time()
         defocus_map, feats_down_out, feats_up_out, refine_lists_out = sess.run([output_defocus, feats_down, feats_up, refine_lists], {patches_blurred: np.expand_dims(test_blur_img, axis = 0)})
         toc = time.time()
@@ -486,7 +483,7 @@ def evaluate():
         # defocus_map[np.where(defocus_map < 1)] = 0.
         # defocus_map[np.where(defocus_map >= 1)] = ((defocus_map[np.where(defocus_map >= 1)] - 1) / 2.) / 7.
 
-        print 'processing {} ... Done [{:.3f}s]'.format(test_blur_img_list[i], toc - tic)
+        print('processing {} ... Done [{:.3f}s]'.format(test_blur_img_list[i], toc - tic))
         avg_time = avg_time + (toc - tic)
         
         tl.files.exists_or_mkdir(sample_dir, verbose = False)
@@ -524,11 +521,11 @@ def evaluate():
     print('averge time: {:.3f}s'.format(avg_time))
         
 def get_accuracy():
-    print 'Evaluation Start'
+    print('Evaluation Start')
     date = datetime.datetime.now().strftime('%Y_%m_%d/%H-%M')
     # directories
     mode_dir = config.TRAIN.root_dir + '{}'.format(tl.global_flag['mode'])
-    ckpt_dir = mode_dir + '/fixed'
+    ckpt_dir = mode_dir + '/fixed_ckpt'
     sample_dir = mode_dir + '/samples/2_acc/{}'.format(date)
     
     # input
@@ -565,14 +562,14 @@ def get_accuracy():
         tl.files.load_and_assign_npz_dict(name = ckpt_dir + '/{}.npz'.format(tl.global_flag['mode']), sess = sess)
 
         # run network
-        print 'processing {} ...'.format(test_blur_img_list[i])
+        print('processing {} ...'.format(test_blur_img_list[i]))
         processing_time = time.time()
         defocus_map, feats_down_out, feats_up_out, refine_lists_out = sess.run([output_defocus, feats_down, feats_up, refine_lists], {patches_blurred: np.expand_dims(test_blur_img, axis = 0)})
         defocus_map = np.squeeze(1 - defocus_map)
         # defocus_map = defocus_map * 15.
         # defocus_map[np.where(defocus_map <= 1)] = 0.
         # defocus_map[np.where(defocus_map > 1)] = ((defocus_map[np.where(defocus_map > 1)] - 1) / 2.) / 7.
-        print 'processing {} ... Done [{:.3f}s]'.format(test_blur_img_list[i], time.time() - processing_time)
+        print('processing {} ... Done [{:.3f}s]'.format(test_blur_img_list[i], time.time() - processing_time))
 
         # thresholding
         alpha = 0.3
@@ -588,18 +585,18 @@ def get_accuracy():
         accuracy = float(np.sum(intersection)) / float(shape[0] * shape[1])
         sum_acc = sum_acc + accuracy
 
-        # tl.files.exists_or_mkdir(sample_dir, verbose = False)
-        # scipy.misc.toimage(test_blur_img, cmin = 0., cmax = 1.).save(sample_dir + '/{}_1_input.png'.format(i))
-        # scipy.misc.toimage(defocus_map, cmin = 0., cmax = 1.).save(sample_dir + '/{}_2_defocus_map_out.png'.format(i))
-        # scipy.misc.toimage(binary_map.astype(int), cmin = 0., cmax = 1.).save(sample_dir + '/{}_3_binary_map_out.png'.format(i))
-        # scipy.misc.toimage(test_gt_img, cmin = 0., cmax = 1.).save(sample_dir + '/{}_4_binary_map_gt.png'.format(i))
-        # scipy.misc.toimage(intersection, cmin = 0., cmax = 1.).save(sample_dir + '/{}_5_intersection.png'.format(i))
-        print '{}/{}:acc={}'.format(i, len(test_blur_imgs), accuracy)
+        tl.files.exists_or_mkdir(sample_dir, verbose = False)
+        scipy.misc.toimage(test_blur_img, cmin = 0., cmax = 1.).save(sample_dir + '/{}_1_input.png'.format(i))
+        scipy.misc.toimage(defocus_map, cmin = 0., cmax = 1.).save(sample_dir + '/{}_2_defocus_map_out.png'.format(i))
+        scipy.misc.toimage(binary_map.astype(int), cmin = 0., cmax = 1.).save(sample_dir + '/{}_3_binary_map_out.png'.format(i))
+        scipy.misc.toimage(test_gt_img, cmin = 0., cmax = 1.).save(sample_dir + '/{}_4_binary_map_gt.png'.format(i))
+        scipy.misc.toimage(intersection, cmin = 0., cmax = 1.).save(sample_dir + '/{}_5_intersection.png'.format(i))
+        print('{}/{}:acc={}'.format(i, len(test_blur_imgs), accuracy))
 
         sess.close()
         reuse = True
     total_acc = sum_acc / float(len(test_blur_imgs))
-    print 'total accuracy: {}'.forat(total_acc)
+    print('total accuracy: {}'.forat(total_acc))
 
 
 if __name__ == '__main__':
@@ -609,6 +606,7 @@ if __name__ == '__main__':
     parser.add_argument('--mode', type = str, default = 'sharp_ass', help = 'model name')
     parser.add_argument('--is_train', type = str , default = 'true', help = 'whether to train or not')
     parser.add_argument('--is_pretrain', type = str , default = 'false', help = 'whether to pretrain or not')
+    parser.add_argument('--is_noise', type = str , default = 'false', help = 'whether to add noise to synthetic images')
     parser.add_argument('--delete_log', type = str , default = 'false', help = 'whether to delete log or not')
     parser.add_argument('--is_acc', type = str , default = 'false', help = 'whether to train or not')
 
@@ -617,9 +615,14 @@ if __name__ == '__main__':
     tl.global_flag['mode'] = args.mode
     tl.global_flag['is_train'] = t_or_f(args.is_train)
     tl.global_flag['is_pretrain'] = t_or_f(args.is_pretrain)
+    tl.global_flag['is_noise'] = t_or_f(args.is_noise)
     tl.global_flag['delete_log'] = t_or_f(args.delete_log)
     
     tl.global_flag['is_acc'] = t_or_f(args.is_acc)
+    print tl.logging.get_verbosity()
+    tl.logging.set_verbosity(tl.logging.INFO)
+    print tl.logging.get_verbosity()
+
 
     if tl.global_flag['is_train']:
         train()

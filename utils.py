@@ -10,6 +10,7 @@ import scipy
 import numpy as np
 import cv2
 import math
+import random
 
 import os
 import fnmatch
@@ -25,15 +26,16 @@ def get_images(file_name, path, mode):
     """ Input an image path and name, return an image array """
     # return scipy.misc.imread(path + file_name).astype(np.float)
     if mode is 'RGB':
-        image = scipy.misc.imread(path + file_name, mode='RGB')/255.
+        image = (scipy.misc.imread(path + file_name, mode='RGB')/255.).astype(np.float32)
     elif mode is 'GRAY':
-        image = scipy.misc.imread(path + file_name, mode='P')/255.
+        image = (scipy.misc.imread(path + file_name, mode='P')/255.).astype(np.float32)
         image = np.expand_dims(1 - image, axis = 2)
     elif mode is 'DEPTH':
         image = (np.float32(cv2.imread(path + file_name, cv2.IMREAD_UNCHANGED))/10.)[:, :, 1]
-        image[np.where(image < 1)] = 1
-        image = (image - 1) / 2. # 7
-        image = 1 - image / 7.
+        # image[np.where(image < 1)] = 1
+        # image = (image - 1) / 2. # 7
+        # image = 1 - image / 7.
+        image = 1 - image
         image = np.expand_dims(image, axis = 2)
 
     return image
@@ -351,6 +353,23 @@ def crop_pair_with_different_shape_images_4(images, labels, labels2, labels3, re
 
     return images_list, labels_list, labels2_list, labels3_list
 def add_gaussian_noise(image):
+    image = image.astype(np.float32)
+    shape = image.shape[:2]
+
+    mean = 0
+    var = random.uniform(0,0.1)
+    sigma = var ** 0.5
+    gamma = 0.25
+    alpha = 0.75
+    beta = 1 - alpha
+
+    gaussian = np.random.normal(loc=mean, scale = sigma, size = (shape[0], shape[1], 1)).astype(np.float32)
+    gaussian = np.concatenate((gaussian, gaussian, gaussian), axis = 2)
+    #gaussian_img = image * 0.75 + 0.25 * gaussian + 0.25
+    gaussian_img = cv2.addWeighted(image, alpha, beta * gaussian, beta, gamma)
+
+    return gaussian_img
+
     # noise_sigma = 0.01
     # h = image.shape[0]
     # w = image.shape[1]
@@ -370,7 +389,6 @@ def add_gaussian_noise(image):
     # """
 
     # return noisy_image
-    return image
 
 def random_flip(images):
     flipped_images = tl.prepro.flip_axis(images, axis=0, is_random=True)
