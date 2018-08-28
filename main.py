@@ -619,12 +619,10 @@ if __name__ == '__main__':
     tl.global_flag['delete_log'] = t_or_f(args.delete_log)
     
     tl.global_flag['is_acc'] = t_or_f(args.is_acc)
-    print tl.logging.get_verbosity()
-    tl.logging.set_verbosity(tl.logging.INFO)
-    print tl.logging.get_verbosity()
 
 
     if tl.global_flag['is_train']:
+        tl.logging.set_verbosity(tl.logging.INFO)
         train()
     elif tl.global_flag['is_acc']:
         get_accuracy()
