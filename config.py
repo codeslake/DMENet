@@ -42,10 +42,10 @@ config.TRAIN.lambda_perceptual = 1e-4
 
 #offset = '/Mango/Users/JunyongLee/datasets/30_new_better/'
 offset = '/Mango/Users/JunyongLee/hub/datasets/'
-config.TRAIN.synthetic_img_path = offset + 'SYNDOF/29_gaussian/image/'
-config.TRAIN.defocus_map_path = offset + 'SYNDOF/29_gaussian/blur_map/'
-config.TRAIN.defocus_map_norm_path = offset + 'SYNDOF/29_gaussian/blur_map_norm/'
-config.TRAIN.synthetic_binary_map_path = offset + 'SYNDOF/29_gaussian/blur_map_binary/'
+config.TRAIN.synthetic_img_path = offset + 'SYNDOF/21_gaussian/image/'
+config.TRAIN.defocus_map_path = offset + 'SYNDOF/21_gaussian/blur_map/'
+config.TRAIN.defocus_map_norm_path = offset + 'SYNDOF/21_gaussian/blur_map_norm/'
+config.TRAIN.synthetic_binary_map_path = offset + 'SYNDOF/21_gaussian/blur_map_binary/'
 
 config.TRAIN.real_img_no_label_path = offset + 'dof_real_resized/'
 
@@ -56,8 +56,8 @@ config.TRAIN.real_binary_map_path = offset + 'BlurDetection/train/gt/'
 
 config.TEST.real_img_path = offset + 'BlurDetection/test/image/'
 config.TEST.real_binary_map_path = offset + 'BlurDetection/test/gt/'
-# config.TEST.real_img_path = offset + 'test/RTF/1.6/'
-# config.TEST.real_binary_map_path = offset + 'test/RTF/1.6/'
+# config.TEST.real_img_path = offset + 'test/RTF/1/'
+# config.TEST.real_binary_map_path = offset + 'test/RTF/1/'
 # config.TEST.real_img_path = offset + 'test/syndof/'
 # config.TEST.real_binary_map_path = offset + 'test/syndof/'
 

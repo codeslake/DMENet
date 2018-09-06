@@ -278,7 +278,7 @@ def train():
                 synthetic_defocus_maps = read_all_imgs(train_defocus_map_list[b_idx], path = config.TRAIN.defocus_map_path, mode = 'DEPTH')
 
                 synthetic_images_blur, synthetic_defocus_maps = \
-                         crop_pair_with_different_shape_images_2(synthetic_images_blur, synthetic_defocus_maps, [h, w], is_gaussian_noise = True)
+                         crop_pair_with_different_shape_images_2(synthetic_images_blur, synthetic_defocus_maps, [h, w], is_gaussian_noise = tl.global_flag['is_noise'])
                
                 err_init, lr, _ = \
                         sess.run([loss_init, learning_rate_init, optim_init], {patches_synthetic: synthetic_images_blur, labels_synthetic_defocus: synthetic_defocus_maps})
