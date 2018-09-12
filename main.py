@@ -1,6 +1,7 @@
 from config import config, log_config
 from utils import *
 from model import *
+from ckpt_manager import CKPT_Manager
 
 import tensorflow as tf
 import tensorlayer as tl
@@ -67,17 +68,25 @@ def train():
     tl.files.exists_or_mkdir(config_dir)
     log_config(config_dir, config)
 
+    # checkpoint manager
+    ckpt_manager = CKPT_Manager(ckpt_dir, tl.global_flag['mode'], 10)
+    ckpt_manager_init = CKPT_Manager(ckpt_dir, tl.global_flag['mode'], 1)
+
     ## DEFINE SESSION
     sess = tf.Session(config = tf.ConfigProto(allow_soft_placement = True, log_device_placement = False))
     
     ## READ DATASET LIST
-    # train_synthetic_img_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.synthetic_img_path, regx = '.*', printable = False)))
-    # train_defocus_map_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.defocus_map_path, regx = '.*', printable = False)))
-    # train_synthetic_binary_map_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.synthetic_binary_map_path, regx = '.*', printable = False)))
-    
+    # train
     train_real_img_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.real_img_path, regx = '.*', printable = False)))
     train_real_binary_map_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.real_binary_map_path, regx = '.*', printable = False)))
     train_real_img_no_label_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.real_img_no_label_path, regx = '.*', printable = False)))
+
+    # test
+    test_blur_img_list = np.array(sorted(tl.files.load_file_list(path = config.TEST.real_img_path, regx = '.*', printable = False)))
+    test_gt_list = np.array(sorted(tl.files.load_file_list(path = config.TEST.real_binary_map_path, regx = '.*', printable = False)))
+    
+    test_blur_imgs = read_all_imgs(test_blur_img_list, path = config.TEST.real_img_path, mode = 'RGB')
+    test_gt_imgs = read_all_imgs(test_gt_list, path = config.TEST.real_binary_map_path, mode = 'GRAY')
 
     ## DEFINE MODEL
     # input
@@ -88,6 +97,9 @@ def train():
         patches_real = tf.placeholder('float32', [None, h, w, 3], name = 'input_real')
         labels_real_binary = tf.placeholder('float32', [None, h, w, 1], name = 'labels_real_binary')
         patches_real_no_label = tf.placeholder('float32', [None, h, w, 3], name = 'input_real_no_label')
+
+        patches_real_test = tf.placeholder('float32', [None, None, None, 3], name = 'input_real')
+        labels_real_binary_test = tf.placeholder('float32', [None, None, None, 1], name = 'labels_real_binary')
 
     # model
     with tf.variable_scope('main_net') as scope:
@@ -113,6 +125,15 @@ def train():
             net_vgg_perceptual, _, perceptual_synthetic_out, logits_perceptual_out = Vgg19_simple_api(output_synthetic_defocus_3c, reuse = False, scope = scope)
             labels_synthetic_defocus_3c = tf.concat([labels_synthetic_defocus, labels_synthetic_defocus, labels_synthetic_defocus], axis = 3)
             _, _, perceptual_synthetic_label, logits_perceptual_label = Vgg19_simple_api(labels_synthetic_defocus_3c, reuse = True, scope = scope)
+
+    # for test
+    with tf.variable_scope('main_net') as scope:
+        with tf.variable_scope('defocus_net') as scope:
+            with tf.variable_scope('encoder') as scope:
+                _, feats_real_down_test, _, _ = Vgg19_simple_api(patches_real_test, reuse = True, scope = scope)
+            with tf.variable_scope('decoder') as scope:
+                output_real_defocus_test, _, _, _ = UNet_up(patches_real, feats_real_down_test, is_train = True, reuse = True, scope = scope)
+    f1_score_, eval_op_ = tf.contrib.metrics.f1_score(labels_real_binary_test, 1 - output_real_defocus_test, 200)
 
     ## DEFINE LOSS
     with tf.variable_scope('loss'):
@@ -231,7 +252,7 @@ def train():
     image_sum = tf.summary.merge(image_sum_list)
 
     ## INITIALIZE SESSION
-    tl.layers.initialize_global_variables(sess)
+    sess.run(tf.global_variables_initializer())
     ## LOAD VGG
     vgg19_npy_path = "vgg19.npy"
     if not os.path.isfile(vgg19_npy_path):
@@ -250,7 +271,8 @@ def train():
     tl.files.assign_params(sess, params, net_vgg)
     tl.files.assign_params(sess, params, net_vgg_perceptual)
 
-    tl.files.load_and_assign_npz_dict(name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
+    ckpt_manager_init.load_ckpt(sess)
+    #tl.files.load_and_assign_npz_dict(name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
     if tl.global_flag['is_pretrain']:
         print('*****************************************')
         print('           PRE-TRAINING START')
@@ -301,7 +323,8 @@ def train():
                 writer_image_init.reopen()
 
             if epoch % 2 or epoch == n_epoch_init - 1:
-                tl.files.save_npz_dict(save_init_vars, name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
+                #tl.files.save_npz_dict(save_init_vars, name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
+                ckpt_manager_init.save_ckpt(sess, save_init_vars, epoch, score = total_loss_init / n_iter)
 
         writer_image_init.close()
         writer_scalar_init.close()
@@ -364,26 +387,10 @@ def train():
             ## RUN NETWORK
             #discriminator
             feed_dict = {patches_synthetic: synthetic_images_blur, patches_real: real_images_blur, labels_synthetic_defocus: synthetic_defocus_maps, patches_real_no_label: real_images_no_label_blur}
-            # d_synthetic, d_real = sess.run([d_feature_synthetic, d_feature_real], feed_dict)
-            # d_acc = get_disc_accuracy([d_synthetic, d_real], [0, 1])
-            d_count = 0
-            # while d_acc < 0.5:
-            #     _ = sess.run(optim_d, feed_dict)
-            #     d_synthetic, d_real = sess.run([d_feature_synthetic, d_feature_real], feed_dict)
-            #     d_acc = get_disc_accuracy([d_synthetic, d_real], [0, 1])
-            #     d_count = d_count + 1
             _ = sess.run(optim_d, feed_dict)
 
             #generator
             feed_dict = {patches_synthetic: synthetic_images_blur, labels_synthetic_defocus: synthetic_defocus_maps, patches_real: real_images_blur, labels_real_binary: real_binary_maps, patches_real_no_label: real_images_no_label_blur}
-            # d_synthetic, d_real = sess.run([d_feature_synthetic, d_feature_real], feed_dict)
-            # g_acc = get_disc_accuracy([d_synthetic, d_real], [1, 0])
-            g_count = 0
-            # while g_count == 0 or g_acc < 0.7:
-            #     err_g, _ = sess.run([loss_g, optim_main], feed_dict)
-            #     d_synthetic, d_real = sess.run([d_feature_synthetic, d_feature_real], feed_dict)
-            #     g_acc = get_disc_accuracy([d_synthetic, d_real], [1, 0])
-            #     g_count = g_count + 1
             _ = sess.run(optim_main, feed_dict)
 
             #log
@@ -392,8 +399,8 @@ def train():
             d_acc = get_disc_accuracy([d_synthetic, d_real], [0, 1])
             g_acc = get_disc_accuracy([d_synthetic, d_real], [1, 0])
 
-            print('[%s] Ep [%2d/%2d] %4d/%4d time: %4.2fs, err[main: %1.2e, g(acc, #): %1.2e(%1.2f, %d), d(acc, #): %1.2e(%1.2f, %d)], lr: %1.2e' % \
-                (tl.global_flag['mode'], epoch, n_epoch, n_iter, len(train_synthetic_img_list)/batch_size, time.time() - step_time, err_main, err_g, g_acc, g_count, err_d, d_acc, d_count, lr))
+            print('[%s] Ep [%2d/%2d] %4d/%4d time: %4.2fs, err[main: %1.2e, g(acc): %1.2e(%1.2f), d(acc): %1.2e(%1.2f)], lr: %1.2e' % \
+                (tl.global_flag['mode'], epoch, n_epoch, n_iter, len(train_synthetic_img_list)/batch_size, time.time() - step_time, err_main, err_g, g_acc, err_d, d_acc, lr))
 
             ## SAVE LOGS
             # save loss & image log
@@ -402,12 +409,6 @@ def train():
                 writer_scalar.add_summary(summary_loss_d, global_step)
                 writer_scalar.add_summary(summary_loss_g, global_step)
                 writer_image.add_summary(summary_image, global_step)
-            # save checkpoint
-            if global_step != 0 and global_step % config.TRAIN.write_ckpt_every == 0:
-                #shutil.rmtree(ckpt_dir, ignore_errors = True)
-                #tl.files.save_ckpt(sess = sess, mode_name = '{}.ckpt'.format(tl.global_flag['mode']), save_dir = ckpt_dir, var_list = save_vars, global_step = global_step, printable = False)
-                remove_file_end_with(ckpt_dir, '*.npz')
-                tl.files.save_npz_dict(save_vars, name = ckpt_dir + '/{}.npz'.format(tl.global_flag['mode']), sess = sess)
 
             # save samples
             if global_step != 0 and global_step % config.TRAIN.write_sample_every == 0:
@@ -423,8 +424,23 @@ def train():
             total_loss += err_main
             n_iter += 1
             global_step += 1
+
+        # save_checkpoint
+        if epoch % config.TRAIN.write_ckpt_every == 0:
+            # compute f1 score
+            sess.run(tf.local_variables_initializer())
+            for i in np.arange(len(test_blur_imgs)):
+                test_blur_img = np.copy(test_blur_imgs[i])
+                test_gt_img = np.copy(test_gt_imgs[i])
+
+                _ = sess.run(eval_op_, feed_dict = {patches_real_test: test_blur_img, labels_real_binary_test: test_gt_img})
+            f1_score = sess.run(f1_score_)
+            # remove_file_end_with(ckpt_dir, '*.npz')
+            # tl.files.save_npz_dict(save_vars, name = ckpt_dir + '/{}.npz'.format(tl.global_flag['mode']), sess = sess)
+            ckpt_manager.save_ckpt(sess, save_vars, epoch, score = f1_score)
             
-        print('[*] Epoch: [%2d/%2d] time: %4.4fs, total_err: %1.2e' % (epoch, n_epoch, time.time() - epoch_time, total_loss/n_iter))
+        print('[TRAIN] Epoch: [%2d/%2d] time: %4.4fs, total_err: %1.2e' % (epoch, n_epoch, time.time() - epoch_time, total_loss/n_iter))
+        print('[TEST] Epoch: [%2d/%2d] time: %4.4fs, total_err: %1.2e' % (epoch, n_epoch, time.time() - epoch_time, total_loss/n_iter))
         # reset image log
         if epoch % config.TRAIN.refresh_image_log_every == 0:
             writer_image.close()
@@ -447,41 +463,47 @@ def evaluate():
     test_gt_imgs = read_all_imgs(test_gt_list, path = config.TEST.real_binary_map_path, mode = 'GRAY')
     
     avg_time = 0.;
-    reuse = False
+
+    # define session
+    sess = tf.Session(config = tf.ConfigProto(allow_soft_placement = True, log_device_placement = False))
+    # define model
+    with tf.variable_scope('input'):
+        patches_blurred = tf.placeholder('float32', [1, None, None, 3], name = 'input_patches')
+        labels = tf.placeholder('float32', [1, None, None, 1], name = 'labels')
+
+
+    with tf.variable_scope('main_net') as scope:
+        with tf.variable_scope('defocus_net') as scope:
+            with tf.variable_scope('encoder') as scope:
+                feats_down = Vgg19_simple_api(patches_blurred, reuse = False, scope = scope, is_test = True)
+            with tf.variable_scope('decoder') as scope:
+                output_defocus, feats_up, _, refine_lists = UNet_up(patches_blurred, feats_down, is_train = False, reuse = False, scope = scope)
+
+    f1_score_, eval_op_ = tf.contrib.metrics.f1_score(labels, 1 - output_defocus)
+    sess.run(tf.local_variables_initializer())
+
+    # init vars
+    sess.run(tf.global_variables_initializer())
+    # load checkpoint
+    tl.files.load_and_assign_npz_dict(name = ckpt_dir + '/{}.npz'.format(tl.global_flag['mode']), sess = sess)
+
     for i in np.arange(len(test_blur_imgs)):
-        tf.reset_default_graph()
         test_blur_img = np.copy(test_blur_imgs[i])
         test_blur_img = refine_image(test_blur_img)
-        shape = test_blur_img.shape
 
-        patches_blurred = tf.placeholder('float32', [1, shape[0], shape[1], 3], name = 'input_patches')
-        # define model
-        with tf.variable_scope('main_net') as scope:
-            with tf.variable_scope('defocus_net') as scope:
-                with tf.variable_scope('encoder') as scope:
-                    feats_down = Vgg19_simple_api(patches_blurred, reuse = False, scope = scope, is_test = True)
-                with tf.variable_scope('decoder') as scope:
-                    output_defocus, feats_up, _, refine_lists = UNet_up(patches_blurred, feats_down, is_train = False, reuse = False, scope = scope)
-
-        # init session
-        sess = tf.Session(config = tf.ConfigProto(allow_soft_placement = True, log_device_placement = False))
-        tl.layers.initialize_global_variables(sess)
-
-        # load checkpoint
-        tl.files.load_and_assign_npz_dict(name = ckpt_dir + '/{}.npz'.format(tl.global_flag['mode']), sess = sess)
+        test_gt_img = np.copy(test_gt_imgs[i])
+        test_gt_img = refine_image(test_gt_img)
 
         # run network
         print('processing {} ...'.format(test_blur_img_list[i]))
         tic = time.time()
-        defocus_map, feats_down_out, feats_up_out, refine_lists_out = sess.run([output_defocus, feats_down, feats_up, refine_lists], {patches_blurred: np.expand_dims(test_blur_img, axis = 0)})
+        feed_dict = {patches_blurred: np.expand_dims(test_blur_img, axis = 0), labels: np.expand_dims(test_gt_img, axis = 0)}
+        defocus_map, feats_down_out, feats_up_out, refine_lists_out, _ = sess.run([output_defocus, feats_down, feats_up, refine_lists, eval_op_], feed_dict)
+
         toc = time.time()
         defocus_map = np.squeeze(1 - defocus_map)
         defocus_map_norm = defocus_map - defocus_map.min()
         defocus_map_norm = defocus_map_norm / defocus_map_norm.max()
-
-        # defocus_map = defocus_map * 15.
-        # defocus_map[np.where(defocus_map < 1)] = 0.
-        # defocus_map[np.where(defocus_map >= 1)] = ((defocus_map[np.where(defocus_map >= 1)] - 1) / 2.) / 7.
 
         print('processing {} ... Done [{:.3f}s]'.format(test_blur_img_list[i], toc - tic))
         avg_time = avg_time + (toc - tic)
@@ -500,23 +522,90 @@ def evaluate():
         scipy.misc.toimage(np.squeeze(1 - refine_image(test_gt_imgs[i])), cmin = 0., cmax = 1.).save(sample_dir + '/{0:04d}_5_binary_map_gt.png'.format(i))
         scipy.misc.toimage(np.squeeze(1 - refine_image(test_gt_imgs[i])), cmin = 0., cmax = 1.).save(sample_dir + '/gt/{0:04d}.png'.format(i))
 
-        # for j in np.arange(len(feats_down_out)):
-        #     feats_down_out[j] = np.squeeze(feats_down_out[j])
-        #     feats_down_out[j] = np.transpose(feats_down_out[j], [2, 0, 1])
-        #     ni = len(feats_down_out[j])
-        #     ni = int(np.ceil(np.sqrt(ni)))
-        #     save_images(norm_image(feats_down_out[j], (1, 2)), [ni, ni], sample_dir + '/{}_6_feats_down_{}.png'.format(i, j+1))
+    f1_score = sess.run(f1_score_)
+    print(f1_score)
 
-        # for j in np.arange(len(feats_up_out)):
-        #     scipy.misc.toimage(np.squeeze(feats_up_out[j]), cmin = 0., cmax = 1.).save(sample_dir + '/{}_7_feat_up_{}.png'.format(i, j+1))
+    avg_time = avg_time / len(test_blur_imgs)
+    print('averge time: {:.3f}s'.format(avg_time))
 
-        # for j in np.arange(len(refine_lists_out)):
-        #     refine_lists_out[j] = np.squeeze(refine_lists_out[j])
-        #     refine_lists_out[j] = np.transpose(refine_lists_out[j], [2, 0, 1])
-        #     save_images(norm_image(refine_lists_out[j], (1, 2)), [8, 8], sample_dir + '/{}_8_refine_{}.png'.format(i, j+1))
+def evaluate_old():
+    print('Evaluation Start')
+    date = datetime.datetime.now().strftime('%Y_%m_%d/%H-%M')
+    # directories
+    mode_dir = config.TRAIN.root_dir + '{}'.format(tl.global_flag['mode'])
+    ckpt_dir = mode_dir + '/fixed_ckpt'
+    sample_dir = mode_dir + '/samples/1_test/{}'.format(date)
+    
+    # input
+    test_blur_img_list = np.array(sorted(tl.files.load_file_list(path = config.TEST.real_img_path, regx = '.*', printable = False)))
+    test_gt_list = np.array(sorted(tl.files.load_file_list(path = config.TEST.real_binary_map_path, regx = '.*', printable = False)))
+    
+    test_blur_imgs = read_all_imgs(test_blur_img_list, path = config.TEST.real_img_path, mode = 'RGB')
+    test_gt_imgs = read_all_imgs(test_gt_list, path = config.TEST.real_binary_map_path, mode = 'GRAY')
+    
+    avg_time = 0.;
 
-        sess.close()
-        reuse = True
+    # define session
+    sess = tf.Session(config = tf.ConfigProto(allow_soft_placement = True, log_device_placement = False))
+    # define model
+    with tf.variable_scope('input'):
+        patches_blurred = tf.placeholder('float32', [1, None, None, 3], name = 'input_patches')
+        labels = tf.placeholder('float32', [1, None, None, 1], name = 'labels')
+
+
+    with tf.variable_scope('main_net') as scope:
+        with tf.variable_scope('defocus_net') as scope:
+            with tf.variable_scope('encoder') as scope:
+                feats_down = Vgg19_simple_api(patches_blurred, reuse = False, scope = scope, is_test = True)
+            with tf.variable_scope('decoder') as scope:
+                output_defocus, feats_up, _, refine_lists = UNet_up(patches_blurred, feats_down, is_train = False, reuse = False, scope = scope)
+
+    f1_score_, eval_op_ = tf.contrib.metrics.f1_score(labels, 1 - output_defocus)
+    sess.run(tf.local_variables_initializer())
+
+    # init vars
+    sess.run(tf.global_variables_initializer())
+    # load checkpoint
+    tl.files.load_and_assign_npz_dict(name = ckpt_dir + '/{}.npz'.format(tl.global_flag['mode']), sess = sess)
+
+    for i in np.arange(len(test_blur_imgs)):
+        test_blur_img = np.copy(test_blur_imgs[i])
+        test_blur_img = refine_image(test_blur_img)
+
+        test_gt_img = np.copy(test_gt_imgs[i])
+        test_gt_img = refine_image(test_gt_img)
+
+        # run network
+        print('processing {} ...'.format(test_blur_img_list[i]))
+        tic = time.time()
+        feed_dict = {patches_blurred: np.expand_dims(test_blur_img, axis = 0), labels: np.expand_dims(test_gt_img, axis = 0)}
+        defocus_map, feats_down_out, feats_up_out, refine_lists_out, op = sess.run([output_defocus, feats_down, feats_up, refine_lists, eval_op_], feed_dict)
+
+        toc = time.time()
+        defocus_map = np.squeeze(1 - defocus_map)
+        defocus_map_norm = defocus_map - defocus_map.min()
+        defocus_map_norm = defocus_map_norm / defocus_map_norm.max()
+
+        print('processing {} ... Done [{:.3f}s]'.format(test_blur_img_list[i], toc - tic))
+        avg_time = avg_time + (toc - tic)
+        
+        tl.files.exists_or_mkdir(sample_dir, verbose = False)
+        tl.files.exists_or_mkdir(sample_dir + '/image')
+        tl.files.exists_or_mkdir(sample_dir + '/out')
+        tl.files.exists_or_mkdir(sample_dir + '/out_norm')
+        tl.files.exists_or_mkdir(sample_dir + '/gt')
+        scipy.misc.toimage(test_blur_img, cmin = 0., cmax = 1.).save(sample_dir + '/{0:04d}_1_input.png'.format(i))
+        scipy.misc.toimage(test_blur_img, cmin = 0., cmax = 1.).save(sample_dir + '/image/{0:04d}.png'.format(i))
+        scipy.misc.toimage(defocus_map, cmin = 0., cmax = 1.).save(sample_dir + '/{0:04d}_2_defocus_map_out.png'.format(i))
+        scipy.misc.toimage(defocus_map, cmin = 0., cmax = 1.).save(sample_dir + '/out/{0:04d}.png'.format(i))
+        scipy.misc.toimage(defocus_map_norm, cmin = 0., cmax = 1.).save(sample_dir + '/{0:04d}_3_defocus_map_norm_out.png'.format(i))
+        scipy.misc.toimage(defocus_map_norm, cmin = 0., cmax = 1.).save(sample_dir + '/out_norm/{0:04d}.png'.format(i))
+        scipy.misc.toimage(np.squeeze(1 - refine_image(test_gt_imgs[i])), cmin = 0., cmax = 1.).save(sample_dir + '/{0:04d}_5_binary_map_gt.png'.format(i))
+        scipy.misc.toimage(np.squeeze(1 - refine_image(test_gt_imgs[i])), cmin = 0., cmax = 1.).save(sample_dir + '/gt/{0:04d}.png'.format(i))
+
+    f1_score = sess.run(f1_score_)
+    print(f1_score)
+
     avg_time = avg_time / len(test_blur_imgs)
     print('averge time: {:.3f}s'.format(avg_time))
         
@@ -553,6 +642,7 @@ def get_accuracy():
                     feats_down = Vgg19_simple_api(patches_blurred, reuse = reuse, scope = scope, is_test = True)
                 with tf.variable_scope('decoder') as scope:
                     output_defocus, feats_up, _, refine_lists = UNet_up(patches_blurred, feats_down, is_train = False, reuse = reuse, scope = scope)
+
 
         # init session
         sess = tf.Session(config = tf.ConfigProto(allow_soft_placement = True, log_device_placement = False))
@@ -622,10 +712,11 @@ if __name__ == '__main__':
 
 
     if tl.global_flag['is_train']:
-        tl.logging.set_verbosity(tl.logging.INFO)
+        #tl.logging.set_verbosity(tl.logging.INFO)
         train()
     elif tl.global_flag['is_acc']:
         get_accuracy()
     else:
+        #tl.logging.set_verbosity(tl.logging.INFO)
         evaluate()
 

@@ -3,6 +3,7 @@
 *.sublime*
 samples/*
 models/*
+datasets/*
 inception_resnet*.ckpt
 
 # trash

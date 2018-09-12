@@ -474,3 +474,4 @@ def get_disc_accuracy(logits, labels):
         tp = tp + len(temp[np.where(temp == labels[i])])
         acc = acc + (tp / float(len(logits[i])))
     return acc / float(len(labels))
+

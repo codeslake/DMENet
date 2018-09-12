@@ -35,27 +35,37 @@ config.TRAIN.lambda_binary = 2e-2
 #config.TRAIN.lambda_perceptual = 1e-6
 config.TRAIN.lambda_perceptual = 1e-4
 
-## train set location
-# config.TRAIN.synthetic_img_path = '/data1/junyonglee/blur_sharp_only/image_dof/'
-# config.TRAIN.defocus_map_path = '/data1/junyonglee/blur_sharp_only/defocus_map/'
-# config.TRAIN.synthetic_binary_map_path = '/data1/junyonglee/blur_sharp_only/binary_map/'
+### TEST DATSET PATH
+#offset = '/Mango/Users/JunyongLee/hub/datasets/'
+offset = '/Jarvis/workspace/junyonglee/defocus_map_estimation/datasets/train/'
 
-#offset = '/Mango/Users/JunyongLee/datasets/30_new_better/'
-offset = '/Mango/Users/JunyongLee/hub/datasets/'
+# Synthetic
 config.TRAIN.synthetic_img_path = offset + 'SYNDOF/21_gaussian/image/'
 config.TRAIN.defocus_map_path = offset + 'SYNDOF/21_gaussian/blur_map/'
 config.TRAIN.defocus_map_norm_path = offset + 'SYNDOF/21_gaussian/blur_map_norm/'
 config.TRAIN.synthetic_binary_map_path = offset + 'SYNDOF/21_gaussian/blur_map_binary/'
 
-config.TRAIN.real_img_no_label_path = offset + 'dof_real_resized/'
+# Real
+config.TRAIN.real_img_path = offset + 'CUHK/train/image/'
+config.TRAIN.real_binary_map_path = offset + 'CUHK/train/gt/'
+config.TRAIN.real_img_no_label_path = offset + 'Flickr/'
 
-## test set location
-offset = '/Mango/Users/JunyongLee/hub/datasets/'
-config.TRAIN.real_img_path = offset + 'BlurDetection/train/image/'
-config.TRAIN.real_binary_map_path = offset + 'BlurDetection/train/gt/'
+### TEST DATSET PATH
+## CUHK
+# offset = '/Mango/Users/JunyongLee/hub/datasets/BlurDetection/test/'
+offset = '/Jarvis/workspace/junyonglee/defocus_map_estimation/datasets/test/CUHK'
+# config.TEST.real_img_path = offset + 'image/'
+# config.TEST.real_binary_map_path = offset + 'gt/'
+config.TEST.real_img_path = offset + 'image/'
+config.TEST.real_binary_map_path = offset + 'gt/'
 
-config.TEST.real_img_path = offset + 'BlurDetection/test/image/'
-config.TEST.real_binary_map_path = offset + 'BlurDetection/test/gt/'
+## SYNDOF
+# offset = '/Jarvis/workspace/junyonglee/defocus_map_estimation/datasets/test/SYNDOF'
+# config.TEST.real_img_path = offset + 'image/'
+# config.TEST.real_binary_map_path = offset + 'gt/'
+
+## RDF
+# offset = '/Jarvis/workspace/junyonglee/defocus_map_estimation/datasets/test/RTF'
 # config.TEST.real_img_path = offset + 'test/RTF/1/'
 # config.TEST.real_binary_map_path = offset + 'test/RTF/1/'
 # config.TEST.real_img_path = offset + 'test/syndof/'
@@ -70,7 +80,7 @@ config.TRAIN.width = 240
 ## log & checkpoint & samples
 # every global step
 config.TRAIN.write_log_every = 5
-config.TRAIN.write_ckpt_every = 1000
+config.TRAIN.write_ckpt_every = 5
 config.TRAIN.write_sample_every = 1000
 # every epoch
 config.TRAIN.refresh_image_log_every = 20

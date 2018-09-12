@@ -97,6 +97,16 @@ def UNet_up(images, feats, is_train=False, reuse=False, scope = 'unet_up'):
     #g_init = tf.random_normal_initializer(1., 0.02)
     g_init = None
     lrelu = lambda x: tl.act.lrelu(x, 0.2)
+
+    def UpSampling2dLayer_(input, scale, method, align_corners, name):
+        input = input.outputs
+        size = tf.shape(input)
+
+        n = InputLayer(input, name = name + '_in')
+        n = UpSampling2dLayer(n, size=[size[1] * scale[0], size[2] * scale[1]], is_scale = False, method = method, align_corners = align_corners, name = name)
+
+        return n
+
     with tf.variable_scope(scope, reuse=reuse):
         d0 = InputLayer(feats[0], name='d0')
         d1 = InputLayer(feats[1], name='d1')
@@ -113,7 +123,7 @@ def UNet_up(images, feats, is_train=False, reuse=False, scope = 'unet_up'):
         u4 = BatchNormLayer(u4, act=tf.nn.sigmoid, is_train = is_train, gamma_init = g_init, name='u4_aux/b2')
         u4 = u4.outputs
 
-        n = UpSampling2dLayer(d4, (2, 2), is_scale = True, method = 1, align_corners=True, name='u3/u')
+        n = UpSampling2dLayer_(d4, (2, 2), method = 1, align_corners=True, name='u3/u')
         n = ConcatLayer([n, d3], concat_dim = 3, name='u3/concat')
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u3/pad1')
         n = Conv2d(n, 256, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u3/c1')
@@ -133,7 +143,7 @@ def UNet_up(images, feats, is_train=False, reuse=False, scope = 'unet_up'):
         u3 = BatchNormLayer(u3, act=tf.nn.sigmoid, is_train = is_train, gamma_init = g_init, name='u3_aux/b2')
         u3 = u3.outputs
 
-        n = UpSampling2dLayer(n, (2, 2), is_scale = True, method = 1, align_corners=True, name='u2/u')
+        n = UpSampling2dLayer_(n, (2, 2), method = 1, align_corners=True, name='u2/u')
         n = ConcatLayer([n, d2], concat_dim = 3, name='u2/concat')
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u2/pad1')
         n = Conv2d(n, 128, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u2/c1')
@@ -153,7 +163,7 @@ def UNet_up(images, feats, is_train=False, reuse=False, scope = 'unet_up'):
         u2 = BatchNormLayer(u2, act=tf.nn.sigmoid, is_train = is_train, gamma_init = g_init, name='u2_aux/b2')
         u2 = u2.outputs
 
-        n = UpSampling2dLayer(n, (2, 2), is_scale = True, method = 1, align_corners=True, name='u1/u')
+        n = UpSampling2dLayer_(n, (2, 2), method = 1, align_corners=True, name='u1/u')
         n = ConcatLayer([n, d1], concat_dim = 3, name='u1/concat')
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u1/pad1')
         n = Conv2d(n, 64, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u1/c1')
@@ -173,7 +183,7 @@ def UNet_up(images, feats, is_train=False, reuse=False, scope = 'unet_up'):
         u1 = BatchNormLayer(u1, act=tf.nn.sigmoid, is_train = is_train, gamma_init = g_init, name='u1_aux/b2')
         u1 = u1.outputs
 
-        n = UpSampling2dLayer(n, (2, 2), is_scale = True, method = 1, align_corners=True, name='u0/u')
+        n = UpSampling2dLayer_(n, (2, 2), method = 1, align_corners=True, name='u0/u')
         n = ConcatLayer([n, d0], concat_dim = 3, name='u0/concat')
         n = PadLayer(n, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='u0/pad_init')
         n = Conv2d(n, 64, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_relu, name='u0/c_init')
@@ -214,6 +224,8 @@ def UNet_up(images, feats, is_train=False, reuse=False, scope = 'unet_up'):
         n = Conv2d(n, 1, (3, 3), (1, 1), act=None, padding='VALID', W_init=w_init_sigmoid, name='uf/c3')#c1
 
         return tf.nn.sigmoid(n.outputs), [u4, u3, u2, u1, u0], gan_feat, refine_lists
+
+
 
 def feature_discriminator(feats, is_train=True, reuse=False, scope = 'feature_discriminator'):
     w_init = tf.contrib.layers.variance_scaling_initializer()
