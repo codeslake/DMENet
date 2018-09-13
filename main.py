@@ -174,7 +174,8 @@ def train():
             loss_aux = tf.identity(loss_aux_1 + loss_aux_2 + loss_aux_3 + loss_aux_4 + loss_aux_5, name = 'total')
 
         with tf.variable_scope('perceptual'):
-            loss_synthetic_perceptual = tl.cost.mean_squared_error(perceptual_synthetic_out, perceptual_synthetic_label, is_mean = True, name = 'synthetic')
+            #loss_synthetic_perceptual = tl.cost.mean_squared_error(perceptual_synthetic_out, perceptual_synthetic_label, is_mean = True, name = 'synthetic')
+            loss_synthetic_perceptual = tl.cost.absolute_difference_error(perceptual_synthetic_out, perceptual_synthetic_label, is_mean = True, name = 'synthetic')
             loss_perceptual = tf.identity(loss_synthetic_perceptual * lambda_perceptual, name = 'total')
 
         with tf.variable_scope('binary'):
@@ -182,8 +183,14 @@ def train():
             #loss_real_binary = tl.cost.mean_squared_error(output_real_binary, labels_real_binary, is_mean = True, name = 'real')
             loss_binary = tf.identity(loss_real_binary * lambda_binary, name = 'total')
 
-        loss_main = tf.identity(loss_defocus + loss_binary + loss_perceptual + loss_aux + loss_g, name = 'total')
-        loss_init = tf.identity(loss_defocus, name = 'loss_init')
+        with tf.variable_scope('l2_regularizer'):
+            l2_reg = 0
+            for kernel in tl.layers.get_variables_with_name('kernel', train_only=True, printable=False):
+                if 'main_net' in kernel.name:
+                    l2_reg += tf.contrib.layers.l2_regularizer(1e-4)(kernel)
+
+        loss_main = tf.identity(loss_defocus + loss_binary + loss_perceptual + loss_aux + loss_g + l2_reg, name = 'total')
+        loss_init = tf.identity(loss_defocus + l2_reg, name = 'loss_init')
 
     ## DEFINE OPTIMIZER
     # variables to save / train
@@ -215,6 +222,7 @@ def train():
     with tf.variable_scope('loss_init'):
         loss_sum_list_init.append(tf.summary.scalar('1_total_loss_init', loss_init))
         loss_sum_list_init.append(tf.summary.scalar('2_defocus_loss_init', loss_defocus))
+        loss_sum_list_init.append(tf.summary.scalar('3_l2_regularizer', l2_reg))
         loss_sum_init = tf.summary.merge(loss_sum_list_init)
 
     image_sum_list_init = []
@@ -232,6 +240,7 @@ def train():
         loss_sum_g_list.append(tf.summary.scalar('4_perceptual', loss_perceptual))
         loss_sum_g_list.append(tf.summary.scalar('5_auxilary', loss_aux))
         loss_sum_g_list.append(tf.summary.scalar('6_binary', loss_binary))
+        loss_sum_g_list.append(tf.summary.scalar('7_l2_regularizer', l2_reg))
     loss_sum_g = tf.summary.merge(loss_sum_g_list)
 
     loss_sum_d_list = []

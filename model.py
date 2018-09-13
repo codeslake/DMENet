@@ -82,6 +82,10 @@ def Vgg19_simple_api(rgb, reuse, scope, is_test = False):
             # logits = PadLayer(network_rg, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='pad6_1')
             logits = PadLayer(network, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='pad6_1')
             logits = Conv2d(logits, n_filter=64, filter_size=(3, 3), strides=(1, 1), act=tf.nn.relu,padding='VALID', name='conv6_1')
+
+            size = get_size_of_tl_tensor(logits)
+            logits = Conv2d(logits, n_filter=512, filter_size=(size[1], size[2]), strides=(1, 1), act=tf.nn.relu, padding='VALID', name='c_logits_1')
+
             logits = FlattenLayer(logits, name='flatten')
             logits = DenseLayer(logits, n_units=512, act=tf.nn.relu, W_init = w_init_relu, name='c_logits_1')
             logits = DenseLayer(logits, n_units=1, act=tf.identity, W_init = w_init_sigmoid, name='c_logits_2')
@@ -96,7 +100,7 @@ def UNet_up(images, feats, is_train=False, reuse=False, scope = 'unet_up'):
     w_init_sigmoid = tf.contrib.layers.xavier_initializer()
     #g_init = tf.random_normal_initializer(1., 0.02)
     g_init = None
-    lrelu = lambda x: tl.act.lrelu(x, 0.2)
+    lrelu = lambda x: tf.nn.leaky_relu(x, 0.2)
 
     def UpSampling2dLayer_(input, scale, method, align_corners, name):
         input = input.outputs
@@ -233,7 +237,7 @@ def feature_discriminator(feats, is_train=True, reuse=False, scope = 'feature_di
     b_init = None # tf.constant_initializer(value=0.0)
     g_init = None
     
-    lrelu = lambda x: tl.act.lrelu(x, 0.2)
+    lrelu = lambda x: tf.nn.leaky_relu(x, 0.2)
     with tf.variable_scope(scope, reuse=reuse):
         n = InputLayer(feats, name='input_feature')
 
@@ -263,7 +267,7 @@ def Binary_Net(input_defocus, is_train=False, reuse=False, scope = 'Binary_Net')
     b_init = None # tf.constant_initializer(value=0.0)
     #g_init = tf.random_normal_initializer(1., 0.02)
     g_init = None
-    lrelu = lambda x: tl.act.lrelu(x, 0.2)
+    lrelu = lambda x: tf.nn.leaky_relu(x, 0.2)
     with tf.variable_scope(scope, reuse=reuse):
         n = InputLayer(input_defocus, name='input_defocus')
         
