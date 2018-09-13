@@ -462,16 +462,12 @@ def evaluate():
         patches_blurred = tf.placeholder('float32', [1, None, None, 3], name = 'input_patches')
         labels = tf.placeholder('float32', [1, None, None, 1], name = 'labels')
 
-
     with tf.variable_scope('main_net') as scope:
         with tf.variable_scope('defocus_net') as scope:
             with tf.variable_scope('encoder') as scope:
                 feats_down = Vgg19_simple_api(patches_blurred, reuse = False, scope = scope, is_test = True)
             with tf.variable_scope('decoder') as scope:
                 output_defocus, feats_up, _, refine_lists = UNet_up(patches_blurred, feats_down, is_train = False, reuse = False, scope = scope)
-
-    f1_score_, eval_op_ = tf.contrib.metrics.f1_score(labels, 1 - output_defocus)
-    sess.run(tf.local_variables_initializer())
 
     # init vars
     sess.run(tf.global_variables_initializer())
@@ -489,7 +485,7 @@ def evaluate():
         print('processing {} ...'.format(test_blur_img_list[i]))
         tic = time.time()
         feed_dict = {patches_blurred: np.expand_dims(test_blur_img, axis = 0), labels: np.expand_dims(test_gt_img, axis = 0)}
-        defocus_map, feats_down_out, feats_up_out, refine_lists_out, op = sess.run([output_defocus, feats_down, feats_up, refine_lists, eval_op_], feed_dict)
+        defocus_map, feats_down_out, feats_up_out, refine_lists_out = sess.run([output_defocus, feats_down, feats_up, refine_lists], feed_dict)
 
         toc = time.time()
         defocus_map = np.squeeze(1 - defocus_map)
@@ -512,9 +508,6 @@ def evaluate():
         scipy.misc.toimage(defocus_map_norm, cmin = 0., cmax = 1.).save(sample_dir + '/out_norm/{0:04d}.png'.format(i))
         scipy.misc.toimage(np.squeeze(1 - refine_image(test_gt_imgs[i])), cmin = 0., cmax = 1.).save(sample_dir + '/{0:04d}_5_binary_map_gt.png'.format(i))
         scipy.misc.toimage(np.squeeze(1 - refine_image(test_gt_imgs[i])), cmin = 0., cmax = 1.).save(sample_dir + '/gt/{0:04d}.png'.format(i))
-
-    f1_score = sess.run(f1_score_)
-    print(f1_score)
 
     avg_time = avg_time / len(test_blur_imgs)
     print('averge time: {:.3f}s'.format(avg_time))
