@@ -5,6 +5,7 @@ samples/*
 models/*
 datasets/*
 inception_resnet*.ckpt
+demo/*
 
 # trash
 .dropbox
