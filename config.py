@@ -37,7 +37,7 @@ config.TRAIN.lambda_perceptual = 1e-4
 
 ### TRAIN DATSET PATH
 #offset = '/Mango/Users/JunyongLee/hub/datasets/'
-offset = '/Mango/Users/JunyongLee/hub/datasets/'
+offset = '/Mango/Users/JunyongLee/hub/datasets/DMENet/train/'
 config.TRAIN.synthetic_img_path = offset + '15_gaussian_many/image/'
 config.TRAIN.defocus_map_path = offset + '15_gaussian_many/blur_map/'
 config.TRAIN.defocus_map_norm_path = offset + '15_gaussian_many/blur_map_norm/'
@@ -50,7 +50,8 @@ config.TRAIN.real_img_no_label_path = offset + 'Flickr/'
 ### TEST DATSET PATH
 ## CUHK
 # offset = '/Mango/Users/JunyongLee/hub/datasets/BlurDetection/test/'
-offset = '/Jarvis/workspace/junyonglee/defocus_map_estimation/datasets/test/CUHK/'
+#offset = '/Jarvis/workspace/junyonglee/defocus_map_estimation/datasets/test/CUHK/'
+offset = '/Mango/Users/JunyongLee/hub/datasets/DMENet/test/CUHK/'
 # config.TEST.real_img_path = offset + 'image/'
 # config.TEST.real_binary_map_path = offset + 'gt/'
 config.TEST.real_img_path = offset + 'image/'
