@@ -37,14 +37,11 @@ config.TRAIN.lambda_perceptual = 1e-4
 
 ### TRAIN DATSET PATH
 #offset = '/Mango/Users/JunyongLee/hub/datasets/'
-offset = '/Jarvis/workspace/junyonglee/defocus_map_estimation/datasets/train/'
-
-# Synthetic
-config.TRAIN.synthetic_img_path = offset + 'SYNDOF/21_gaussian/image/'
-config.TRAIN.defocus_map_path = offset + 'SYNDOF/21_gaussian/blur_map/'
-config.TRAIN.defocus_map_norm_path = offset + 'SYNDOF/21_gaussian/blur_map_norm/'
-config.TRAIN.synthetic_binary_map_path = offset + 'SYNDOF/21_gaussian/blur_map_binary/'
-
+offset = '/Mango/Users/JunyongLee/hub/datasets/'
+config.TRAIN.synthetic_img_path = offset + '15_gaussian_many/image/'
+config.TRAIN.defocus_map_path = offset + '15_gaussian_many/blur_map/'
+config.TRAIN.defocus_map_norm_path = offset + '15_gaussian_many/blur_map_norm/'
+config.TRAIN.synthetic_binary_map_path = offset + '15_gaussian_many/blur_map_binary/'
 # Real
 config.TRAIN.real_img_path = offset + 'CUHK/image/'
 config.TRAIN.real_binary_map_path = offset + 'CUHK/gt/'

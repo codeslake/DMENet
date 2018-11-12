@@ -184,7 +184,7 @@ def train():
                 if 'main_net' in kernel.name:
                     l2_reg += tf.contrib.layers.l2_regularizer(1e-4)(kernel)
 
-        loss_main = tf.identity(loss_defocus + loss_binary + loss_perceptual + loss_aux + loss_g + l2_reg, name = 'total')
+        loss_main = tf.identity(loss_defocus + loss_binary + loss_perceptual + loss_g + l2_reg, name = 'total')
         loss_init = tf.identity(loss_defocus + l2_reg, name = 'loss_init')
 
     ## DEFINE OPTIMIZER
