@@ -93,8 +93,8 @@ def train():
         labels_real_binary = tf.placeholder('float32', [None, h, w, 1], name = 'labels_real_binary')
         patches_real_no_label = tf.placeholder('float32', [None, h, w, 3], name = 'input_real_no_label')
 
-        patches_real_test = tf.placeholder('float32', [None, None, None, 3], name = 'input_real')
-        labels_real_binary_test = tf.placeholder('float32', [None, None, None, 1], name = 'labels_real_binary')
+        patches_real_test = tf.placeholder('float32', [None, h, w, 3], name = 'input_real')
+        labels_real_binary_test = tf.placeholder('float32', [None, h, w, 1], name = 'labels_real_binary')
 
     # model
     with tf.variable_scope('main_net') as scope:
@@ -128,7 +128,7 @@ def train():
                 _, feats_real_down_test, _, _ = Vgg19_simple_api(patches_real_test, reuse = True, scope = scope)
             with tf.variable_scope('decoder') as scope:
                 output_real_defocus_test, _, _, _ = UNet_up(patches_real, feats_real_down_test, is_train = True, reuse = True, scope = scope)
-    f1_score_, eval_op_ = tf.contrib.metrics.f1_score(labels_real_binary_test, 1 - output_real_defocus_test, 200)
+    #f1_score_, eval_op_ = tf.contrib.metrics.f1_score(labels_real_binary_test, 1 - output_real_defocus_test, 200)
 
     ## DEFINE LOSS
     with tf.variable_scope('loss'):
@@ -155,22 +155,22 @@ def train():
         with tf.variable_scope('defocus'):
             loss_defocus = tl.cost.mean_squared_error(output_synthetic_defocus, labels_synthetic_defocus, is_mean = True, name = 'synthetic')
             # loss_defocus = tl.cost.absolute_difference_error(output_synthetic_defocus, labels_synthetic_defocus, is_mean = True)
-        with tf.variable_scope('auxilary'):
-            labels_layer = InputLayer(labels_synthetic_defocus)
-            loss_aux_1 = tl.cost.mean_squared_error(feats_synthetic_up_aux[0],
-                DownSampling2dLayer(labels_layer, (1/16., 1/16.), method = 1, align_corners=True).outputs, is_mean = True, name = 'aux1')
-            loss_aux_2 = tl.cost.mean_squared_error(feats_synthetic_up_aux[1],
-                DownSampling2dLayer(labels_layer, (1/8., 1/8.), method = 1, align_corners=True).outputs, is_mean = True, name = 'aux2')
-            loss_aux_3 = tl.cost.mean_squared_error(feats_synthetic_up_aux[2],
-                DownSampling2dLayer(labels_layer, (1/4., 1/4.), method = 1, align_corners=True).outputs, is_mean = True, name = 'aux3')
-            loss_aux_4 = tl.cost.mean_squared_error(feats_synthetic_up_aux[3],
-                DownSampling2dLayer(labels_layer, (1/2., 1/2.), method = 1, align_corners=True).outputs, is_mean = True, name = 'aux4')
-            loss_aux_5 = tl.cost.mean_squared_error(feats_synthetic_up_aux[4], labels_synthetic_defocus, is_mean = True, name = 'aux5')
-            loss_aux = tf.identity(loss_aux_1 + loss_aux_2 + loss_aux_3 + loss_aux_4 + loss_aux_5, name = 'total')
+        # with tf.variable_scope('auxilary'):
+        #     labels_layer = InputLayer(labels_synthetic_defocus)
+        #     loss_aux_1 = tl.cost.mean_squared_error(feats_synthetic_up_aux[0],
+        #         DownSampling2dLayer(labels_layer, (1/16., 1/16.), method = 1, align_corners=True).outputs, is_mean = True, name = 'aux1')
+        #     loss_aux_2 = tl.cost.mean_squared_error(feats_synthetic_up_aux[1],
+        #         DownSampling2dLayer(labels_layer, (1/8., 1/8.), method = 1, align_corners=True).outputs, is_mean = True, name = 'aux2')
+        #     loss_aux_3 = tl.cost.mean_squared_error(feats_synthetic_up_aux[2],
+        #         DownSampling2dLayer(labels_layer, (1/4., 1/4.), method = 1, align_corners=True).outputs, is_mean = True, name = 'aux3')
+        #     loss_aux_4 = tl.cost.mean_squared_error(feats_synthetic_up_aux[3],
+        #         DownSampling2dLayer(labels_layer, (1/2., 1/2.), method = 1, align_corners=True).outputs, is_mean = True, name = 'aux4')
+        #     loss_aux_5 = tl.cost.mean_squared_error(feats_synthetic_up_aux[4], labels_synthetic_defocus, is_mean = True, name = 'aux5')
+        #     loss_aux = tf.identity(loss_aux_1 + loss_aux_2 + loss_aux_3 + loss_aux_4 + loss_aux_5, name = 'total')
 
         with tf.variable_scope('perceptual'):
             #loss_synthetic_perceptual = tl.cost.mean_squared_error(perceptual_synthetic_out, perceptual_synthetic_label, is_mean = True, name = 'synthetic')
-            loss_synthetic_perceptual = tl.cost.absolute_difference_error(perceptual_synthetic_out, perceptual_synthetic_label, is_mean = True, name = 'synthetic')
+            loss_synthetic_perceptual = tl.cost.absolute_difference_error(perceptual_synthetic_out, perceptual_synthetic_label, True, name = 'synthetic')
             loss_perceptual = tf.identity(loss_synthetic_perceptual * lambda_perceptual, name = 'total')
 
         with tf.variable_scope('binary'):
@@ -233,7 +233,7 @@ def train():
         loss_sum_g_list.append(tf.summary.scalar('2_g', loss_g))
         loss_sum_g_list.append(tf.summary.scalar('3_defocus', loss_defocus))
         loss_sum_g_list.append(tf.summary.scalar('4_perceptual', loss_perceptual))
-        loss_sum_g_list.append(tf.summary.scalar('5_auxilary', loss_aux))
+        #loss_sum_g_list.append(tf.summary.scalar('5_auxilary', loss_aux))
         loss_sum_g_list.append(tf.summary.scalar('6_binary', loss_binary))
     loss_sum_g = tf.summary.merge(loss_sum_g_list)
 
@@ -411,11 +411,6 @@ def train():
                 writer_scalar.add_summary(summary_loss_g, global_step)
                 writer_image.add_summary(summary_image, global_step)
 
-            # save_checkpoint
-            if epoch % config.TRAIN.write_ckpt_every == 0:
-                remove_file_end_with(ckpt_dir, '*.npz')
-                tl.files.save_npz_dict(save_vars, name = ckpt_dir + '/{}.npz'.format(tl.global_flag['mode']), sess = sess)
-
             # save samples
             if global_step != 0 and global_step % config.TRAIN.write_sample_every == 0:
                 synthetic_defocus_out, real_defocus_out, real_binary_out = sess.run([output_synthetic_defocus, output_real_defocus, output_real_binary], {patches_synthetic: synthetic_images_blur, patches_real: real_images_blur, labels_real_binary: real_binary_maps })
@@ -437,6 +432,11 @@ def train():
             writer_image.close()
             remove_file_end_with(log_dir_image, '*.image_log')
             writer_image.reopen()
+
+        if epoch % config.TRAIN.write_ckpt_every == 0:
+            #remove_file_end_with(ckpt_dir, '*.npz')
+            tl.files.save_npz_dict(save_vars, name = ckpt_dir + '/{}_{}.npz'.format(tl.global_flag['mode'], epoch), sess = sess)
+
 
 def evaluate():
     print('Evaluation Start')

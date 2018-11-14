@@ -83,7 +83,11 @@ def Vgg19_simple_api(rgb, reuse, scope, is_test = False):
             logits = PadLayer(network, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='pad6_1')
             logits = Conv2d(logits, n_filter=64, filter_size=(3, 3), strides=(1, 1), act=tf.nn.relu,padding='VALID', name='conv6_1')
 
-            size = get_size_of_tl_tensor(logits)
+            #size = get_size_of_tl_tensor(logits)
+            logits = logits.outputs
+            size = logits.get_shape().as_list()
+            logits = InputLayer(logits)
+
             logits = Conv2d(logits, n_filter=512, filter_size=(size[1], size[2]), strides=(1, 1), act=tf.nn.relu, padding='VALID', name='c_logits_1')
 
             logits = FlattenLayer(logits, name='flatten')

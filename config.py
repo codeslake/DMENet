@@ -6,7 +6,7 @@ config.TRAIN = edict()
 config.TEST = edict()
 
 ## Adam
-config.TRAIN.batch_size = 3
+config.TRAIN.batch_size = 2
 config.TRAIN.batch_size_init = 8
 #config.TRAIN.lr_init = 1e-5
 config.TRAIN.lr_init = 1e-4
@@ -38,6 +38,7 @@ config.TRAIN.lambda_perceptual = 1e-4
 ### TRAIN DATSET PATH
 #offset = '/Mango/Users/junyonglee/hub/datasets/'
 offset = '/Mango/Users/junyonglee/hub/datasets/DMENet/train/'
+#offset = '/root/DMENet/train/'
 config.TRAIN.synthetic_img_path = offset + '15_gaussian_many/image/'
 config.TRAIN.defocus_map_path = offset + '15_gaussian_many/blur_map/'
 config.TRAIN.defocus_map_norm_path = offset + '15_gaussian_many/blur_map_norm/'
@@ -52,6 +53,7 @@ config.TRAIN.real_img_no_label_path = offset + 'Flickr/'
 # offset = '/Mango/Users/junyonglee/hub/datasets/BlurDetection/test/'
 #offset = '/Jarvis/workspace/junyonglee/defocus_map_estimation/datasets/test/CUHK/'
 offset = '/Mango/Users/junyonglee/hub/datasets/DMENet/test/CUHK/'
+#offset = '/root/DMENet/test/CUHK/'
 # config.TEST.real_img_path = offset + 'image/'
 # config.TEST.real_binary_map_path = offset + 'gt/'
 config.TEST.real_img_path = offset + 'image/'
@@ -77,8 +79,8 @@ config.TRAIN.width = 240
 
 ## log & checkpoint & samples
 # every global step
-config.TRAIN.write_log_every = 5
-config.TRAIN.write_ckpt_every = 5
+config.TRAIN.write_log_every = 100
+config.TRAIN.write_ckpt_every = 1
 config.TRAIN.write_sample_every = 1000
 # every epoch
 config.TRAIN.refresh_image_log_every = 20
