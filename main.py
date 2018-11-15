@@ -472,7 +472,7 @@ def evaluate():
     # init vars
     sess.run(tf.global_variables_initializer())
     # load checkpoint
-    tl.files.load_and_assign_npz_dict(name = ckpt_dir + '/{}.npz'.format(tl.global_flag['mode']), sess = sess)
+    tl.files.load_and_assign_npz_dict(name = ckpt_dir + '/{}_1.npz'.format(tl.global_flag['mode']), sess = sess)
 
     for i in np.arange(len(test_blur_imgs)):
         test_blur_img = np.copy(test_blur_imgs[i])
@@ -488,7 +488,7 @@ def evaluate():
         defocus_map, feats_down_out, feats_up_out, refine_lists_out = sess.run([output_defocus, feats_down, feats_up, refine_lists], feed_dict)
 
         toc = time.time()
-        defocus_map = np.squeeze(1 - defocus_map)
+        defocus_map = np.squeeze(defocus_map)
         defocus_map_norm = defocus_map - defocus_map.min()
         defocus_map_norm = defocus_map_norm / defocus_map_norm.max()
 
@@ -552,13 +552,13 @@ def get_accuracy():
         tl.layers.initialize_global_variables(sess)
 
         # load checkpoint
-        tl.files.load_and_assign_npz_dict(name = ckpt_dir + '/{}.npz'.format(tl.global_flag['mode']), sess = sess)
+        tl.files.load_and_assign_npz_dict(name = ckpt_dir + '/{}_1.npz'.format(tl.global_flag['mode']), sess = sess)
 
         # run network
         print('processing {} ...'.format(test_blur_img_list[i]))
         processing_time = time.time()
         defocus_map, feats_down_out, feats_up_out, refine_lists_out = sess.run([output_defocus, feats_down, feats_up, refine_lists], {patches_blurred: np.expand_dims(test_blur_img, axis = 0)})
-        defocus_map = np.squeeze(1 - defocus_map)
+        defocus_map = np.squeeze(defocus_map)
         # defocus_map = defocus_map * 15.
         # defocus_map[np.where(defocus_map <= 1)] = 0.
         # defocus_map[np.where(defocus_map > 1)] = ((defocus_map[np.where(defocus_map > 1)] - 1) / 2.) / 7.
