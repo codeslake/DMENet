@@ -6,7 +6,7 @@ config.TRAIN = edict()
 config.TEST = edict()
 
 ## Adam
-config.TRAIN.batch_size = 2
+config.TRAIN.batch_size = 3
 config.TRAIN.batch_size_init = 8
 #config.TRAIN.lr_init = 1e-5
 config.TRAIN.lr_init = 1e-4
@@ -16,7 +16,7 @@ config.TRAIN.beta1 = 0.9
 
 # learning rate
 config.TRAIN.n_epoch = 10000
-config.TRAIN.n_epoch_init = 5
+config.TRAIN.n_epoch_init = 10
 config.TRAIN.lr_decay = 0.8
 config.TRAIN.decay_every = 20
 
@@ -37,7 +37,8 @@ config.TRAIN.lambda_perceptual = 1e-4
 
 ### TRAIN DATSET PATH
 #offset = '/Mango/Users/junyonglee/hub/datasets/'
-offset = '/Mango/Users/junyonglee/hub/datasets/DMENet/train/'
+#offset = '/Mango/Users/junyonglee/hub/datasets/DMENet/train/'
+offset = '/data1/junyonglee/defocus_map_estimation/DMENet/train/'
 #offset = '/root/DMENet/train/'
 config.TRAIN.synthetic_img_path = offset + '15_gaussian_many/image/'
 config.TRAIN.defocus_map_path = offset + '15_gaussian_many/blur_map/'
@@ -52,7 +53,8 @@ config.TRAIN.real_img_no_label_path = offset + 'Flickr/'
 ## CUHK
 # offset = '/Mango/Users/junyonglee/hub/datasets/BlurDetection/test/'
 #offset = '/Jarvis/workspace/junyonglee/defocus_map_estimation/datasets/test/CUHK/'
-offset = '/Mango/Users/junyonglee/hub/datasets/DMENet/test/CUHK/'
+#offset = '/Mango/Users/junyonglee/hub/datasets/DMENet/test/CUHK/'
+offset = '/data1/junyonglee/defocus_map_estimation/DMENet/test/CUHK/'
 #offset = '/root/DMENet/test/CUHK/'
 # config.TEST.real_img_path = offset + 'image/'
 # config.TEST.real_binary_map_path = offset + 'gt/'

@@ -233,8 +233,6 @@ def UNet_up(images, feats, is_train=False, reuse=False, scope = 'unet_up'):
 
         return tf.nn.sigmoid(n.outputs), [u4, u3, u2, u1, u0], gan_feat, refine_lists
 
-
-
 def feature_discriminator(feats, is_train=True, reuse=False, scope = 'feature_discriminator'):
     w_init = tf.contrib.layers.variance_scaling_initializer()
     w_init_sigmoid = tf.contrib.layers.xavier_initializer()
