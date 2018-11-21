@@ -443,7 +443,7 @@ def evaluate():
     date = datetime.datetime.now().strftime('%Y_%m_%d/%H-%M')
     # directories
     mode_dir = config.TRAIN.root_dir + '{}'.format(tl.global_flag['mode'])
-    ckpt_dir = mode_dir + '/fixed_ckpt'
+    ckpt_dir = mode_dir + '/checkpoint'
     sample_dir = mode_dir + '/samples/1_test/{}'.format(date)
     
     # input
@@ -472,7 +472,7 @@ def evaluate():
     # init vars
     sess.run(tf.global_variables_initializer())
     # load checkpoint
-    tl.files.load_and_assign_npz_dict(name = ckpt_dir + '/{}_1.npz'.format(tl.global_flag['mode']), sess = sess)
+    tl.files.load_and_assign_npz_dict(name = ckpt_dir + '/{}_17.npz'.format(tl.global_flag['mode']), sess = sess)
 
     for i in np.arange(len(test_blur_imgs)):
         test_blur_img = np.copy(test_blur_imgs[i])

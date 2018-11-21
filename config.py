@@ -54,17 +54,19 @@ config.TRAIN.real_img_no_label_path = offset + 'Flickr/'
 # offset = '/Mango/Users/junyonglee/hub/datasets/BlurDetection/test/'
 #offset = '/Jarvis/workspace/junyonglee/defocus_map_estimation/datasets/test/CUHK/'
 #offset = '/Mango/Users/junyonglee/hub/datasets/DMENet/test/CUHK/'
-offset = '/data1/junyonglee/defocus_map_estimation/DMENet/test/CUHK/'
 #offset = '/root/DMENet/test/CUHK/'
 # config.TEST.real_img_path = offset + 'image/'
 # config.TEST.real_binary_map_path = offset + 'gt/'
-config.TEST.real_img_path = offset + 'image/'
-config.TEST.real_binary_map_path = offset + 'gt/'
 
-## SYNDOF
-# offset = '/Jarvis/workspace/junyonglee/defocus_map_estimation/datasets/test/SYNDOF'
+# current
+# offset = '/data1/junyonglee/defocus_map_estimation/DMENet/test/CUHK/'
 # config.TEST.real_img_path = offset + 'image/'
 # config.TEST.real_binary_map_path = offset + 'gt/'
+
+# SYNDOF
+offset = '/Mango/Users/junyonglee/hub/datasets/test/syndof/'
+config.TEST.real_img_path = offset
+config.TEST.real_binary_map_path = offset
 
 ## RDF
 # offset = '/Jarvis/workspace/junyonglee/defocus_map_estimation/datasets/test/RTF'
