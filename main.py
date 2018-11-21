@@ -155,18 +155,18 @@ def train():
         with tf.variable_scope('defocus'):
             loss_defocus = tl.cost.mean_squared_error(output_synthetic_defocus, labels_synthetic_defocus, is_mean = True, name = 'synthetic')
             # loss_defocus = tl.cost.absolute_difference_error(output_synthetic_defocus, labels_synthetic_defocus, is_mean = True)
-        # with tf.variable_scope('auxilary'):
-        #     labels_layer = InputLayer(labels_synthetic_defocus)
-        #     loss_aux_1 = tl.cost.mean_squared_error(feats_synthetic_up_aux[0],
-        #         DownSampling2dLayer(labels_layer, (1/16., 1/16.), method = 1, align_corners=True).outputs, is_mean = True, name = 'aux1')
-        #     loss_aux_2 = tl.cost.mean_squared_error(feats_synthetic_up_aux[1],
-        #         DownSampling2dLayer(labels_layer, (1/8., 1/8.), method = 1, align_corners=True).outputs, is_mean = True, name = 'aux2')
-        #     loss_aux_3 = tl.cost.mean_squared_error(feats_synthetic_up_aux[2],
-        #         DownSampling2dLayer(labels_layer, (1/4., 1/4.), method = 1, align_corners=True).outputs, is_mean = True, name = 'aux3')
-        #     loss_aux_4 = tl.cost.mean_squared_error(feats_synthetic_up_aux[3],
-        #         DownSampling2dLayer(labels_layer, (1/2., 1/2.), method = 1, align_corners=True).outputs, is_mean = True, name = 'aux4')
-        #     loss_aux_5 = tl.cost.mean_squared_error(feats_synthetic_up_aux[4], labels_synthetic_defocus, is_mean = True, name = 'aux5')
-        #     loss_aux = tf.identity(loss_aux_1 + loss_aux_2 + loss_aux_3 + loss_aux_4 + loss_aux_5, name = 'total')
+        with tf.variable_scope('auxilary'):
+            labels_layer = InputLayer(labels_synthetic_defocus)
+            loss_aux_1 = tl.cost.mean_squared_error(feats_synthetic_up_aux[0],
+                DownSampling2dLayer(labels_layer, (1/16., 1/16.), method = 1, align_corners=True).outputs, is_mean = True, name = 'aux1')
+            loss_aux_2 = tl.cost.mean_squared_error(feats_synthetic_up_aux[1],
+                DownSampling2dLayer(labels_layer, (1/8., 1/8.), method = 1, align_corners=True).outputs, is_mean = True, name = 'aux2')
+            loss_aux_3 = tl.cost.mean_squared_error(feats_synthetic_up_aux[2],
+                DownSampling2dLayer(labels_layer, (1/4., 1/4.), method = 1, align_corners=True).outputs, is_mean = True, name = 'aux3')
+            loss_aux_4 = tl.cost.mean_squared_error(feats_synthetic_up_aux[3],
+                DownSampling2dLayer(labels_layer, (1/2., 1/2.), method = 1, align_corners=True).outputs, is_mean = True, name = 'aux4')
+            loss_aux_5 = tl.cost.mean_squared_error(feats_synthetic_up_aux[4], labels_synthetic_defocus, is_mean = True, name = 'aux5')
+            loss_aux = tf.identity(loss_aux_1 + loss_aux_2 + loss_aux_3 + loss_aux_4 + loss_aux_5, name = 'total')
 
         with tf.variable_scope('perceptual'):
             loss_synthetic_perceptual = tl.cost.mean_squared_error(perceptual_synthetic_out, perceptual_synthetic_label, is_mean = True, name = 'synthetic')
@@ -184,7 +184,7 @@ def train():
         #         if 'main_net' in kernel.name:
         #             l2_reg += tf.contrib.layers.l2_regularizer(1e-4)(kernel)
 
-        loss_main = tf.identity(loss_defocus + loss_binary + loss_perceptual + loss_g, name = 'total')
+        loss_main = tf.identity(loss_defocus + loss_binary + loss_perceptual + loss_aux + loss_g, name = 'total')
         loss_init = tf.identity(loss_defocus, name = 'loss_init')
 
     ## DEFINE OPTIMIZER
@@ -233,7 +233,7 @@ def train():
         loss_sum_g_list.append(tf.summary.scalar('2_g', loss_g))
         loss_sum_g_list.append(tf.summary.scalar('3_defocus', loss_defocus))
         loss_sum_g_list.append(tf.summary.scalar('4_perceptual', loss_perceptual))
-        #loss_sum_g_list.append(tf.summary.scalar('5_auxilary', loss_aux))
+        loss_sum_g_list.append(tf.summary.scalar('5_auxilary', loss_aux))
         loss_sum_g_list.append(tf.summary.scalar('6_binary', loss_binary))
     loss_sum_g = tf.summary.merge(loss_sum_g_list)
 
