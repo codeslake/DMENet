@@ -1,12 +1,6 @@
 # data
-*.avi
 *.sublime*
-samples/*
-models/*
-datasets/*
-inception_resnet*.ckpt
-demo/*
-*.npy
+pretrained/*
 
 # trash
 .dropbox
@@ -16,7 +10,6 @@ demo/*
 __pycache__/
 *.py[cod]
 *$py.class
-*.npy
 
 ### Vim ###
 [._]*.s[a-w][a-z]

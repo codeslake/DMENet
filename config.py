@@ -52,9 +52,9 @@ config.TRAIN.real_img_no_label_path = offset + 'Flickr/'
 ### TEST DATSET PATH
 ## CUHK
 # offset = '/Mango/Users/junyonglee/hub/datasets/BlurDetection/test/'
-#offset = '/Jarvis/workspace/junyonglee/defocus_map_estimation/datasets/test/CUHK/'
-#offset = '/Mango/Users/junyonglee/hub/datasets/DMENet/test/CUHK/'
-#offset = '/root/DMENet/test/CUHK/'
+# offset = '/Jarvis/workspace/junyonglee/defocus_map_estimation/datasets/test/CUHK/'
+# offset = '/Mango/Users/junyonglee/hub/datasets/DMENet/test/CUHK/'
+# offset = '/root/DMENet/test/CUHK/'
 # config.TEST.real_img_path = offset + 'image/'
 # config.TEST.real_binary_map_path = offset + 'gt/'
 
@@ -78,8 +78,6 @@ config.TEST.real_binary_map_path = offset
 ## train image size
 config.TRAIN.height = 240
 config.TRAIN.width = 240
-# config.TRAIN.height = 299
-# config.TRAIN.width = 299
 
 ## log & checkpoint & samples
 # every global step
@@ -90,8 +88,7 @@ config.TRAIN.write_sample_every = 1000
 config.TRAIN.refresh_image_log_every = 20
 
 # save dir
-#config.TRAIN.root_dir = '/data2/junyonglee/sharpness_assessment/'
-config.TRAIN.root_dir = '/Jarvis/logs/junyonglee/sharpness_assessment/'
+config.TRAIN.root_dir = '/Jarvis/logs/junyonglee/DMENet/'
 
 config.TRAIN.max_coc = 15.;
 

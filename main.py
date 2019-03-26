@@ -11,8 +11,6 @@ import datetime
 import time
 import shutil
 
-from flip_gradient import flip_gradient            
-
 batch_size = config.TRAIN.batch_size
 batch_size_init = config.TRAIN.batch_size_init
 lr_init = config.TRAIN.lr_init
@@ -79,7 +77,6 @@ def train():
     # test
     test_blur_img_list = np.array(sorted(tl.files.load_file_list(path = config.TEST.real_img_path, regx = '.*', printable = False)))
     test_gt_list = np.array(sorted(tl.files.load_file_list(path = config.TEST.real_binary_map_path, regx = '.*', printable = False)))
-    
     test_blur_imgs = read_all_imgs(test_blur_img_list, path = config.TEST.real_img_path, mode = 'RGB')
     test_gt_imgs = read_all_imgs(test_gt_list, path = config.TEST.real_binary_map_path, mode = 'GRAY')
 
