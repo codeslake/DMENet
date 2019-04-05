@@ -254,7 +254,7 @@ def train():
     ## INITIALIZE SESSION
     sess.run(tf.global_variables_initializer())
     ## LOAD VGG
-    vgg19_npy_path = "vgg19.npy"
+    vgg19_npy_path = "pretrained/vgg19.npy"
     if not os.path.isfile(vgg19_npy_path):
         print("Please download vgg19.npz from : https://github.com/machrisaa/tensorflow-vgg")
         exit()
@@ -409,15 +409,15 @@ def train():
                 writer_image.add_summary(summary_image, global_step)
 
             # save samples
-            if global_step != 0 and global_step % config.TRAIN.write_sample_every == 0:
-                synthetic_defocus_out, real_defocus_out, real_binary_out = sess.run([output_synthetic_defocus, output_real_defocus, output_real_binary], {patches_synthetic: synthetic_images_blur, patches_real: real_images_blur, labels_real_binary: real_binary_maps })
-                save_images(synthetic_images_blur, [ni, ni], sample_dir + '/{}_{}_1_synthetic_input.png'.format(epoch, global_step))
-                save_images(norm_image(synthetic_defocus_out), [ni, ni], sample_dir + '/{}_{}_2_synthetic_defocus_out_norm.png'.format(epoch, global_step))
-                save_images(norm_image(synthetic_defocus_maps), [ni, ni], sample_dir + '/{}_{}_3_synthetic_defocus_gt.png'.format(epoch, global_step))
-                save_images(real_images_blur, [ni, ni], sample_dir + '/{}_{}_4_real_input.png'.format(epoch, global_step))
-                save_images(norm_image(real_defocus_out), [ni, ni], sample_dir + '/{}_{}_5_real_defocus_out_norm.png'.format(epoch, global_step))
-                save_images(real_binary_out, [ni, ni], sample_dir + '/{}_{}_6_real_binary_out.png'.format(epoch, global_step))
-                save_images(real_binary_maps, [ni, ni], sample_dir + '/{}_{}_7_real_binary_gt.png'.format(epoch, global_step))
+            # if global_step != 0 and global_step % config.TRAIN.write_sample_every == 0:
+            #     synthetic_defocus_out, real_defocus_out, real_binary_out = sess.run([output_synthetic_defocus, output_real_defocus, output_real_binary], {patches_synthetic: synthetic_images_blur, patches_real: real_images_blur, labels_real_binary: real_binary_maps })
+            #     save_images(synthetic_images_blur, [ni, ni], sample_dir + '/{}_{}_1_synthetic_input.png'.format(epoch, global_step))
+            #     save_images(norm_image(synthetic_defocus_out), [ni, ni], sample_dir + '/{}_{}_2_synthetic_defocus_out_norm.png'.format(epoch, global_step))
+            #     save_images(norm_image(synthetic_defocus_maps), [ni, ni], sample_dir + '/{}_{}_3_synthetic_defocus_gt.png'.format(epoch, global_step))
+            #     save_images(real_images_blur, [ni, ni], sample_dir + '/{}_{}_4_real_input.png'.format(epoch, global_step))
+            #     save_images(norm_image(real_defocus_out), [ni, ni], sample_dir + '/{}_{}_5_real_defocus_out_norm.png'.format(epoch, global_step))
+            #     save_images(real_binary_out, [ni, ni], sample_dir + '/{}_{}_6_real_binary_out.png'.format(epoch, global_step))
+            #     save_images(real_binary_maps, [ni, ni], sample_dir + '/{}_{}_7_real_binary_gt.png'.format(epoch, global_step))
 
             total_loss += err_main
             n_iter += 1
