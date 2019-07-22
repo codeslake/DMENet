@@ -8,10 +8,8 @@ config.TEST = edict()
 ## Adam
 config.TRAIN.batch_size = 3
 config.TRAIN.batch_size_init = 8
-#config.TRAIN.lr_init = 1e-5
 config.TRAIN.lr_init = 1e-4
 config.TRAIN.lr_init_init = 1e-4
-#config.TRAIN.beta1 = 0.5
 config.TRAIN.beta1 = 0.9
 
 # learning rate
@@ -24,22 +22,16 @@ config.TRAIN.decay_every = 20
 config.TRAIN.lambda_adv = 1e-3
 
 ## discriminator lr coefficient
-#config.TRAIN.lambda_lr_d = 1e-2
 config.TRAIN.lambda_lr_d = 1
 
 ## binary loss coefficient
-#config.TRAIN.lambda_binary = 1e-2
 config.TRAIN.lambda_binary = 2e-2
 
 ## perceptual loss coefficient
-#config.TRAIN.lambda_perceptual = 1e-6
 config.TRAIN.lambda_perceptual = 1e-4
 
 ### TRAIN DATSET PATH
-#offset = '/Mango/Users/junyonglee/hub/datasets/'
-#offset = '/Mango/Users/junyonglee/hub/datasets/DMENet/train/'
 offset = '/data1/junyonglee/defocus_map_estimation/DMENet/train/'
-#offset = '/root/DMENet/train/'
 config.TRAIN.synthetic_img_path = offset + '15_gaussian_many/image/'
 config.TRAIN.defocus_map_path = offset + '15_gaussian_many/blur_map/'
 config.TRAIN.defocus_map_norm_path = offset + '15_gaussian_many/blur_map_norm/'
@@ -51,25 +43,17 @@ config.TRAIN.real_img_no_label_path = offset + 'Flickr/'
 
 ### TEST DATSET PATH
 ## CUHK
-# offset = '/Mango/Users/junyonglee/hub/datasets/BlurDetection/test/'
-# offset = '/Jarvis/workspace/junyonglee/defocus_map_estimation/datasets/test/CUHK/'
-# offset = '/Mango/Users/junyonglee/hub/datasets/DMENet/test/CUHK/'
-# offset = '/root/DMENet/test/CUHK/'
-# config.TEST.real_img_path = offset + 'image/'
-# config.TEST.real_binary_map_path = offset + 'gt/'
-
-# current
 # offset = '/data1/junyonglee/defocus_map_estimation/DMENet/test/CUHK/'
-# config.TEST.real_img_path = offset + 'image/'
-# config.TEST.real_binary_map_path = offset + 'gt/'
+# config.TEST.cuhk_img_path = offset + 'image/'
+# config.TEST.cuhk_binary_map_path = offset + 'gt/'
 
 # SYNDOF
-offset = '/Mango/Users/junyonglee/hub/datasets/test/syndof/'
-config.TEST.real_img_path = offset
-config.TEST.real_binary_map_path = offset
+# offset = '/data1/junyonglee/defocus_map_estimation/DMENet/test/SYNDOF/'
+# config.TEST.syndof_img_path = offset + 'image/'
+# config.TEST.syndof_defocus_map_path = offset + 'gt/'
 
 ## RDF
-# offset = '/Jarvis/workspace/junyonglee/defocus_map_estimation/datasets/test/RTF'
+# offset = '/data1/junyonglee/defocus_map_estimation/DMENet/test/RTF/'
 # config.TEST.real_img_path = offset + 'test/RTF/1/'
 # config.TEST.real_binary_map_path = offset + 'test/RTF/1/'
 # config.TEST.real_img_path = offset + 'test/syndof/'

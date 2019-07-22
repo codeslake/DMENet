@@ -49,30 +49,6 @@ def t_or_f(arg):
     else:
        pass 
 
-def activation_map(gray):
-    red = np.expand_dims(np.ones_like(gray), axis = 2)
-    green = np.expand_dims(np.ones_like(gray), axis = 2)
-    blue = np.expand_dims(np.ones_like(gray), axis = 2)
-    gray = np.expand_dims(gray, axis = 2)
-
-    red[(gray == 0.)] = 0.
-    green[(gray == 0.)] = 0.
-    blue[(gray == 0.)] = 0.
-
-    red[(gray <= 1./3)&(gray > 0.)] = 1.
-    green[(gray <= 1./3)&(gray > 0.)] = 3. * gray[(gray <= 1./3.)&(gray > 0.)]
-    blue[(gray <= 1./3)&(gray > 0.)] = 0.
-
-    red[(gray > 1./3)&(gray <= 2./3)] = -3. * (gray[(gray > 1./3)&(gray <= 2./3)] - 1./3.) + 1.
-    green[(gray > 1./3)&(gray <= 2./3)] = 1.
-    blue[(gray > 1./3)&(gray <= 2./3)] = 0.
-
-    red[(gray > 2./3)] = 0.
-    green[(gray > 2./3)] = -3. * (gray[(gray > 2./3)] - 2./3.) + 1.
-    blue[(gray > 2./3)] = 3. * (gray[(gray > 2./3)] - 2./3.)
-
-    return np.concatenate((red, green, blue), axis = 2) * 255.
-
 def _tf_fspecial_gauss(size, sigma):
     """Function to mimic the 'fspecial' gaussian MATLAB function
     """
@@ -89,83 +65,6 @@ def _tf_fspecial_gauss(size, sigma):
 
     g = tf.exp(-((x**2 + y**2)/(2.0*sigma**2)))
     return g / tf.reduce_sum(g)
-
-def tf_ssim(img1, img2, mean_metric = True, cs_map=False, size=9, sigma=0.5):
-    window = _tf_fspecial_gauss(size, sigma) # window shape [size, size]
-    K1 = 0.01
-    K2 = 0.03
-    L = 1  # depth of image (255 in case the image has a differnt scale)
-    C1 = (K1*L)**2
-    C2 = (K2*L)**2
-    C3 = C2/2.
-    mu1 = tf.nn.conv2d(img1, window, strides=[1,1,1,1], padding='VALID')
-    mu2 = tf.nn.conv2d(img2, window, strides=[1,1,1,1],padding='VALID')
-    mu1_sq = mu1*mu1
-    mu2_sq = mu2*mu2
-    mu1_mu2 = mu1*mu2
-    sigma1_sq = tf.nn.conv2d(img1*img1, window, strides=[1,1,1,1],padding='VALID') - mu1_sq
-    sigma2_sq = tf.nn.conv2d(img2*img2, window, strides=[1,1,1,1],padding='VALID') - mu2_sq
-    sigma12 = tf.nn.conv2d(img1*img2, window, strides=[1,1,1,1],padding='VALID') - mu1_mu2
-
-    l = (2 * mu1 * mu2 + C1)/(mu1_sq + mu2_sq + C1)
-    c = (2 * tf.sqrt(sigma1_sq) * tf.sqrt(sigma2_sq) + C2) / (sigma1_sq + sigma2_sq + C2)
-    #s = (sigma12 + C3)/(tf.sqrt(sigma1_sq) * tf.sqrt(sigma2_sq) + C3)
-    s = (sigma12**2 + C3)/(sigma1_sq * sigma2_sq + C3)
-    if cs_map:
-        value = ( l ** 0, (c ** 0) * s)
-    else:
-        '''
-        value = ((2*mu1_mu2 + C1)*(2*sigma12 + C2))/((mu1_sq + mu2_sq + C1)*
-                    (sigma1_sq + sigma2_sq + C2))
-        '''
-        value = s
-
-    if mean_metric:
-        value = tf.reduce_mean(value)
-
-    return value
-
-def tf_ms_ssim(img1, img2, batch_size, mean_metric=True, level=5):
-    #weight = [0.0448, 0.2856, 0.3001, 0.2363, 0.1333]
-    weight = [1., 1., 1., 1., 1.]
-
-    ml = []
-    mcs = []
-    image1 = img1
-    image2 = img2
-    for l in range(level):
-        l_map, cs_map = tf_ssim(image1, image2, cs_map=True, mean_metric=False)
-
-        l_map_mean = tf.reduce_mean(tf.reshape(l_map, [batch_size, -1]), axis=1)
-        cs_map_mean = tf.reduce_mean(tf.reshape(cs_map, [batch_size, -1]), axis=1)
-
-        #l_map_mean = tf.Print(l_map_mean, [l_map_mean], message = 'l_map_{}'.format(l), summarize = 10)
-        #cs_map_mean = tf.Print(cs_map_mean, [cs_map_mean], message = 'cs_map_{}'.format(l), summarize = 10)
-
-        ml.append(l_map_mean)
-        mcs.append(cs_map_mean)
-
-        image1 = tf.nn.avg_pool(image1, [1,2,2,1], [1,2,2,1], padding='SAME')
-        image2 = tf.nn.avg_pool(image2, [1,2,2,1], [1,2,2,1], padding='SAME')
-
-    # list to tensor of dim D+1
-    ml = tf.stack(ml, axis=0)
-    mcs = tf.stack(mcs, axis=0)
-
-    mat = np.copy(weight)
-    for i in np.arange(batch_size - 1):
-        mat = np.concatenate((mat, weight))
-    mat = np.reshape(mat, [batch_size, level])
-    mat = np.transpose(mat)
-
-    weight_mat = tf.constant(mat, shape=[level, batch_size], dtype=tf.float32)
-    #weight_mat = tf.Print(weight_mat, [weight_mat], message = 'w_mat', summarize = 50)
-
-    value = (ml[level-1]**tf.constant(weight[level-1], shape=[batch_size])) * tf.reduce_prod(mcs[0:level]**weight_mat)
-
-    if mean_metric:
-        value = tf.reduce_mean(value)
-    return value
 
 def refine_image(img):
     h, w = img.shape[:2]
@@ -197,10 +96,10 @@ def random_crop(images, resize_shape, is_gaussian_noise = False):
             image = add_gaussian_noise(image)
 
         cropped_image = tl.prepro.crop(image, wrg=w, hrg=h, is_random=True)
-        augmented_image = random_flip(cropped_image)
+        augmented_image = _random_flip(cropped_image)
         angles = np.array([1, 2, 3, 4])
         angle = np.random.choice(angles)
-        augmented_image = random_rotation(augmented_image, angle)
+        augmented_image = _random_rotation(augmented_image, angle)
         image = np.expand_dims(augmented_image, axis=0)
         
         images_list = np.copy(image) if i == 0 else np.concatenate((images_list, image), axis = 0)
@@ -237,10 +136,10 @@ def crop_pair_with_different_shape_images_2(images, labels, resize_shape, is_gau
 
         concatenated_images = np.concatenate((image, label), axis = 2)
         cropped_images = tl.prepro.crop(concatenated_images, wrg=w, hrg=h, is_random=True)
-        augmented_images = random_flip(cropped_images)
+        augmented_images = _random_flip(cropped_images)
         angles = np.array([1, 2, 3, 4])
         angle = np.random.choice(angles)
-        augmented_images = random_rotation(augmented_images, angle)
+        augmented_images = _random_rotation(augmented_images, angle)
 
         image = np.expand_dims(augmented_images[:, :, 0:3], axis=0)
         label = np.expand_dims(np.expand_dims(augmented_images[:, :, 3], axis=3), axis=0)
@@ -250,108 +149,6 @@ def crop_pair_with_different_shape_images_2(images, labels, resize_shape, is_gau
 
     return images_list, labels_list
 
-def crop_pair_with_different_shape_images_3(images, labels, labels2, resize_shape, is_gaussian_noise = False):
-    images_list = None
-    labels_list = None
-    labels2_list = None
-    h, w = resize_shape[:2]
-    max_size_limit = 800
-    
-    for i in np.arange(len(images)):
-        image = np.copy(images[i])
-        label = np.copy(labels[i])
-        label2 = np.copy(labels2[i])
-        shape = np.array(image.shape[:2])
-        
-        if shape.min() <= h:
-            ratio = resize_shape[shape.argmin()]/float(shape.min())
-            resize_w = int(math.floor(shape[1] * ratio)) + 1
-            resize_h = int(math.floor(shape[0] * ratio)) + 1
-            image = cv2.resize(image, (resize_w, resize_h))
-            label = np.expand_dims(cv2.resize(label[:, :, 0], (resize_w, resize_h)), axis = 2)
-            label2 = np.expand_dims(cv2.resize(label2[:, :, 0], (resize_w, resize_h)), axis = 2)
-
-        if shape.min() > max_size_limit:
-            ratio = max_size_limit/float(shape.min())
-            resize_w = int(math.floor(shape[1] * ratio)) + 1
-            resize_h = int(math.floor(shape[0] * ratio)) + 1
-            image = cv2.resize(image, (resize_w, resize_h))
-            label = np.expand_dims(cv2.resize(label[:, :, 0], (resize_w, resize_h)), axis = 2)
-            label2 = np.expand_dims(cv2.resize(label2[:, :, 0], (resize_w, resize_h)), axis = 2)
-
-        if is_gaussian_noise:
-            image = add_gaussian_noise(image)
-
-        concatenated_images = np.concatenate((image, label, label2), axis = 2)
-        cropped_images = tl.prepro.crop(concatenated_images, wrg=w, hrg=h, is_random=True)
-        augmented_images = random_flip(cropped_images)
-        angles = np.array([1, 2, 3, 4])
-        angle = np.random.choice(angles)
-        augmented_images = random_rotation(augmented_images, angle)
-        image = np.expand_dims(augmented_images[:, :, :3], axis=0)
-        label = np.expand_dims(np.expand_dims(augmented_images[:, :, 3], axis=3), axis=0)
-        label2 = np.expand_dims(np.expand_dims(augmented_images[:, :, 4], axis=3), axis=0)
-        
-        images_list = np.copy(image) if i == 0 else np.concatenate((images_list, image), axis = 0)
-        labels_list = np.copy(label) if i == 0 else np.concatenate((labels_list, label), axis = 0)
-        labels2_list = np.copy(label2) if i == 0 else np.concatenate((labels2_list, label2), axis = 0)
-
-    return images_list, labels_list, labels2_list
-
-def crop_pair_with_different_shape_images_4(images, labels, labels2, labels3, resize_shape, is_gaussian_noise = False):
-    images_list = None
-    labels_list = None
-    labels2_list = None
-    labels3_list = None
-    h, w = resize_shape[:2]
-    max_size_limit = 800
-    
-    for i in np.arange(len(images)):
-        image = np.copy(images[i])
-        label = np.copy(labels[i])
-        label2 = np.copy(labels2[i])
-        label3 = np.copy(labels3[i])
-        shape = np.array(image.shape[:2])
-        
-        if shape.min() <= h:
-            ratio = resize_shape[shape.argmin()]/float(shape.min())
-            resize_w = int(math.floor(shape[1] * ratio)) + 1
-            resize_h = int(math.floor(shape[0] * ratio)) + 1
-            image = cv2.resize(image, (resize_w, resize_h))
-            label = np.expand_dims(cv2.resize(label[:, :, 0], (resize_w, resize_h)), axis = 2)
-            label2 = np.expand_dims(cv2.resize(label2[:, :, 0], (resize_w, resize_h)), axis = 2)
-            label3 = np.expand_dims(cv2.resize(label3[:, :, 0], (resize_w, resize_h)), axis = 2)
-            
-        if shape.min() > max_size_limit:
-            ratio = max_size_limit/float(shape.min())
-            resize_w = int(math.floor(shape[1] * ratio)) + 1
-            resize_h = int(math.floor(shape[0] * ratio)) + 1
-            image = cv2.resize(image, (resize_w, resize_h))
-            label = np.expand_dims(cv2.resize(label[:, :, 0], (resize_w, resize_h)), axis = 2)
-            label2 = np.expand_dims(cv2.resize(label2[:, :, 0], (resize_w, resize_h)), axis = 2)
-            label3 = np.expand_dims(cv2.resize(label3[:, :, 0], (resize_w, resize_h)), axis = 2)
-                
-        if is_gaussian_noise:
-            image = add_gaussian_noise(image)
-
-        concatenated_images = np.concatenate((image, label, label2, label3), axis = 2)
-        cropped_images = tl.prepro.crop(concatenated_images, wrg=w, hrg=h, is_random=True)
-
-        augmented_images = random_flip(cropped_images)
-        angles = np.array([1, 2, 3, 4])
-        angle = np.random.choice(angles)
-        augmented_images = random_rotation(augmented_images, angle)
-        image = np.expand_dims(augmented_images[:, :, :3], axis=0)
-        label = np.expand_dims(np.expand_dims(augmented_images[:, :, 3], axis=3), axis=0)
-        label2 = np.expand_dims(np.expand_dims(augmented_images[:, :, 4], axis=3), axis=0)
-        label3 = np.expand_dims(np.expand_dims(augmented_images[:, :, 5], axis=3), axis=0)
-        
-        images_list = np.copy(image) if i == 0 else np.concatenate((images_list, image), axis = 0)
-        labels_list = np.copy(label) if i == 0 else np.concatenate((labels_list, label), axis = 0)
-        labels2_list = np.copy(label2) if i == 0 else np.concatenate((labels2_list, label2), axis = 0)
-        labels3_list = np.copy(label3) if i == 0 else np.concatenate((labels3_list, label3), axis = 0)
-
-    return images_list, labels_list, labels2_list, labels3_list
 def add_gaussian_noise(image):
     image = image.astype(np.float32)
     shape = image.shape[:2]
@@ -390,12 +187,12 @@ def add_gaussian_noise(image):
 
     # return noisy_image
 
-def random_flip(images):
+def _random_flip(images):
     flipped_images = tl.prepro.flip_axis(images, axis=0, is_random=True)
 
     return flipped_images
 
-def random_rotation(images, angle):
+def _random_rotation(images, angle):
     if angle != 4:
         rotated_images = np.rot90(images, angle)
     else:
@@ -403,17 +200,7 @@ def random_rotation(images, angle):
 
     return rotated_images
 
-def get_binary_maps(maps):
-    continuous_maps = maps
-    for i in np.arange(len(continuous_maps)):
-        continuous_map = continuous_maps[i]
-        continuous_map[np.where(continuous_map > continuous_map.min())] = 1
-        continuous_map[np.where(continuous_map == continuous_map.min())] = 0
-        continuous_maps[i] = continuous_map
-
-    return continuous_maps
-    
-def get_file_path(path, regex):
+def _get_file_path(path, regex):
     file_path = []
     for root, dirnames, filenames in os.walk(path):
         for i in np.arange(len(regex)):
@@ -423,7 +210,7 @@ def get_file_path(path, regex):
     return file_path
 
 def remove_file_end_with(path, regex):
-    file_paths = get_file_path(path, [regex])
+    file_paths = _get_file_path(path, [regex])
 
     for i in np.arange(len(file_paths)):
         os.remove(file_paths[i])
@@ -461,10 +248,6 @@ def norm_image(image, axis = (1, 2, 3)):
     image = image / np.amax(image, axis = axis, keepdims=True)
     return image
         
-def entry_stop_gradients(target, mask):
-    mask_h = tf.abs(mask-1)
-    return tf.stop_gradient(mask_h * target) + mask * target
-
 def get_disc_accuracy(logits, labels):
     acc = 0.
     for i in np.arange(len(logits)):

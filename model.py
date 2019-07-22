@@ -4,7 +4,7 @@ import numpy as np
 from tensorlayer.layers import *
 from reduce_gradient import reduce_gradient
 
-def Vgg19_simple_api(rgb, reuse, scope, is_test = False):
+def VGG19_down(rgb, reuse, scope, is_test = False):
     w_init_relu = tf.contrib.layers.variance_scaling_initializer()
     w_init_sigmoid = tf.contrib.layers.xavier_initializer()
     VGG_MEAN = [103.939, 116.779, 123.68]
@@ -12,7 +12,7 @@ def Vgg19_simple_api(rgb, reuse, scope, is_test = False):
         rgb_scaled = rgb * 255.0
         if tf.__version__ <= '0.11':
             red, green, blue = tf.split(3, 3, rgb_scaled)
-        else: # TF 1.0
+        else:
             red, green, blue = tf.split(rgb_scaled, 3, 3)
         if tf.__version__ <= '0.11':
             bgr = tf.concat(3, [
@@ -77,24 +77,17 @@ def Vgg19_simple_api(rgb, reuse, scope, is_test = False):
         d4 = network
 
         if is_test == False:
-            # for classification
-            # network_rg = InputLayer(reduce_gradient(network.outputs, 1e-2), 'gradient_reduced')
-            # logits = PadLayer(network_rg, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='pad6_1')
             logits = PadLayer(network, [[0, 0], [1, 1], [1, 1], [0, 0]], "Symmetric", name='pad6_1')
             logits = Conv2d(logits, n_filter=64, filter_size=(3, 3), strides=(1, 1), act=tf.nn.relu,padding='VALID', name='conv6_1')
 
-            #size = get_size_of_tl_tensor(logits)
             logits = logits.outputs
             size = logits.get_shape().as_list()
             logits = InputLayer(logits)
-
             logits = Conv2d(logits, n_filter=512, filter_size=(size[1], size[2]), strides=(1, 1), act=tf.nn.relu, padding='VALID', name='c_logits_1')
-
             logits = FlattenLayer(logits, name='flatten')
             logits = DenseLayer(logits, n_units=512, act=tf.nn.relu, W_init = w_init_relu, name='c_logits_1')
             logits = DenseLayer(logits, n_units=1, act=tf.identity, W_init = w_init_sigmoid, name='c_logits_2')
             
-            #network, features for defocusNet, feature for perceptual loss, logits for classification 
             return network, [d0.outputs, d1.outputs, d2.outputs, d3.outputs, d4.outputs], d3.outputs, logits.outputs
         else:
             return [d0.outputs, d1.outputs, d2.outputs, d3.outputs, d4.outputs]
@@ -102,7 +95,6 @@ def Vgg19_simple_api(rgb, reuse, scope, is_test = False):
 def UNet_up(images, feats, is_train=False, reuse=False, scope = 'unet_up'):
     w_init_relu = tf.contrib.layers.variance_scaling_initializer()
     w_init_sigmoid = tf.contrib.layers.xavier_initializer()
-    #g_init = tf.random_normal_initializer(1., 0.02)
     g_init = None
     lrelu = lambda x: tf.nn.leaky_relu(x, 0.2)
 
@@ -236,18 +228,12 @@ def UNet_up(images, feats, is_train=False, reuse=False, scope = 'unet_up'):
 def feature_discriminator(feats, is_train=True, reuse=False, scope = 'feature_discriminator'):
     w_init = tf.contrib.layers.variance_scaling_initializer()
     w_init_sigmoid = tf.contrib.layers.xavier_initializer()
-    b_init = None # tf.constant_initializer(value=0.0)
+    b_init = None
     g_init = None
     
     lrelu = lambda x: tf.nn.leaky_relu(x, 0.2)
     with tf.variable_scope(scope, reuse=reuse):
         n = InputLayer(feats, name='input_feature')
-
-        # n = Conv2d(n, 64, (4, 4), (2, 2), act=lrelu, padding='SAME', W_init=w_init, b_init=b_init, name='h0/c1')
-        # n = Conv2d(n, 128, (4, 4), (2, 2), act=lrelu, padding='SAME', W_init=w_init, b_init=b_init, name='h1/c1')
-        # n = Conv2d(n, 256, (4, 4), (2, 2), act=lrelu, padding='SAME', W_init=w_init, b_init=b_init, name='h2/c1')
-        # n = Conv2d(n, 512, (4, 4), (2, 2), act=lrelu, padding='SAME', W_init=w_init, b_init=b_init, name='h3/c1')
-        # n = Conv2d(n, 1, (4, 4), (2, 2), act=None, padding='SAME', W_init=w_init_sigmoid, b_init=b_init, name='h4/c1')
 
         n = Conv2d(n, 64, (4, 4), (2, 2), act=None, padding='SAME', W_init=w_init, b_init=b_init, name='h0/c1')
         n = BatchNormLayer(n, act=lrelu, is_train = is_train, gamma_init = g_init, name='h0/b1')#
@@ -266,8 +252,7 @@ def feature_discriminator(feats, is_train=True, reuse=False, scope = 'feature_di
 def Binary_Net(input_defocus, is_train=False, reuse=False, scope = 'Binary_Net'):
     w_init_relu = tf.contrib.layers.variance_scaling_initializer()
     w_init_sigmoid = tf.contrib.layers.xavier_initializer()
-    b_init = None # tf.constant_initializer(value=0.0)
-    #g_init = tf.random_normal_initializer(1., 0.02)
+    b_init = None
     g_init = None
     lrelu = lambda x: tf.nn.leaky_relu(x, 0.2)
     with tf.variable_scope(scope, reuse=reuse):
