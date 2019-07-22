@@ -2,7 +2,6 @@ import tensorflow as tf
 import tensorlayer as tl
 import numpy as np
 from tensorlayer.layers import *
-from reduce_gradient import reduce_gradient
 
 def VGG19_down(rgb, reuse, scope, is_test = False):
     w_init_relu = tf.contrib.layers.variance_scaling_initializer()

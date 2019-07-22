@@ -31,33 +31,20 @@ config.TRAIN.lambda_binary = 2e-2
 config.TRAIN.lambda_perceptual = 1e-4
 
 ### TRAIN DATSET PATH
-offset = '/data1/junyonglee/defocus_map_estimation/DMENet/train/'
-config.TRAIN.synthetic_img_path = offset + '15_gaussian_many/image/'
-config.TRAIN.defocus_map_path = offset + '15_gaussian_many/blur_map/'
-config.TRAIN.defocus_map_norm_path = offset + '15_gaussian_many/blur_map_norm/'
-config.TRAIN.synthetic_binary_map_path = offset + '15_gaussian_many/blur_map_binary/'
+offset = './datasets/DMENet/train/'
+config.TRAIN.synthetic_img_path = offset + 'SYNDOF/image/'
+config.TRAIN.defocus_map_path = offset + 'SYNDOF/blur_map/'
+config.TRAIN.defocus_map_norm_path = offset + 'SYNDOF/blur_map_norm/'
+config.TRAIN.synthetic_binary_map_path = offset + 'SYNDOF/blur_map_binary/'
 # Real
 config.TRAIN.real_img_path = offset + 'CUHK/image/'
 config.TRAIN.real_binary_map_path = offset + 'CUHK/gt/'
 config.TRAIN.real_img_no_label_path = offset + 'Flickr/'
 
 ### TEST DATSET PATH
-## CUHK
-# offset = '/data1/junyonglee/defocus_map_estimation/DMENet/test/CUHK/'
-# config.TEST.cuhk_img_path = offset + 'image/'
-# config.TEST.cuhk_binary_map_path = offset + 'gt/'
-
-# SYNDOF
-# offset = '/data1/junyonglee/defocus_map_estimation/DMENet/test/SYNDOF/'
-# config.TEST.syndof_img_path = offset + 'image/'
-# config.TEST.syndof_defocus_map_path = offset + 'gt/'
-
-## RDF
-# offset = '/data1/junyonglee/defocus_map_estimation/DMENet/test/RTF/'
-# config.TEST.real_img_path = offset + 'test/RTF/1/'
-# config.TEST.real_binary_map_path = offset + 'test/RTF/1/'
-# config.TEST.real_img_path = offset + 'test/syndof/'
-# config.TEST.real_binary_map_path = offset + 'test/syndof/'
+offset = './datasets/DMENet/test/CUHK/'
+config.TEST.cuhk_img_path = offset + 'image/'
+config.TEST.cuhk_binary_map_path = offset + 'gt/'
 
 ## train image size
 config.TRAIN.height = 240
@@ -72,7 +59,7 @@ config.TRAIN.write_sample_every = 1000
 config.TRAIN.refresh_image_log_every = 20
 
 # save dir
-config.TRAIN.root_dir = '/Jarvis/logs/junyonglee/DMENet/'
+config.TRAIN.root_dir = './logs/DMENet/'
 
 config.TRAIN.max_coc = 15.;
 

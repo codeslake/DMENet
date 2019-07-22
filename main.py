@@ -75,10 +75,10 @@ def train():
     train_real_img_no_label_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.real_img_no_label_path, regx = '.*', printable = False)))
 
     # test
-    test_blur_img_list = np.array(sorted(tl.files.load_file_list(path = config.TEST.real_img_path, regx = '.*', printable = False)))
-    test_gt_list = np.array(sorted(tl.files.load_file_list(path = config.TEST.real_binary_map_path, regx = '.*', printable = False)))
-    test_blur_imgs = read_all_imgs(test_blur_img_list, path = config.TEST.real_img_path, mode = 'RGB')
-    test_gt_imgs = read_all_imgs(test_gt_list, path = config.TEST.real_binary_map_path, mode = 'GRAY')
+    test_blur_img_list = np.array(sorted(tl.files.load_file_list(path = config.TEST.cuhk_img_path, regx = '.*', printable = False)))
+    test_gt_list = np.array(sorted(tl.files.load_file_list(path = config.TEST.cuhk_binary_map_path, regx = '.*', printable = False)))
+    test_blur_imgs = read_all_imgs(test_blur_img_list, path = config.TEST.cuhk_img_path, mode = 'RGB')
+    test_gt_imgs = read_all_imgs(test_gt_list, path = config.TEST.cuhk_binary_map_path, mode = 'GRAY')
 
     ## DEFINE MODEL
     # input
@@ -151,13 +151,13 @@ def train():
         with tf.variable_scope('auxilary'):
             labels_layer = InputLayer(labels_synthetic_defocus)
             loss_aux_1 = tl.cost.mean_squared_error(feats_synthetic_up_aux[0],
-                DownSampling2dLayer(labels_layer, (1/16., 1/16.), method = 1, align_corners=True).outputs, is_mean = True, name = 'aux1')
+                DownSampling2dLayer(labels_layer, (int(h / 16), int(w / 16)), is_scale = False, method = 1, align_corners=True).outputs, is_mean = True, name = 'aux1')
             loss_aux_2 = tl.cost.mean_squared_error(feats_synthetic_up_aux[1],
-                DownSampling2dLayer(labels_layer, (1/8., 1/8.), method = 1, align_corners=True).outputs, is_mean = True, name = 'aux2')
+                DownSampling2dLayer(labels_layer, (int(h / 8), int(w / 8)), is_scale = False, method = 1, align_corners=True).outputs, is_mean = True, name = 'aux2')
             loss_aux_3 = tl.cost.mean_squared_error(feats_synthetic_up_aux[2],
-                DownSampling2dLayer(labels_layer, (1/4., 1/4.), method = 1, align_corners=True).outputs, is_mean = True, name = 'aux3')
+                DownSampling2dLayer(labels_layer, (int(h / 4), int(w / 4)), is_scale = False, method = 1, align_corners=True).outputs, is_mean = True, name = 'aux3')
             loss_aux_4 = tl.cost.mean_squared_error(feats_synthetic_up_aux[3],
-                DownSampling2dLayer(labels_layer, (1/2., 1/2.), method = 1, align_corners=True).outputs, is_mean = True, name = 'aux4')
+                DownSampling2dLayer(labels_layer, (int(h / 2), int(w / 2)), is_scale = False, method = 1, align_corners=True).outputs, is_mean = True, name = 'aux4')
             loss_aux_5 = tl.cost.mean_squared_error(feats_synthetic_up_aux[4], labels_synthetic_defocus, is_mean = True, name = 'aux5')
             loss_aux = tf.identity(loss_aux_1 + loss_aux_2 + loss_aux_3 + loss_aux_4 + loss_aux_5, name = 'total')
 
@@ -277,7 +277,8 @@ def train():
             train_defocus_map_list = train_defocus_map_list[shuffle_index]
 
             epoch_time = time.time()
-            for idx in range(0, len(train_synthetic_img_list), batch_size_init):
+            #for idx in range(0, len(train_synthetic_img_list), batch_size_init):
+            for idx in range(0, 10):
                 step_time = time.time()
                 ## READ DATA
                 # read synthetic data
@@ -431,11 +432,12 @@ def evaluate():
     sample_dir = mode_dir + '/samples/1_test/{}'.format(date)
     
     # input
-    test_blur_img_list = np.array(sorted(tl.files.load_file_list(path = config.TEST.real_img_path, regx = '.*', printable = False)))
-    test_gt_list = np.array(sorted(tl.files.load_file_list(path = config.TEST.real_binary_map_path, regx = '.*', printable = False)))
+    path = config.TEST.cuhk_img_path
+    test_blur_img_list = np.array(sorted(tl.files.load_file_list(path = config.TEST.cuhk_img_path, regx = '.*', printable = False)))
+    test_gt_list = np.array(sorted(tl.files.load_file_list(path = config.TEST.cuhk_binary_map_path, regx = '.*', printable = False)))
     
-    test_blur_imgs = read_all_imgs(test_blur_img_list, path = config.TEST.real_img_path, mode = 'RGB')
-    test_gt_imgs = read_all_imgs(test_gt_list, path = config.TEST.real_binary_map_path, mode = 'GRAY')
+    test_blur_imgs = read_all_imgs(test_blur_img_list, path = config.TEST.cuhk_img_path, mode = 'RGB')
+    test_gt_imgs = read_all_imgs(test_gt_list, path = config.TEST.cuhk_binary_map_path, mode = 'GRAY')
     
     avg_time = 0.;
 
