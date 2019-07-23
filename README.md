@@ -9,7 +9,7 @@
 
 This repository contains the official TensorFlow implementation of the following paper:
 
-> **Deep Defocus Map Estimation using Domain Adaptation**
+> **Deep Defocus Map Estimation using Domain Adaptation**<br>
 > Junyong Lee (POSTECH), Sungkil Lee (Sungkyunkwan University), Sunghyun Cho (POSTECH) Seungyong Lee (POSTECH)
 > 
 > http://cg.postech.ac.kr/papers/2019_CVPR_JY.pdf
