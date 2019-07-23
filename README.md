@@ -64,6 +64,7 @@ The provided checkpoint file is the new checkpoint that shows the closest evalua
 ## BIBTEX
 If you find this code useful, please consider citing:
 
+```
 @InProceedings{Lee_2019_CVPR,
 author = {Lee, Junyong and Lee, Sungkil and Cho, Sunghyun and Lee, Seungyong},
 title = {Deep Defocus Map Estimation Using Domain Adaptation},
@@ -71,6 +72,7 @@ booktitle = {The IEEE Conference on Computer Vision and Pattern Recognition (CVP
 month = {June},
 year = {2019}
 }
+```
 
 ## License ##
 This software is being made available under the terms in the [LICENSE](LICENSE) file.
