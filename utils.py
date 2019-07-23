@@ -29,13 +29,10 @@ def get_images(file_name, path, mode):
         image = (scipy.misc.imread(path + file_name, mode='RGB')/255.).astype(np.float32)
     elif mode is 'GRAY':
         image = (scipy.misc.imread(path + file_name, mode='P')/255.).astype(np.float32)
-        image = np.expand_dims(1 - image, axis = 2)
+        image = np.expand_dims(image, axis = 2)
     elif mode is 'DEPTH':
         image = (np.float32(cv2.imread(path + file_name, cv2.IMREAD_UNCHANGED))/10.)[:, :, 1]
-        image[np.where(image < 1)] = 1
-        image = (image - 1) / 2. # 7
-        image = 1 - image / 7.
-        image = 1 - image
+        image = image / 15.
         image = np.expand_dims(image, axis = 2)
 
     return image
@@ -106,7 +103,7 @@ def random_crop(images, resize_shape, is_gaussian_noise = False):
 
     return images_list
 
-def crop_pair_with_different_shape_images_2(images, labels, resize_shape, is_gaussian_noise = False):
+def crop_pair_with_different_shape_images(images, labels, resize_shape, is_gaussian_noise = False):
     images_list = None
     labels_list = None
     h, w = resize_shape[:2]

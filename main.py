@@ -287,7 +287,7 @@ def train():
                 synthetic_defocus_maps = read_all_imgs(train_defocus_map_list[b_idx], path = config.TRAIN.defocus_map_path, mode = 'DEPTH')
 
                 synthetic_images_blur, synthetic_defocus_maps = \
-                         crop_pair_with_different_shape_images_2(synthetic_images_blur, synthetic_defocus_maps, [h, w], is_gaussian_noise = tl.global_flag['is_noise'])
+                         crop_pair_with_different_shape_images(synthetic_images_blur, synthetic_defocus_maps, [h, w], is_gaussian_noise = tl.global_flag['is_noise'])
                
                 err_init, lr, _ = \
                         sess.run([loss_init, learning_rate_init, optim_init], {patches_synthetic: synthetic_images_blur, labels_synthetic_defocus: synthetic_defocus_maps})
@@ -360,13 +360,13 @@ def train():
             synthetic_images_blur = read_all_imgs(train_synthetic_img_list[b_idx], path = config.TRAIN.synthetic_img_path, mode = 'RGB')
             synthetic_defocus_maps = read_all_imgs(train_defocus_map_list[b_idx], path = config.TRAIN.defocus_map_path, mode = 'DEPTH')
 
-            synthetic_images_blur, synthetic_defocus_maps = crop_pair_with_different_shape_images_2(synthetic_images_blur, synthetic_defocus_maps, [h, w], is_gaussian_noise = tl.global_flag['is_noise'])
+            synthetic_images_blur, synthetic_defocus_maps = crop_pair_with_different_shape_images(synthetic_images_blur, synthetic_defocus_maps, [h, w], is_gaussian_noise = tl.global_flag['is_noise'])
 
             # read real data #
             b_idx = (idx % len(train_real_img_list) + np.arange(batch_size)) % len(train_real_img_list)
             real_images_blur = read_all_imgs(train_real_img_list[b_idx], path = config.TRAIN.real_img_path, mode = 'RGB')
             real_binary_maps = read_all_imgs(train_real_binary_map_list[b_idx], path = config.TRAIN.real_binary_map_path, mode = 'GRAY')
-            real_images_blur, real_binary_maps = crop_pair_with_different_shape_images_2(real_images_blur, real_binary_maps, [h, w])
+            real_images_blur, real_binary_maps = crop_pair_with_different_shape_images(real_images_blur, real_binary_maps, [h, w])
             real_images_no_label_blur = read_all_imgs(train_real_img_no_label_list[b_idx], path = config.TRAIN.real_img_no_label_path, mode = 'RGB')
             real_images_no_label_blur = random_crop(real_images_no_label_blur, [h, w])
 
@@ -477,6 +477,7 @@ def evaluate():
         defocus_map = np.squeeze(defocus_map)
         defocus_map_norm = defocus_map - defocus_map.min()
         defocus_map_norm = defocus_map_norm / defocus_map_norm.max()
+        print(sample_dir)
 
         print('processing {} ... Done [{:.3f}s]'.format(test_blur_img_list[i], toc - tic))
         avg_time = avg_time + (toc - tic)

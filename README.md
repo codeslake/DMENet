@@ -27,14 +27,14 @@ All material related to our paper is available via the following links:
 | [Paper PDF](https://drive.google.com/open?id=1wmauOTscwrVs38NR2JfO4Xopt3isqiWT) |
 | [Supplementary Files](https://drive.google.com/drive/folders/17QECZR4YNOjJO7QrIHcK7MGkwG6t8UaB?usp=sharing) |
 | [Checkpoint Files](https://drive.google.com/open?id=19QPL2shfBRRZsYaJ1Gokv8NdogKHOVH0) |
-| [Datasets](https://drive.google.com/open?id=1DanUzF_R5y_9VDhDShPwWpf5gUzNvjiu)|
+| [Datasets](https://www.dropbox.com/s/s6ehxpvu9xxu9w8/datasets.zip?dl=0)|
 
 ## Preparing datasets for training
 Frist, download the dataset from [here](https://drive.google.com/open?id=1DanUzF_R5y_9VDhDShPwWpf5gUzNvjiu).
-Initially, datasets should be placed in `./datasets`, but one can change the offset in `config.py`.
+Initially, datasets should be placed in `./datasets/test` or `./datasets/train` (one can change the offset in `config.py`).
 
-## Preparing pretrained VGG19 (we need pretrained weights for the encoder) for training
-Download pretrained VGG19 checkpoint file from [here](https://drive.google.com/open?id=1vUUT0hV19_tYb-j-bNNCt81cPoAWk1Qj). Place the file in `./pretrained`.
+## Preparing pretrained VGG19 for training
+We need pretrained weights of VGG18 for the encoder part of DMENet. Download pretrained VGG19 checkpoint file from [here](https://drive.google.com/open?id=1vUUT0hV19_tYb-j-bNNCt81cPoAWk1Qj). Place the file in `./pretrained`.
 
 ## Training/Testing the network
 To train the network, type
@@ -45,16 +45,15 @@ To test the network, type
 ```bash
 python main.py --is_train False --mode [model name]
 ```
-other options
+Modify config.py for other options, such as
 ```bash
 --is_pretrain : ([True/False], pretrain the network with MSE loss first)
---delete_log : ([True/False], deletes checkpoint, summaries before start training)
+--delete_log : ([True/False], deletes logs such as checkpoint, summaries before training begins)
 ```
-modify config.py for other options
 
 ## Using pre-trained networks
 Download pretrained DMENet from [here](https://drive.google.com/open?id=14WWRd8I2gMEdHUkDGG-oPoLyKkt9D9OS).
-Place the file under `./log/DMENet/DMENet_BDCS/checkpoint` (one can change the offset in `./config.py`).
+Place the file under `./logs/DMENet_BDCS/checkpoint` (one can change the offset in `./config.py`).
 Then, run the network by typing,
 ```bash
 python main.py --is_train False --mode DMENet_BDCS
