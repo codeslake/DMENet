@@ -31,7 +31,7 @@ All material related to our paper is available via the following links:
 
 ## Preparing datasets for training
 Frist, download the dataset from [here](https://drive.google.com/open?id=1DanUzF_R5y_9VDhDShPwWpf5gUzNvjiu).
-Initially, datasets should be placed in `./datasets/test` or `./datasets/train` (one can change the offset in `config.py`).
+Initially, datasets should be placed in `./datasets` where each testing and training are separated as `./datasets/test` or `./datasets/train` (one may change the offset in `config.py`).
 
 ## Preparing pretrained VGG19 for training
 We need pretrained weights of VGG18 for the encoder part of DMENet. Download pretrained VGG19 checkpoint file from [here](https://drive.google.com/open?id=1vUUT0hV19_tYb-j-bNNCt81cPoAWk1Qj). Place the file in `./pretrained`.
@@ -52,14 +52,14 @@ Modify config.py for other options, such as
 ```
 
 ## Using pre-trained networks
-Download pretrained DMENet from [here](https://drive.google.com/open?id=14WWRd8I2gMEdHUkDGG-oPoLyKkt9D9OS).
-Place the file under `./logs/DMENet_BDCS/checkpoint` (one can change the offset in `./config.py`).
+Download pretrained weights for DMENet from [here](https://drive.google.com/open?id=14WWRd8I2gMEdHUkDGG-oPoLyKkt9D9OS).
+Place the file under `./logs/DMENet_BDCS/checkpoint` (one may change the offset in `./config.py`).
 Then, run the network by typing,
 ```bash
 python main.py --is_train False --mode DMENet_BDCS
 ```
-Please note that due to server issue, checkpoint file used for the paper is lost.
-The provided checkpoint file is the new checkpoint that shows as closest evaluation result as described in the paper.
+*Please note that due to server issue, checkpoint file used for the paper is lost.
+The provided checkpoint file is the new checkpoint that shows the closest evaluation results as the checkpoint used in the paper.*
 
 ## License ##
 This software is being made available under the terms in the [LICENSE](LICENSE) file.
