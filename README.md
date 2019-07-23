@@ -61,6 +61,17 @@ python main.py --is_train False --mode DMENet_BDCS
 *Please note that due to server issue, checkpoint file used for the paper is lost.
 The provided checkpoint file is the new checkpoint that shows the closest evaluation results as the checkpoint used in the paper.*
 
+## BIBTEX
+If you find this code useful, please consider citing:
+
+@InProceedings{Lee_2019_CVPR,
+author = {Lee, Junyong and Lee, Sungkil and Cho, Sunghyun and Lee, Seungyong},
+title = {Deep Defocus Map Estimation Using Domain Adaptation},
+booktitle = {The IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
+month = {June},
+year = {2019}
+}
+
 ## License ##
 This software is being made available under the terms in the [LICENSE](LICENSE) file.
 
