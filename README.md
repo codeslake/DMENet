@@ -34,7 +34,7 @@ Frist, download the dataset from [here](https://www.dropbox.com/s/s6ehxpvu9xxu9w
 Initially, datasets should be placed in `./datasets` where each testing and training are separated as `./datasets/test` or `./datasets/train` (one may change the offset in `config.py`).
 
 ## Preparing pretrained VGG19 for training
-We need pretrained weights of VGG18 for the encoder part of DMENet. Download pretrained VGG19 checkpoint file from [here](https://drive.google.com/file/d/1vUUT0hV19_tYb-j-bNNCt81cPoAWk1Qj/view).
+We need pretrained weights of VGG18 for the encoder part of DMENet. Download pretrained VGG19 checkpoint file from [here](https://www.dropbox.com/s/7ah1jwrmggog4q9/vgg19.zip?dl=0).
 
 ## Training/Testing the network
 To train the network, type
@@ -52,7 +52,7 @@ Modify config.py for other options, such as
 ```
 
 ## Using pre-trained networks
-Download pretrained weights for DMENet from [here](https://drive.google.com/open?id=14WWRd8I2gMEdHUkDGG-oPoLyKkt9D9OS).
+Download pretrained weights for DMENet from [here](https://www.dropbox.com/s/p1xlr5jgj7oemt1/DMENet_BDCS.zip?dl=0).
 Place the file under `./logs/DMENet_BDCS/checkpoint` (one may change the offset in `./config.py`).
 Then, run the network by typing,
 ```bash
