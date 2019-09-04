@@ -30,11 +30,11 @@ All material related to our paper is available via the following links:
 | [Datasets](https://www.dropbox.com/s/s6ehxpvu9xxu9w8/datasets.zip?dl=0)|
 
 ## Preparing datasets for training
-Frist, download the dataset from [here](https://drive.google.com/open?id=1DanUzF_R5y_9VDhDShPwWpf5gUzNvjiu).
+Frist, download the dataset from [here](https://www.dropbox.com/s/s6ehxpvu9xxu9w8/datasets.zip?dl=0).
 Initially, datasets should be placed in `./datasets` where each testing and training are separated as `./datasets/test` or `./datasets/train` (one may change the offset in `config.py`).
 
 ## Preparing pretrained VGG19 for training
-We need pretrained weights of VGG18 for the encoder part of DMENet. Download pretrained VGG19 checkpoint file from [here](https://drive.google.com/open?id=1vUUT0hV19_tYb-j-bNNCt81cPoAWk1Qj). Place the file in `./pretrained`.
+We need pretrained weights of VGG18 for the encoder part of DMENet. Download pretrained VGG19 checkpoint file from [here](https://drive.google.com/file/d/1vUUT0hV19_tYb-j-bNNCt81cPoAWk1Qj/view).
 
 ## Training/Testing the network
 To train the network, type
