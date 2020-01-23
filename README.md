@@ -40,11 +40,11 @@ We need pretrained weights of VGG18 for the encoder part of DMENet. Download pre
 ## Training/Testing the network
 To train the network, type
 ```bash
-python main.py --is_train True --mode [model name]
+python main.py --is_train True --mode DMENet_BDCS
 ```
 To test the network, type
 ```bash
-python main.py --is_train False --mode [model name]
+python main.py --is_train False --mode DMENet_BDCS
 ```
 Modify config.py for other options, such as
 ```bash
