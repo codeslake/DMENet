@@ -1,7 +1,7 @@
 ## DMENet &mdash; Official TensorFlow Implementation
 ![Python 3.6](https://img.shields.io/badge/python-3.6-green.svg?style=plastic)
 ![TensorFlow 1.13](https://img.shields.io/badge/tensorflow-1.13-green.svg?style=plastic)
-![TensorLayer 1.2.1](https://img.shields.io/badge/tensorlayer-1.2.1-green.svg?style=plastic)
+![TensorLayer 1.11.1](https://img.shields.io/badge/tensorlayer-1.11.1-green.svg?style=plastic)
 ![CUDA 10.0.130](https://img.shields.io/badge/CUDA-10.0.130-green.svg?style=plastic)
 ![License CC BY-NC](https://img.shields.io/badge/license-GNU_AGPv3-green.svg?style=plastic)
 
