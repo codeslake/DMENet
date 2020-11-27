@@ -113,6 +113,7 @@ def train():
             d_feature_logits_real, d_feature_real = feature_discriminator(feats_real_da, is_train = True, reuse = True, scope = scope)
             d_feature_logits_real_no_label, d_feature_real_no_label = feature_discriminator(feats_real_no_label_da, is_train = True, reuse = True, scope = scope)
             
+    # fixed
     with tf.variable_scope('perceptual') as scope:
         output_synthetic_defocus_3c = tf.concat([output_synthetic_defocus, output_synthetic_defocus, output_synthetic_defocus], axis = 3)
         net_vgg_perceptual, _, perceptual_synthetic_out, logits_perceptual_out = VGG19_down(output_synthetic_defocus_3c, reuse = False, scope = scope)
