@@ -32,8 +32,8 @@ All material related to our paper is available via the following links:
 
 | Link |
 | :-------------- |
-| [Paper PDF](https://www.dropbox.com/s/pmjhh1ocugagwyh/Lee_Deep_Defocus_Map_Estimation_Using_Domain_Adaptation_CVPR_2019_paper.pdf?dl=0) |
-| [Supplementary Files](https://www.dropbox.com/s/van0beau0npq3de/supp.zip?dl=0) |
+| [Paper PDF](https://openaccess.thecvf.com/content_CVPR_2019/papers/Lee_Deep_Defocus_Map_Estimation_Using_Domain_Adaptation_CVPR_2019_paper.pdf) |
+| [Supplementary Files](https://openaccess.thecvf.com/content_CVPR_2019/supplemental/Lee_Deep_Defocus_Map_CVPR_2019_supplemental.zip) |
 | [Checkpoint Files](https://www.dropbox.com/s/p1xlr5jgj7oemt1/DMENet_BDCS.zip?dl=0) |
 | [Datasets](https://www.dropbox.com/s/s6ehxpvu9xxu9w8/datasets.zip?dl=0)|
 
