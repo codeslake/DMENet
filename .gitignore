@@ -2,6 +2,7 @@
 *.sublime*
 pretrained/*
 utils/*
+*.zip
 
 # trash
 .dropbox
