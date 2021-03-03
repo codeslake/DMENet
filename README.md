@@ -46,6 +46,7 @@ We need pretrained weights of VGG18 for the encoder part of DMENet. Download pre
 
 ## Training/Testing the network
 > `docker pull codeslake/tensorflow-1.13.1:DME` might help setting the environment.
+> 
 > Note that the image is quite heavy, as it is not organized.
 
 To train the network, type
