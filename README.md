@@ -32,9 +32,9 @@ All material related to our paper is available via the following links:
 
 | Link |
 | :-------------- |
-| [Paper PDF](https://drive.google.com/open?id=1wmauOTscwrVs38NR2JfO4Xopt3isqiWT) |
-| [Supplementary Files](https://drive.google.com/drive/folders/17QECZR4YNOjJO7QrIHcK7MGkwG6t8UaB?usp=sharing) |
-| [Checkpoint Files](https://drive.google.com/open?id=19QPL2shfBRRZsYaJ1Gokv8NdogKHOVH0) |
+| [Paper PDF](https://www.dropbox.com/s/pmjhh1ocugagwyh/Lee_Deep_Defocus_Map_Estimation_Using_Domain_Adaptation_CVPR_2019_paper.pdf?dl=0) |
+| [Supplementary Files](https://www.dropbox.com/s/van0beau0npq3de/supp.zip?dl=0) |
+| [Checkpoint Files](https://www.dropbox.com/s/p1xlr5jgj7oemt1/DMENet_BDCS.zip?dl=0) |
 | [Datasets](https://www.dropbox.com/s/s6ehxpvu9xxu9w8/datasets.zip?dl=0)|
 
 ### Preparing datasets for training
