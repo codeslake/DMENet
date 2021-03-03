@@ -45,7 +45,8 @@ Initially, datasets should be placed in `./datasets` where each testing and trai
 We need pretrained weights of VGG18 for the encoder part of DMENet. Download pretrained VGG19 checkpoint file from [here](https://www.dropbox.com/s/7ah1jwrmggog4q9/vgg19.zip?dl=0).
 
 ## Training/Testing the network
-> `docker pull codeslake/tensorflow-1.13.1:DME` might help setting the environment. The image is heavy as it is not organized.
+> `docker pull codeslake/tensorflow-1.13.1:DME` might help setting the environment.
+> Note that the image is quite heavy, as it is not organized.
 
 To train the network, type
 ```bash
