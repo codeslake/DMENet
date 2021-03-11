@@ -3,7 +3,12 @@
 pretrained/*
 utils/*
 update.sh
+update_amend.sh
+jupyter/*
+sample/*
 *.zip
+ckpt/
+eval_self.py
 
 # trash
 .dropbox

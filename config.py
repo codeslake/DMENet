@@ -31,8 +31,8 @@ config.TRAIN.lambda_binary = 2e-2
 config.TRAIN.lambda_perceptual = 1e-4
 
 ### TRAIN DATSET PATH
-# offset = './datasets/DMENet/train/'
-offset = '/data1/juntonglee/defocus_map_estimation/DMENet/train/'
+offset = './datasets/DMENet/train/'
+#offset = '/data1/junyonglee/defocus_map_estimation/DMENet/train/'
 config.TRAIN.synthetic_img_path = offset + 'SYNDOF/image/'
 config.TRAIN.defocus_map_path = offset + 'SYNDOF/blur_map/'
 config.TRAIN.defocus_map_norm_path = offset + 'SYNDOF/blur_map_norm/'
@@ -43,8 +43,8 @@ config.TRAIN.real_binary_map_path = offset + 'CUHK/gt/'
 config.TRAIN.real_img_no_label_path = offset + 'Flickr/'
 
 ### TEST DATSET PATH
-# offset = './datasets/DMENet/test/CUHK/'
-offset = '/data1/junyonglee/defocus_map_estimation/DMENet/test/CUHK/'
+offset = './datasets/DMENet/test/CUHK/'
+#offset = '/data1/junyonglee/defocus_map_estimation/DMENet/test/CUHK/'
 config.TEST.cuhk_img_path = offset + 'image/'
 config.TEST.cuhk_binary_map_path = offset + 'gt/'
 
@@ -62,6 +62,7 @@ config.TRAIN.refresh_image_log_every = 20
 
 # save dir
 config.TRAIN.root_dir = './logs/'
+#config.TRAIN.root_dir = '/Jarvis/logs/junyonglee/DMENet_test/'
 
 config.TRAIN.max_coc = 15.;
 
