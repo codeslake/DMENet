@@ -2,6 +2,7 @@
 *.sublime*
 pretrained/*
 utils/*
+update.sh
 *.zip
 
 # trash
