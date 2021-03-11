@@ -15,26 +15,23 @@ This repository contains the official TensorFlow implementation of the following
 ## Getting Started
 ### Prerequisites
 1. Download the docker image and run container: `docker pull codeslake/tensorflow-1.13.1:DME`.
-    > **Note:**
-    >
-    > The image is heavy as it is not organized.
+2. Download [datasets](https://www.dropbox.com/s/s6ehxpvu9xxu9w8/datasets.zip?dl=0).
+    * Initially, datasets should be placed in `./datasets` where each testing and training are separated as `./datasets/test` or `./datasets/train`
 
-2. Datasets
-    * Download the dataset from [here](https://www.dropbox.com/s/s6ehxpvu9xxu9w8/datasets.zip?dl=0).
         > **Note:**
         >
-        > *Initially, datasets should be placed in `./datasets` where each testing and training are separated as `./datasets/test` or `./datasets/train`*
-        >
-        > *one may change the offset in `config.py`.*
+        > The offset path can be configured by `offset` in `config.py`.
 
-2. Pre-trained VGG19
-    * Download pretrained VGG19 checkpoint file from [here](https://www.dropbox.com/s/7ah1jwrmggog4q9/vgg19.zip?dl=0).
+3. Download [pretrained weights of DMENet](https://www.dropbox.com/s/p1xlr5jgj7oemt1/DMENet_BDCS.zip?dl=0).
+    * Place the file under `./logs/DMENet_BDCS/checkpoint`
+
+        > **Note:**
+        >
+        > The offset path can be configured by `config.TRAIN.root_dir` in `config.py`.
+
+2. Download [pretrained VGG19 weigths](https://www.dropbox.com/s/7ah1jwrmggog4q9/vgg19.zip?dl=0).
 
 ## Testing models of CVPR2019
-
-Download pretrained weights for DMENet from [here](https://www.dropbox.com/s/p1xlr5jgj7oemt1/DMENet_BDCS.zip?dl=0).
-Place the file under `./logs/DMENet_BDCS/checkpoint` (one may change the offset in `./config.py`).
-Then, run the network by typing,
 
 ```bash
 python main.py --is_train False --mode DMENet_BDCS
@@ -42,8 +39,8 @@ python main.py --is_train False --mode DMENet_BDCS
 
 > **Note:**
 >
-> *Please note that due to server issue, checkpoint file used for the paper is lost.
-The provided checkpoint file is the new checkpoint that shows the closest evaluation results as the checkpoint used in the paper.*
+> *Please note that due to server issue, the checkpoint used for the paper is lost.
+> The provided checkpoint is the new checkpoint that shows the closest evaluation results as the checkpoint used in the paper.*
 
 ## Training & testing the network
 
@@ -60,8 +57,8 @@ python main.py --is_train False --mode DMENet_BDCS
 ```
 
 * arguments
-    * `--is_pretrain`: Pretrain the network with MSE loss (`True` | `False`). Default: `False`
-    * `--delete_log`: Deletes logs such as checkpoints, scalar/image logs before training begins (`True` | `False`). Default: `False`
+    * `--is_pretrain`: Pretrain the network with the MSE loss (`True` | `False`). Default: `False`
+    * `--delete_log`: Deletes logs such as checkpoints and  scalar/image logs before training begins (`True` | `False`). Default: `False`
 
 
 ## Citation
