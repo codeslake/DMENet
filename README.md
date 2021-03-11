@@ -5,28 +5,30 @@
 ![CUDA 10.0.130](https://img.shields.io/badge/CUDA-10.0.130-green.svg?style=plastic)
 ![License CC BY-NC](https://img.shields.io/badge/license-GNU_AGPv3-green.svg?style=plastic)
 
+![Teaser image](./assets/figure.png)
+
 This repository contains the official TensorFlow implementation of the following paper:
 
 > **[Deep Defocus Map Estimation using Domain Adaptation](http://cg.postech.ac.kr/papers/2019_CVPR_JY.pdf)**<br>
 > Junyong Lee, Sungkil Lee, Sunghyun Cho and Seungyong Lee, CVPR2019
 
-![Teaser image](./assets/figure.png)
-
 ## Getting Started
 ### Prerequisites
 1. Download the docker image and run container: `docker pull codeslake/tensorflow-1.13.1:DME`.
-> **Note:**
->
-> The image is heavy as it is not organized.
+    > **Note:**
+    >
+    > The image is heavy as it is not organized.
 
-2. Preparing datasets for training
-Frist, download the dataset from [here](https://www.dropbox.com/s/s6ehxpvu9xxu9w8/datasets.zip?dl=0).
+2. Datasets
+    * Download the dataset from [here](https://www.dropbox.com/s/s6ehxpvu9xxu9w8/datasets.zip?dl=0).
+        > **Note:**
+        >
+        > *Initially, datasets should be placed in `./datasets` where each testing and training are separated as `./datasets/test` or `./datasets/train`*
+        >
+        > *one may change the offset in `config.py`.*
 
-Initially, datasets should be placed in `./datasets` where each testing and training are separated as `./datasets/test` or `./datasets/train` (one may change the offset in `config.py`).
-
-2. Preparing pretrained VGG19 for training
-Download pretrained VGG19 checkpoint file from [here](https://www.dropbox.com/s/7ah1jwrmggog4q9/vgg19.zip?dl=0).
-We need the pretrained VGG19 for the encoder of DMENet.
+2. Pre-trained VGG19
+    * Download pretrained VGG19 checkpoint file from [here](https://www.dropbox.com/s/7ah1jwrmggog4q9/vgg19.zip?dl=0).
 
 ## Testing models of CVPR2019
 
@@ -57,7 +59,7 @@ To test the network:
 python main.py --is_train False --mode DMENet_BDCS
 ```
 
-* options
+* arguments
     * `--is_pretrain`: Pretrain the network with MSE loss (`True` | `False`). Default: `False`
     * `--delete_log`: Deletes logs such as checkpoints, scalar/image logs before training begins (`True` | `False`). Default: `False`
 
