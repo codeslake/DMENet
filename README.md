@@ -1,10 +1,8 @@
 # DMENet: Deep Defocus Map Estimation Network
-![Python 3.6](https://img.shields.io/badge/Python-3.6.13-green.svg?style=plastic)
-![TensorFlow 1.13.1](https://img.shields.io/badge/tensorflow-1.15.0-green.svg?style=plastic)
-![TensorLayer 1.11.1](https://img.shields.io/badge/tensorlayer-1.11.1-green.svg?style=plastic)
-![CUDA 10.0.130](https://img.shields.io/badge/CUDA-10.0.130-green.svg?style=plastic)
-![CUDNN 7.6.](https://img.shields.io/badge/CUDNN-7.6.5-green.svg?style=plastic)
 ![License CC BY-NC](https://img.shields.io/badge/license-GNU_AGPv3-green.svg?style=plastic)
+
+***Checkout for the [demo](https://2JI532DIZN4TSYWF.anvil.app/BIEWGFSFTYML53VXPQZBRNTX)!***
+> *The demo server might occasionally be offline*
 
 ![Teaser image](./assets/figure.png)
 
@@ -13,11 +11,17 @@ This repository contains the official TensorFlow implementation of the following
 > **[Deep Defocus Map Estimation using Domain Adaptation](http://cg.postech.ac.kr/papers/2019_CVPR_JY.pdf)**<br>
 > Junyong Lee, Sungkil Lee, Sunghyun Cho and Seungyong Lee, CVPR2019
 
-<script src="https://anvil.works/embed.js" async></script>
-<iframe style="width:100%;" data-anvil-embed src="https://2JI532DIZN4TSYWF.anvil.app/BIEWGFSFTYML53VXPQZBRNTX"></iframe>
 
 ## Getting Started
 ### Prerequisites
+*Tested environment*
+
+![Python 3.6](https://img.shields.io/badge/Python-3.6.13-green.svg?style=plastic)
+![TensorFlow 1.13.1](https://img.shields.io/badge/tensorflow-1.15.0-green.svg?style=plastic)
+![TensorLayer 1.11.1](https://img.shields.io/badge/tensorlayer-1.11.1-green.svg?style=plastic)
+![CUDA 10.0.130](https://img.shields.io/badge/CUDA-10.0.130-green.svg?style=plastic)
+![CUDNN 7.6.](https://img.shields.io/badge/CUDNN-7.6.5-green.svg?style=plastic)
+
 1. Setup Environment 
     * Option 1. Docker
         * Download the docker image and run container: `docker pull codeslake/ubuntu18.04-conda:DME`.
@@ -36,22 +40,32 @@ This repository contains the official TensorFlow implementation of the following
 2. Install Requirement: `pip install -r requirments.txt`
 
 
-3. Download [datasets](https://www.dropbox.com/s/s6ehxpvu9xxu9w8/datasets.zip?dl=1).
-    * Initially, datasets should be placed in `./datasets` where each testing and training are separated as `./datasets/test` or `./datasets/train`
+3. Download and unzip [datasets](https://www.dropbox.com/s/s6ehxpvu9xxu9w8/datasets.zip?dl=1) under `[DATASET_ROOT]`.
+
+        ```
+        ├── [DATASET_ROOT]
+        │   ├── train
+        │   │   ├── SYNDOF
+        │   │   ├── CUHK
+        │   │   ├── Flickr
+        │   ├── test
+        │   │   ├── CUHK
+        │   │   ├── RTF
+        │   │   ├── SYNDOF
+        ```
 
         > **Note:**
         >
-        > The offset path can be configured by `offset` in `config.py`.
+        > `[DATASET_ROOT]` is currently set to `./datasets/DMENet/`. It can be specified by modifying `config.data_offset` in `./config.py`.
 
 4. Download [pretrained weights of DMENet](https://www.dropbox.com/s/04lg03ogsto1fmw/DMENet_BDCS.zip?dl=1).
-    * Place the file under `./logs/DMENet_BDCS/checkpoint`
+    * Place the file under `[LOG_DIR]/DMENet_BDCS/checkpoint`
 
         > **Note:**
         >
-        > The offset path can be configured by `config.TRAIN.root_dir` in `config.py`.
+        > `[LOG_DIR]` is currently set to `./logs/`. It can be specified by modifying `config.TRAIN.root_dir` in `./config.py`.
 
-5. Download [pretrained VGG19 weigths](https://www.dropbox.com/s/7ah1jwrmggog4q9/vgg19.zip?dl=1) (for training only).
-    * Unzip the weight as `pretrained/vgg19.npy`.
+5. Download [pretrained VGG19 weigths](https://www.dropbox.com/s/7ah1jwrmggog4q9/vgg19.zip?dl=1) and unzip as in `pretrined/vgg19.npy` (for training only).
 
 ## Testing models of CVPR2019
 
@@ -107,7 +121,7 @@ All material related to our paper is available via the following links:
 | :-------------- |
 | [Paper PDF](https://www.dropbox.com/s/pmjhh1ocugagwyh/Lee_Deep_Defocus_Map_Estimation_Using_Domain_Adaptation_CVPR_2019_paper.pdf?dl=1) |
 | [Supplementary Files](https://www.dropbox.com/s/van0beau0npq3de/supp.zip?dl=1) |
-| [Checkpoint Files](https://www.dropbox.com/s/p1xlr5jgj7oemt1/DMENet_BDCS.zip?dl=1) |
+| [Checkpoint Files](https://www.dropbox.com/s/04lg03ogsto1fmw/DMENet_BDCS.zip?dl=1) |
 | [Datasets](https://www.dropbox.com/s/s6ehxpvu9xxu9w8/datasets.zip?dl=1)|
 
 ## License

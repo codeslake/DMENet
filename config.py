@@ -31,22 +31,21 @@ config.TRAIN.lambda_binary = 2e-2
 config.TRAIN.lambda_perceptual = 1e-4
 
 ### TRAIN DATSET PATH
-offset = './datasets/DMENet/train/'
-#offset = '/data1/junyonglee/defocus_map_estimation/DMENet/train/'
-config.TRAIN.synthetic_img_path = offset + 'SYNDOF/image/'
-config.TRAIN.defocus_map_path = offset + 'SYNDOF/blur_map/'
-config.TRAIN.defocus_map_norm_path = offset + 'SYNDOF/blur_map_norm/'
-config.TRAIN.synthetic_binary_map_path = offset + 'SYNDOF/blur_map_binary/'
+data_offset = './datasets/DMENet/'
+#offset = '/data1/junyonglee/defocus_map_estimation/DMENet/'
+config.TRAIN.synthetic_img_path = data_offset + 'train/SYNDOF/image/'
+config.TRAIN.defocus_map_path = data_offset + 'train/SYNDOF/blur_map/'
+config.TRAIN.defocus_map_norm_path = data_offset + 'train/SYNDOF/blur_map_norm/'
+config.TRAIN.synthetic_binary_map_path = data_offset + 'train/SYNDOF/blur_map_binary/'
 # Real
-config.TRAIN.real_img_path = offset + 'CUHK/image/'
-config.TRAIN.real_binary_map_path = offset + 'CUHK/gt/'
-config.TRAIN.real_img_no_label_path = offset + 'Flickr/'
+config.TRAIN.real_img_path = data_offset + 'train/CUHK/image/'
+config.TRAIN.real_binary_map_path = data_offset + 'train/CUHK/gt/'
+config.TRAIN.real_img_no_label_path = data_offset + 'train/Flickr/'
 
 ### TEST DATSET PATH
-offset = './datasets/DMENet/test/CUHK/'
-#offset = '/data1/junyonglee/defocus_map_estimation/DMENet/test/CUHK/'
-config.TEST.cuhk_img_path = offset + 'image/'
-config.TEST.cuhk_binary_map_path = offset + 'gt/'
+#offset_test = '/data1/junyonglee/defocus_map_estimation/DMENet/'
+config.TEST.cuhk_img_path = data_offset + 'test/CUHK/image/'
+config.TEST.cuhk_binary_map_path = data_offset + 'test/CUHK/gt/'
 
 ## train image size
 config.TRAIN.height = 240
