@@ -42,28 +42,27 @@ This repository contains the official TensorFlow implementation of the following
 
 3. Download and unzip [datasets](https://www.dropbox.com/s/s6ehxpvu9xxu9w8/datasets.zip?dl=1) under `[DATASET_ROOT]`.
 
-        ```
-        ├── [DATASET_ROOT]
-        │   ├── train
-        │   │   ├── SYNDOF
-        │   │   ├── CUHK
-        │   │   ├── Flickr
-        │   ├── test
-        │   │   ├── CUHK
-        │   │   ├── RTF
-        │   │   ├── SYNDOF
-        ```
+    ```
+    ├── [DATASET_ROOT]
+    │   ├── train
+    │   │   ├── SYNDOF
+    │   │   ├── CUHK
+    │   │   ├── Flickr
+    │   ├── test
+    │   │   ├── CUHK
+    │   │   ├── RTF
+    │   │   ├── SYNDOF
+    ```
 
-        > **Note:**
-        >
-        > `[DATASET_ROOT]` is currently set to `./datasets/DMENet/`. It can be specified by modifying `config.data_offset` in `./config.py`.
+    > **Note:**
+    >
+    > `[DATASET_ROOT]` is currently set to `./datasets/DMENet/`. It can be specified by modifying `config.data_offset` in `./config.py`.
 
-4. Download [pretrained weights of DMENet](https://www.dropbox.com/s/04lg03ogsto1fmw/DMENet_BDCS.zip?dl=1).
-    * Place the file under `[LOG_DIR]/DMENet_BDCS/checkpoint`
+4. Download [pretrained weights of DMENet](https://www.dropbox.com/s/04lg03ogsto1fmw/DMENet_BDCS.zip?dl=1) and upznip it as `[LOG_DIR]/DMENet_BDCS/checkpoint`
 
-        > **Note:**
-        >
-        > `[LOG_DIR]` is currently set to `./logs/`. It can be specified by modifying `config.TRAIN.root_dir` in `./config.py`.
+    > **Note:**
+    >
+    > `[LOG_DIR]` is currently set to `./logs/`. It can be specified by modifying `config.TRAIN.root_dir` in `./config.py`.
 
 5. Download [pretrained VGG19 weigths](https://www.dropbox.com/s/7ah1jwrmggog4q9/vgg19.zip?dl=1) and unzip as in `pretrined/vgg19.npy` (for training only).
 
