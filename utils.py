@@ -32,10 +32,17 @@ def get_images(file_name, path, mode):
         image = np.expand_dims(image, axis = 2)
     elif mode is 'DEPTH':
         image = (np.float32(cv2.imread(path + file_name, cv2.IMREAD_UNCHANGED))/10.)[:, :, 1]
-        # if you train the network with shared SYNDOF. it's max COC is 15 and we saved it with the COC. In the paper, max_coc is 28. This is becuase the orignal SYNDOF visually had maximaum coc of 28 when it was generated with max_coc=15.
+        ## If you train the network with the SYNDOF dataset (thi is the original SYNDOF dataset) shared in this repository.
+        ## The SYNDOF's max COC is 15 and we saved the defocus map with the COC value.
+        ## The paper said max_coc is 28, which is becuase the orignal SYNDOF visually had maximaum coc of 28 when it was generated with max_coc=15.
+        
         image = image / 15
-        # if you train the network with new SYNDOF generated with the codes in "https://github.com/codeslake/SYNDOF". We save the sigma values in the code.
-        # image = image / 7 # sigma = max_coc-1/4, when max_coc = 29, max_sigma = 7
+        
+        ## If you train the network with the new SYNDOF dataset generated with the codes in "https://github.com/codeslake/SYNDOF".
+        ## We save the sigma value (max=7) in the code.
+        ## sigma = max_coc-1/4, when max_coc = 29, max_sigma = 7
+        
+        # image = image / 7
         
         image = np.expand_dims(image, axis = 2)
 

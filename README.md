@@ -8,8 +8,8 @@
 
 This repository contains the official TensorFlow implementation of the following paper:
 
-> **[Deep Defocus Map Estimation using Domain Adaptation](http://cg.postech.ac.kr/papers/2019_CVPR_JY.pdf)**<br>
-> Junyong Lee, Sungkil Lee, Sunghyun Cho and Seungyong Lee, CVPR2019
+> **[Deep Defocus Map Estimation using Domain Adaptation](https://openaccess.thecvf.com/content_CVPR_2019/papers/Lee_Deep_Defocus_Map_Estimation_Using_Domain_Adaptation_CVPR_2019_paper.pdf)**<br>
+> Junyong Lee, Sungkil Lee, Sunghyun Cho and Seungyong Lee, CVPR 2019
 
 
 ## Getting Started
@@ -33,11 +33,11 @@ This repository contains the official TensorFlow implementation of the following
         $ conda activate DMENet
         $ conda install cudatoolkit=10.0
         $ conda install cudnn=7.6
-        $ pip install tensorflow-gpu==1.13.1
+        $ pip install tensorflow-gpu==1.15
         $ pip install tensorlayer==1.11.1
         ```
 
-2. Install Requirement: `pip install -r requirments.txt`
+2. Install Requirement: `pip install -r requirements.txt`
 
 
 3. Download and unzip [datasets](https://www.dropbox.com/s/s6ehxpvu9xxu9w8/datasets.zip?dl=1) under `[DATASET_ROOT]`.
@@ -58,13 +58,13 @@ This repository contains the official TensorFlow implementation of the following
     >
     > `[DATASET_ROOT]` is currently set to `./datasets/DMENet/`. It can be specified by modifying `config.data_offset` in `./config.py`.
 
-4. Download [pretrained weights of DMENet](https://www.dropbox.com/s/04lg03ogsto1fmw/DMENet_BDCS.zip?dl=1) and upznip it as `[LOG_DIR]/DMENet_BDCS/checkpoint`
+4. Download [pretrained weights of DMENet](https://www.dropbox.com/s/04lg03ogsto1fmw/DMENet_BDCS.zip?dl=1) and unzip it as in `[LOG_DIR]/DMENet_BDCS/checkpoint/DMENet_BDCS.npz`
 
     > **Note:**
     >
     > `[LOG_DIR]` is currently set to `./logs/`. It can be specified by modifying `config.TRAIN.root_dir` in `./config.py`.
 
-5. Download [pretrained VGG19 weigths](https://www.dropbox.com/s/7ah1jwrmggog4q9/vgg19.zip?dl=1) and unzip as in `pretrined/vgg19.npy` (for training only).
+5. Download [pretrained VGG19 weights](https://www.dropbox.com/s/7ah1jwrmggog4q9/vgg19.zip?dl=1) and unzip as in `pretrined/vgg19.npy` (for training only).
 
 ## Testing models of CVPR2019
 
@@ -118,10 +118,11 @@ All material related to our paper is available via the following links:
 
 | Link |
 | :-------------- |
-| [Paper PDF](https://www.dropbox.com/s/pmjhh1ocugagwyh/Lee_Deep_Defocus_Map_Estimation_Using_Domain_Adaptation_CVPR_2019_paper.pdf?dl=1) |
+| [Paper PDF](https://openaccess.thecvf.com/content_CVPR_2019/papers/Lee_Deep_Defocus_Map_Estimation_Using_Domain_Adaptation_CVPR_2019_paper.pdf) |
 | [Supplementary Files](https://www.dropbox.com/s/van0beau0npq3de/supp.zip?dl=1) |
 | [Checkpoint Files](https://www.dropbox.com/s/04lg03ogsto1fmw/DMENet_BDCS.zip?dl=1) |
 | [Datasets](https://www.dropbox.com/s/s6ehxpvu9xxu9w8/datasets.zip?dl=1)|
+| [SYNDOF Generation Code](https://github.com/codeslake/SYNDOF)|
 
 ## License
 This software is being made available under the terms in the [LICENSE](LICENSE) file.
