@@ -11,7 +11,6 @@ This repository contains the official TensorFlow implementation of the following
 > **[Deep Defocus Map Estimation using Domain Adaptation](https://openaccess.thecvf.com/content_CVPR_2019/papers/Lee_Deep_Defocus_Map_Estimation_Using_Domain_Adaptation_CVPR_2019_paper.pdf)**<br>
 > Junyong Lee, Sungkil Lee, Sunghyun Cho and Seungyong Lee, CVPR 2019
 
-
 ## Getting Started
 ### Prerequisites
 *Tested environment*
@@ -27,7 +26,7 @@ This repository contains the official TensorFlow implementation of the following
         * Download the docker image and run container: `docker pull codeslake/ubuntu18.04-conda:DME`.
         * Inside container, activate `DMENet` environment (*i.e.*, `conda activate DMENet`).
 
-    * Option 2. Manual (conda should be installed)
+    * Option 2. Manual installation (conda should be installed)
         ```bash
         $ conda create --name DMENet python=3.6
         $ conda activate DMENet
@@ -38,7 +37,6 @@ This repository contains the official TensorFlow implementation of the following
         ```
 
 2. Install Requirement: `pip install -r requirements.txt`
-
 
 3. Download and unzip [datasets](https://www.dropbox.com/s/s6ehxpvu9xxu9w8/datasets.zip?dl=1) under `[DATASET_ROOT]`.
 
@@ -56,7 +54,7 @@ This repository contains the official TensorFlow implementation of the following
 
     > **Note:**
     >
-    > `[DATASET_ROOT]` is currently set to `./datasets/DMENet/`. It can be specified by modifying `config.data_offset` in `./config.py`.
+    > `[DATASET_ROOT]` is currently set to `./datasets/`. It can be specified by modifying `config.data_offset` in `./config.py`.
 
 4. Download [pretrained weights of DMENet](https://www.dropbox.com/s/04lg03ogsto1fmw/DMENet_BDCS.zip?dl=1) and unzip it as in `[LOG_DIR]/DMENet_BDCS/checkpoint/DMENet_BDCS.npz`
 
@@ -84,6 +82,10 @@ To train the network:
 ```bash
 python main.py --is_train True --mode DMENet_BDCS
 ```
+
+> **Note:**
+>
+> If you train DMENet with newly generated SYNDOF dataset from [this repo](https://github.com/codeslake/SYNDOF), comment [this line](https://github.com/codeslake/DMENet/blob/master/utils.py#L39) and uncomment [this line](https://github.com/codeslake/DMENet/blob/master/utils.py#L45) before the training.
 
 To test the network:
 

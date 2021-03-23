@@ -12,6 +12,8 @@ sample/*
 ckpt/
 eval_self.py
 .nfs*
+datasets/*
+logs/*
 
 # trash
 .dropbox

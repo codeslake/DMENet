@@ -31,7 +31,7 @@ config.TRAIN.lambda_binary = 2e-2
 config.TRAIN.lambda_perceptual = 1e-4
 
 ### TRAIN DATSET PATH
-data_offset = './datasets/DMENet/'
+data_offset = './datasets/'
 #offset = '/data1/junyonglee/defocus_map_estimation/DMENet/'
 config.TRAIN.synthetic_img_path = data_offset + 'train/SYNDOF/image/'
 config.TRAIN.defocus_map_path = data_offset + 'train/SYNDOF/blur_map/'
@@ -46,6 +46,12 @@ config.TRAIN.real_img_no_label_path = data_offset + 'train/Flickr/'
 #offset_test = '/data1/junyonglee/defocus_map_estimation/DMENet/'
 config.TEST.cuhk_img_path = data_offset + 'test/CUHK/image/'
 config.TEST.cuhk_binary_map_path = data_offset + 'test/CUHK/gt/'
+config.TEST.SYNDOF_img_path = data_offset + 'test/SYNDOF/image/'
+config.TEST.SYNDOF_gt_map_path = data_offset + 'test/SYNDOF/gt/'
+config.TEST.RTF_img_path = data_offset + 'test/RTF/image/'
+config.TEST.RTF_gt_map_path = data_offset + 'test/RTF/gt/'
+config.TEST.random_img_path = data_offset + 'test/random/'
+
 
 ## train image size
 config.TRAIN.height = 240
@@ -70,3 +76,13 @@ def log_config(path, cfg):
         f.write('================================================\n')
         f.write(json.dumps(cfg, indent=4))
         f.write('\n================================================\n')
+
+def get_eval_path(test_set, cfg):
+    if test_set == 'CUHK':
+        return cfg.TEST.cuhk_img_path, cfg.TEST.cuhk_binary_map_path
+    elif test_set == 'SYNDOF':
+        return cfg.TEST.SYNDOF_img_path, cfg.TEST.SYNDOF_gt_map_path
+    elif test_set == 'RTF':
+        return cfg.TEST.RTF_img_path, cfg.TEST.RTF_gt_map_path
+    elif test_set == 'random':
+        return cfg.TEST.random_img_path, None

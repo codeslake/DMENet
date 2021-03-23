@@ -1,4 +1,4 @@
-from config import config, log_config
+from config import config, log_config, get_eval_path
 from utils import *
 from model import *
 
@@ -434,21 +434,24 @@ def evaluate():
     sample_dir = mode_dir + '/samples/1_test/{}'.format(date)
     
     # input
-    path = config.TEST.cuhk_img_path
-    test_blur_img_list = np.array(sorted(tl.files.load_file_list(path = config.TEST.cuhk_img_path, regx = '.*', printable = False)))
-    test_gt_list = np.array(sorted(tl.files.load_file_list(path = config.TEST.cuhk_binary_map_path, regx = '.*', printable = False)))
+    # input_path = config.TEST.cuhk_img_path if tl.global_flag['test_input_path'] is None else tl.global_flag['test_input_path']
+    # gt_path = config.TEST.cuhk_binary_map_path if tl.global_flag['test_gt_path'] is None else tl.global_flag['test_gt_path']
+    input_path, gt_path = get_eval_path(tl.global_flag['test_set'], config)
+
+    test_blur_img_list = np.array(sorted(tl.files.load_file_list(path = input_path, regx = '.*', printable = False)))
+    test_blur_imgs = read_all_imgs(test_blur_img_list, path = input_path, mode = 'RGB')
+
+    if gt_path is not None:
+        test_gt_list = np.array(sorted(tl.files.load_file_list(path = config.TEST.cuhk_binary_map_path, regx = '.*', printable = False)))
+        test_gt_imgs = read_all_imgs(test_gt_list, path = config.TEST.cuhk_binary_map_path, mode = 'GRAY')
     
-    test_blur_imgs = read_all_imgs(test_blur_img_list, path = config.TEST.cuhk_img_path, mode = 'RGB')
-    test_gt_imgs = read_all_imgs(test_gt_list, path = config.TEST.cuhk_binary_map_path, mode = 'GRAY')
-    
-    avg_time = 0.;
+    avg_time = 0.
 
     # define session
     sess = tf.Session(config = tf.ConfigProto(allow_soft_placement = True, log_device_placement = False))
     # define model
     with tf.variable_scope('input'):
         patches_blurred = tf.placeholder('float32', [1, None, None, 3], name = 'input_patches')
-        labels = tf.placeholder('float32', [1, None, None, 1], name = 'labels')
 
     with tf.variable_scope('main_net') as scope:
         with tf.variable_scope('defocus_net') as scope:
@@ -466,21 +469,26 @@ def evaluate():
         test_blur_img = np.copy(test_blur_imgs[i])
         test_blur_img = refine_image(test_blur_img)
 
-        test_gt_img = np.copy(test_gt_imgs[i])
-        test_gt_img = refine_image(test_gt_img)
+        if gt_path is not None:
+            test_gt_img = np.copy(test_gt_imgs[i])
+            test_gt_img = refine_image(test_gt_img)
 
         # run network
         print('processing {} ...'.format(test_blur_img_list[i]))
         tic = time.time()
-        feed_dict = {patches_blurred: np.expand_dims(test_blur_img, axis = 0), labels: np.expand_dims(test_gt_img, axis = 0)}
+        feed_dict = {patches_blurred: np.expand_dims(test_blur_img, axis = 0)}
         defocus_map, feats_down_out, feats_up_out, refine_lists_out = sess.run([output_defocus, feats_down, feats_up, refine_lists], feed_dict)
 
         toc = time.time()
         defocus_map = np.squeeze(defocus_map)
         defocus_map_norm = defocus_map - defocus_map.min()
         defocus_map_norm = defocus_map_norm / defocus_map_norm.max()
-        print(sample_dir)
 
+        sigma_map = ((defocus_map * 15) - 1) / 2
+        sigma_map[np.where(sigma_map < 0)] = 0
+        sigma_map = sigma_map / 7.
+
+        print(sample_dir)
         print('processing {} ... Done [{:.3f}s]'.format(test_blur_img_list[i], toc - tic))
         avg_time = avg_time + (toc - tic)
         
@@ -488,15 +496,19 @@ def evaluate():
         tl.files.exists_or_mkdir(sample_dir + '/image')
         tl.files.exists_or_mkdir(sample_dir + '/out')
         tl.files.exists_or_mkdir(sample_dir + '/out_norm')
-        tl.files.exists_or_mkdir(sample_dir + '/gt')
+        tl.files.exists_or_mkdir(sample_dir + '/sigma_map_7_norm') # when you read, multipy the image by 7 to get sigma
         scipy.misc.toimage(test_blur_img, cmin = 0., cmax = 1.).save(sample_dir + '/{0:04d}_1_input.png'.format(i))
         scipy.misc.toimage(test_blur_img, cmin = 0., cmax = 1.).save(sample_dir + '/image/{0:04d}.png'.format(i))
         scipy.misc.toimage(defocus_map, cmin = 0., cmax = 1.).save(sample_dir + '/{0:04d}_2_defocus_map_out.png'.format(i))
         scipy.misc.toimage(defocus_map, cmin = 0., cmax = 1.).save(sample_dir + '/out/{0:04d}.png'.format(i))
         scipy.misc.toimage(defocus_map_norm, cmin = 0., cmax = 1.).save(sample_dir + '/{0:04d}_3_defocus_map_norm_out.png'.format(i))
         scipy.misc.toimage(defocus_map_norm, cmin = 0., cmax = 1.).save(sample_dir + '/out_norm/{0:04d}.png'.format(i))
-        scipy.misc.toimage(np.squeeze(1 - refine_image(test_gt_imgs[i])), cmin = 0., cmax = 1.).save(sample_dir + '/{0:04d}_5_binary_map_gt.png'.format(i))
-        scipy.misc.toimage(np.squeeze(1 - refine_image(test_gt_imgs[i])), cmin = 0., cmax = 1.).save(sample_dir + '/gt/{0:04d}.png'.format(i))
+        scipy.misc.toimage(sigma_map, cmin = 0., cmax = 1.).save(sample_dir + '/sigma_map_7_norm/{0:04d}.png'.format(i))
+
+        if gt_path is not None:
+            tl.files.exists_or_mkdir(sample_dir + '/gt')
+            scipy.misc.toimage(np.squeeze(1 - refine_image(test_gt_imgs[i])), cmin = 0., cmax = 1.).save(sample_dir + '/{0:04d}_5_binary_map_gt.png'.format(i))
+            scipy.misc.toimage(np.squeeze(1 - refine_image(test_gt_imgs[i])), cmin = 0., cmax = 1.).save(sample_dir + '/gt/{0:04d}.png'.format(i))
 
     avg_time = avg_time / len(test_blur_imgs)
     print('averge time: {:.3f}s'.format(avg_time))
@@ -511,6 +523,7 @@ if __name__ == '__main__':
     parser.add_argument('--is_noise', type = str , default = 'false', help = 'whether to add noise to synthetic images')
     parser.add_argument('--delete_log', type = str , default = 'false', help = 'whether to delete log or not')
     parser.add_argument('--is_acc', type = str , default = 'false', help = 'whether to train or not')
+    parser.add_argument('--test_set', type = str , default = None, help = 'test_set CUHK|SYNDOF|RTF|random')
 
     args = parser.parse_args()
 
@@ -523,6 +536,7 @@ if __name__ == '__main__':
     tl.global_flag['is_acc'] = t_or_f(args.is_acc)
 
 
+
     if tl.global_flag['is_train']:
         #tl.logging.set_verbosity(tl.logging.INFO)
         train()
@@ -530,5 +544,7 @@ if __name__ == '__main__':
         get_accuracy()
     else:
         #tl.logging.set_verbosity(tl.logging.INFO)
+        tl.global_flag['test_set'] = args.test_set
+
         evaluate()
 
