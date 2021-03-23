@@ -14,6 +14,7 @@ eval_self.py
 .nfs*
 datasets/*
 logs/*
+backup/*
 
 # trash
 .dropbox

@@ -10,6 +10,7 @@ import matplotlib
 import datetime
 import time
 import shutil
+import os
 
 batch_size = config.TRAIN.batch_size
 batch_size_init = config.TRAIN.batch_size_init
@@ -42,7 +43,7 @@ def train():
     log_dir_image_init = mode_dir + '/log/image_init'
     log_dir_scalar = mode_dir + '/log/scalar'
     log_dir_image = mode_dir + '/log/image'
-    sample_dir = mode_dir + '/samples/0_train'
+    sample_dir = mode_dir + '/samples/train'
     config_dir = mode_dir + '/config'
 
     if tl.global_flag['delete_log']:
@@ -67,7 +68,7 @@ def train():
 
     ## DEFINE SESSION
     sess = tf.Session(config = tf.ConfigProto(allow_soft_placement = True, log_device_placement = False))
-    
+
     ## READ DATASET LIST
     # train
     train_real_img_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.real_img_path, regx = '.*', printable = False)))
@@ -112,7 +113,7 @@ def train():
             d_feature_logits_synthetic, d_feature_synthetic = feature_discriminator(feats_synthetic_da, is_train = True, reuse = False, scope = scope)
             d_feature_logits_real, d_feature_real = feature_discriminator(feats_real_da, is_train = True, reuse = True, scope = scope)
             d_feature_logits_real_no_label, d_feature_real_no_label = feature_discriminator(feats_real_no_label_da, is_train = True, reuse = True, scope = scope)
-            
+
     # fixed
     with tf.variable_scope('perceptual') as scope:
         output_synthetic_defocus_3c = tf.concat([output_synthetic_defocus, output_synthetic_defocus, output_synthetic_defocus], axis = 3)
@@ -198,7 +199,7 @@ def train():
     if tl.global_flag['is_pretrain']:
         writer_scalar_init = tf.summary.FileWriter(log_dir_scalar_init, sess.graph, flush_secs=30, filename_suffix = '.loss_log_init')
         writer_image_init = tf.summary.FileWriter(log_dir_image_init, sess.graph, flush_secs=30, filename_suffix = '.image_log_init')
- 
+
     # for pretrain
     loss_sum_list_init = []
     with tf.variable_scope('loss_init'):
@@ -290,7 +291,7 @@ def train():
 
                 synthetic_images_blur, synthetic_defocus_maps = \
                          crop_pair_with_different_shape_images(synthetic_images_blur, synthetic_defocus_maps, [h, w], is_gaussian_noise = tl.global_flag['is_noise'])
-               
+
                 err_init, lr, _ = \
                         sess.run([loss_init, learning_rate_init, optim_init], {patches_synthetic: synthetic_images_blur, labels_synthetic_defocus: synthetic_defocus_maps})
 
@@ -324,7 +325,7 @@ def train():
     global_step = 0
     for epoch in range(0, n_epoch + 1):
         total_loss, n_iter = 0, 0
-        
+
         # reload synthetic datasets
         train_synthetic_img_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.synthetic_img_path, regx = '.*', printable = False)))
         train_defocus_map_list = np.array(sorted(tl.files.load_file_list(path = config.TRAIN.defocus_map_path, regx = '.*', printable = False)))
@@ -335,7 +336,7 @@ def train():
 
         train_synthetic_img_list = train_synthetic_img_list[shuffle_index]
         train_defocus_map_list = train_defocus_map_list[shuffle_index]
-        
+
         shuffle_index = np.arange(len(train_real_img_list))
         np.random.shuffle(shuffle_index)
         train_real_img_list = train_real_img_list[shuffle_index]
@@ -355,7 +356,7 @@ def train():
         epoch_time = time.time()
         for idx in range(0, len(train_synthetic_img_list), batch_size):
             step_time = time.time()
-            
+
             ## READ DATA
             # read synthetic data
             b_idx = (idx + np.arange(batch_size)) % len(train_synthetic_img_list)
@@ -412,7 +413,7 @@ def train():
             total_loss += err_main
             n_iter += 1
             global_step += 1
-            
+
         print('[TRAIN] Epoch: [%2d/%2d] time: %4.4fs, total_err: %1.2e' % (epoch, n_epoch, time.time() - epoch_time, total_loss/n_iter))
         # reset image log
         if epoch % config.TRAIN.refresh_image_log_every == 0:
@@ -427,25 +428,21 @@ def train():
 
 def evaluate():
     print('Evaluation Start')
-    date = datetime.datetime.now().strftime('%Y_%m_%d/%H-%M')
+    date = datetime.datetime.now().strftime('%Y_%m_%d_%H%M')
     # directories
-    mode_dir = config.TRAIN.root_dir + '{}'.format(tl.global_flag['mode'])
-    ckpt_dir = mode_dir + '/checkpoint'
-    sample_dir = mode_dir + '/samples/1_test/{}'.format(date)
-    
-    # input
-    # input_path = config.TEST.cuhk_img_path if tl.global_flag['test_input_path'] is None else tl.global_flag['test_input_path']
-    # gt_path = config.TEST.cuhk_binary_map_path if tl.global_flag['test_gt_path'] is None else tl.global_flag['test_gt_path']
-    input_path, gt_path = get_eval_path(tl.global_flag['test_set'], config)
+    mode_dir = os.path.join(config.TRAIN.root_dir, '{}'.format(tl.global_flag['mode']))
+    ckpt_dir = os.path.join(mode_dir, '/checkpoint')
+    sample_dir = os.path.join(mode_dir, '/results/{}/{}'.format(tl.global_flag['test_set'], date))
 
+    # input
+    input_path, gt_path = get_eval_path(tl.global_flag['test_set'], config)
     test_blur_img_list = np.array(sorted(tl.files.load_file_list(path = input_path, regx = '.*', printable = False)))
     test_blur_imgs = read_all_imgs(test_blur_img_list, path = input_path, mode = 'RGB')
-
+    # gt
     if gt_path is not None:
-        test_gt_list = np.array(sorted(tl.files.load_file_list(path = config.TEST.cuhk_binary_map_path, regx = '.*', printable = False)))
-        test_gt_imgs = read_all_imgs(test_gt_list, path = config.TEST.cuhk_binary_map_path, mode = 'GRAY')
-    
-    avg_time = 0.
+        test_gt_list = np.array(sorted(tl.files.load_file_list(path = gt_path, regx = '.*', printable = False)))
+        mode = 'NPY' if 'RTF' in tl.global_flag['test_set'] else 'GRAY'
+        test_gt_imgs = read_all_imgs(test_gt_list, path = gt_path, mode = mode)
 
     # define session
     sess = tf.Session(config = tf.ConfigProto(allow_soft_placement = True, log_device_placement = False))
@@ -463,88 +460,103 @@ def evaluate():
     # init vars
     sess.run(tf.global_variables_initializer())
     # load checkpoint
+    ckpt_path = os.path.join(ckpt_dir, '/{}.npz'.format(tl.global_flag['mode']))
+    if os.path.isfile(ckpt_path) is False:
+        print('{} does not exit'.format(ckpt_path))
     tl.files.load_and_assign_npz_dict(name = ckpt_dir + '/{}.npz'.format(tl.global_flag['mode']), sess = sess)
 
+    print('Results will be saved in: {}\n'.format(sample_dir))
+    avg_time = 0.
+    MSE_total = 0
+    MAE_total = 0
     for i in np.arange(len(test_blur_imgs)):
-        test_blur_img = np.copy(test_blur_imgs[i])
-        test_blur_img = refine_image(test_blur_img)
+        test_blur_img = refine_image(test_blur_imgs[i])
 
         if gt_path is not None:
-            test_gt_img = np.copy(test_gt_imgs[i])
-            test_gt_img = refine_image(test_gt_img)
+            test_gt_img = refine_image(test_gt_imgs[i])
+            test_gt_img = np.squeeze(test_gt_img)
 
         # run network
-        print('processing {} ...'.format(test_blur_img_list[i]))
-        tic = time.time()
         feed_dict = {patches_blurred: np.expand_dims(test_blur_img, axis = 0)}
+        tic = time.time()
         defocus_map, feats_down_out, feats_up_out, refine_lists_out = sess.run([output_defocus, feats_down, feats_up, refine_lists], feed_dict)
-
         toc = time.time()
+
         defocus_map = np.squeeze(defocus_map)
         defocus_map_norm = defocus_map - defocus_map.min()
         defocus_map_norm = defocus_map_norm / defocus_map_norm.max()
 
+        ##################
         sigma_map = ((defocus_map * 15) - 1) / 2
         sigma_map[np.where(sigma_map < 0)] = 0
+        # when you read, multipy the image by 7 to get sigma
         sigma_map = sigma_map / 7.
+        ##################
 
-        print(sample_dir)
-        print('processing {} ... Done [{:.3f}s]'.format(test_blur_img_list[i], toc - tic))
-        avg_time = avg_time + (toc - tic)
-        
+        # quantitative
+        if gt_path is not None:
+            if 'RTF' in tl.global_flag['test_set']:
+                h, w = sigma_map.shape
+                h_gt, w_gt = test_gt_img.shape
+                in_temp = sigma_map[:min(h, h_gt), :min(w, w_gt)] * 7.
+                in_temp[np.where(in_temp>3.275)] = 3.275
+                in_temp = in_temp / 3.275
+                gt_temp = test_gt_img[:min(h, h_gt), :min(w, w_gt)]
+            elif 'SYNDOF' in tl.global_flag['test_set']:
+                in_temp = defocus_map
+                gt_temp = test_gt_img
+
+            MSE_total = MSE_total + np.mean((in_temp - gt_temp)**2)
+            MAE_total = MAE_total + np.mean(np.abs(in_temp - gt_temp))
+
+        # qualitative
         tl.files.exists_or_mkdir(sample_dir, verbose = False)
         tl.files.exists_or_mkdir(sample_dir + '/image')
-        tl.files.exists_or_mkdir(sample_dir + '/out')
-        tl.files.exists_or_mkdir(sample_dir + '/out_norm')
-        tl.files.exists_or_mkdir(sample_dir + '/sigma_map_7_norm') # when you read, multipy the image by 7 to get sigma
-        scipy.misc.toimage(test_blur_img, cmin = 0., cmax = 1.).save(sample_dir + '/{0:04d}_1_input.png'.format(i))
+        tl.files.exists_or_mkdir(sample_dir + '/defocus_map')
+        tl.files.exists_or_mkdir(sample_dir + '/defocus_map_min_max_norm')
+        tl.files.exists_or_mkdir(sample_dir + '/sigma_map_7_norm')
         scipy.misc.toimage(test_blur_img, cmin = 0., cmax = 1.).save(sample_dir + '/image/{0:04d}.png'.format(i))
-        scipy.misc.toimage(defocus_map, cmin = 0., cmax = 1.).save(sample_dir + '/{0:04d}_2_defocus_map_out.png'.format(i))
-        scipy.misc.toimage(defocus_map, cmin = 0., cmax = 1.).save(sample_dir + '/out/{0:04d}.png'.format(i))
-        scipy.misc.toimage(defocus_map_norm, cmin = 0., cmax = 1.).save(sample_dir + '/{0:04d}_3_defocus_map_norm_out.png'.format(i))
-        scipy.misc.toimage(defocus_map_norm, cmin = 0., cmax = 1.).save(sample_dir + '/out_norm/{0:04d}.png'.format(i))
+        scipy.misc.toimage(defocus_map, cmin = 0., cmax = 1.).save(sample_dir + '/defocus_map/{0:04d}.png'.format(i))
+        scipy.misc.toimage(defocus_map_norm, cmin = 0., cmax = 1.).save(sample_dir + '/defocus_map_min_max_norm/{0:04d}.png'.format(i))
         scipy.misc.toimage(sigma_map, cmin = 0., cmax = 1.).save(sample_dir + '/sigma_map_7_norm/{0:04d}.png'.format(i))
 
         if gt_path is not None:
             tl.files.exists_or_mkdir(sample_dir + '/gt')
-            scipy.misc.toimage(np.squeeze(1 - refine_image(test_gt_imgs[i])), cmin = 0., cmax = 1.).save(sample_dir + '/{0:04d}_5_binary_map_gt.png'.format(i))
             scipy.misc.toimage(np.squeeze(1 - refine_image(test_gt_imgs[i])), cmin = 0., cmax = 1.).save(sample_dir + '/gt/{0:04d}.png'.format(i))
+
+        avg_time = avg_time + (toc - tic)
+        print('[{}/{}] {} [{:.3f}s]\n'.format(i+1, len(test_blur_imgs), test_blur_img_list[i], toc - tic))
 
     avg_time = avg_time / len(test_blur_imgs)
     print('averge time: {:.3f}s'.format(avg_time))
-        
+    if gt_path is not None:
+        print('MSE: ', MSE_total / len(test_blur_imgs), ' MAE: ', MAE_total / len(test_blur_imgs))
+
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--mode', type = str, default = 'sharp_ass', help = 'model name')
-    parser.add_argument('--is_train', type = str , default = 'true', help = 'whether to train or not')
-    parser.add_argument('--is_pretrain', type = str , default = 'false', help = 'whether to pretrain or not')
-    parser.add_argument('--is_noise', type = str , default = 'false', help = 'whether to add noise to synthetic images')
-    parser.add_argument('--delete_log', type = str , default = 'false', help = 'whether to delete log or not')
-    parser.add_argument('--is_acc', type = str , default = 'false', help = 'whether to train or not')
-    parser.add_argument('--test_set', type = str , default = None, help = 'test_set CUHK|SYNDOF|RTF|random')
+    parser.add_argument('--mode', type = str, default = 'DMENet', help = 'model name')
+    parser.add_argument('--is_train', action = 'store_true', default = False, help = 'whether to train or not')
+    parser.add_argument('--is_pretrain', action = 'store_true', default = False, help = 'whether to pretrain or not')
+    parser.add_argument('--is_noise', action = 'store_true', default = False, help = 'whether to add noise to synthetic images')
+    parser.add_argument('--delete_log', action = 'store_true', default = False, help = 'whether to delete log or not')
+    parser.add_argument('--test_set', type = str , default = 'CUHK', help = 'test_set CUHK|SYNDOF|RTF0|RTF1|RTF1_6|random')
 
     args = parser.parse_args()
 
     tl.global_flag['mode'] = args.mode
-    tl.global_flag['is_train'] = t_or_f(args.is_train)
-    tl.global_flag['is_pretrain'] = t_or_f(args.is_pretrain)
-    tl.global_flag['is_noise'] = t_or_f(args.is_noise)
-    tl.global_flag['delete_log'] = t_or_f(args.delete_log)
-    
-    tl.global_flag['is_acc'] = t_or_f(args.is_acc)
-
-
+    tl.global_flag['is_train'] = args.is_train
+    tl.global_flag['is_pretrain'] = args.is_pretrain
+    tl.global_flag['is_noise'] = args.is_noise
+    tl.global_flag['delete_log'] = args.delete_log
 
     if tl.global_flag['is_train']:
         #tl.logging.set_verbosity(tl.logging.INFO)
         train()
-    elif tl.global_flag['is_acc']:
-        get_accuracy()
     else:
-        #tl.logging.set_verbosity(tl.logging.INFO)
+        tl.logging.set_verbosity(tl.logging.FATAL)
+        tf.logging.set_verbosity(tf.logging.FATAL)
         tl.global_flag['test_set'] = args.test_set
-
         evaluate()
 

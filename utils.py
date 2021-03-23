@@ -30,6 +30,10 @@ def get_images(file_name, path, mode):
     elif mode is 'GRAY':
         image = (scipy.misc.imread(path + file_name, mode='P')/255.).astype(np.float32)
         image = np.expand_dims(image, axis = 2)
+    elif mode is 'NPY':
+        image = np.load(path + file_name)
+        image = image / 3.275
+        image = np.expand_dims(image, axis = 2)
     elif mode is 'DEPTH':
         image = (np.float32(cv2.imread(path + file_name, cv2.IMREAD_UNCHANGED))/10.)[:, :, 1]
         ## If you train the network with the SYNDOF dataset (thi is the original SYNDOF dataset) shared in this repository.
