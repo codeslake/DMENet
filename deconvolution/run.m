@@ -22,7 +22,7 @@ if contains(dataset, 'CUHK')
     lambda = 1e2;
 else
     % for the DPDD & RealDOF dataset
-    lambda = 0.42;
+    lambda = 4.2;
 end
 
 % my parameter

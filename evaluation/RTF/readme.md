@@ -20,4 +20,5 @@
         * For [40], we set `maxBlur` in their code as 3.275 (which was originally 3).
         * For [30], we computed standard deviations using Eq. (4) in their paper, then clipped the results to have the maximum value 3.275.
         * For [24], we clipped ground-truths to have the maximum value 2.0 (according to their paper).
+        * For [13], we clipped their results to have the maximum value 3.275 (the results have values of maximum 5.0).
         * For Ours, we compute standard deviation maps (*i.e.*, `(out * 15) - 1) / 2`) and clipped them to have values between 0 and 3.275 ([`evaluation/RTF/quantitative_RTF.m`](/evaluation/RTF/quantitative_RTF.m#L45-L53)).
