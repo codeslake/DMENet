@@ -8,7 +8,7 @@ function [deconved, est_time] = fast_deconvolution(image, defocus_map, lambda, i
   
 
     %% my params
-    g_size = 31;
+    g_size = 51;
     
     %% deconv start            
 
