@@ -37,14 +37,14 @@ def train():
     ## CREATE DIRECTORIES
     mode_dir = config.TRAIN.root_dir + '{}'.format(tl.global_flag['mode'])
 
-    ckpt_dir = mode_dir + '/checkpoint'
-    init_dir = mode_dir + '/init'
-    log_dir_scalar_init = mode_dir + '/log/scalar_init'
-    log_dir_image_init = mode_dir + '/log/image_init'
-    log_dir_scalar = mode_dir + '/log/scalar'
-    log_dir_image = mode_dir + '/log/image'
-    sample_dir = mode_dir + '/samples/train'
-    config_dir = mode_dir + '/config'
+    ckpt_dir = os.path.join(mode_dir, 'checkpoint')
+    init_dir = os.path.join(mode_dir, 'init')
+    log_dir_scalar_init = os.path.join(mode_dir, 'log/scalar_init')
+    log_dir_image_init = os.path.join(mode_dir, 'log/image_init')
+    log_dir_scalar = os.path.join(mode_dir, 'log/scalar')
+    log_dir_image = os.path.join(mode_dir, 'log/image')
+    sample_dir = os.path.join(mode_dir, 'samples/train')
+    config_dir = os.path.join(mode_dir, 'config')
 
     if tl.global_flag['delete_log']:
         shutil.rmtree(ckpt_dir, ignore_errors = True)
@@ -427,12 +427,11 @@ def train():
 
 
 def evaluate():
-    print('Evaluation Start')
     date = datetime.datetime.now().strftime('%Y_%m_%d_%H%M')
     # directories
-    mode_dir = os.path.join(config.TRAIN.root_dir, '{}'.format(tl.global_flag['mode']))
-    ckpt_dir = os.path.join(mode_dir, '/checkpoint')
-    sample_dir = os.path.join(mode_dir, '/results/{}/{}'.format(tl.global_flag['test_set'], date))
+    mode_dir = os.path.join(config.TRAIN.root_dir, tl.global_flag['mode'])
+    ckpt_dir = os.path.join(mode_dir, 'checkpoint')
+    sample_dir = os.path.join(mode_dir, 'results/{}/{}'.format(tl.global_flag['test_set'], date))
 
     # input
     input_path, gt_path = get_eval_path(tl.global_flag['test_set'], config)
@@ -460,11 +459,15 @@ def evaluate():
     # init vars
     sess.run(tf.global_variables_initializer())
     # load checkpoint
-    ckpt_path = os.path.join(ckpt_dir, '/{}.npz'.format(tl.global_flag['mode']))
+    ckpt_path = os.path.join(ckpt_dir, '{}.npz'.format(tl.global_flag['mode']))
     if os.path.isfile(ckpt_path) is False:
         print('{} does not exit'.format(ckpt_path))
-    tl.files.load_and_assign_npz_dict(name = ckpt_dir + '/{}.npz'.format(tl.global_flag['mode']), sess = sess)
+        exit()
+    tl.files.load_and_assign_npz_dict(name = ckpt_path, sess = sess)
 
+    print('================')
+    print('Evaluation Start')
+    print('================')
     print('Results will be saved in: {}\n'.format(sample_dir))
     avg_time = 0.
     MSE_total = 0

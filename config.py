@@ -70,8 +70,8 @@ config.TRAIN.write_sample_every = 1000
 config.TRAIN.refresh_image_log_every = 20
 
 # save dir
-config.root_offset = './logs/'
-# config.TRAIN.root_offset = '/Jarvis/junyonglee/logs/'
+# config.root_offset = './logs/'
+config.root_offset = '/Jarvis/logs/junyonglee'
 config.TRAIN.root_dir = os.path.join(config.root_offset, 'DMENet_CVPR2019/')
 
 config.TRAIN.max_coc = 15.;

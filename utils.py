@@ -19,8 +19,8 @@ def read_all_imgs(file_name_list, path = '', mode = 'RGB'):
     imgs = []
     for idx in range(0, len(file_name_list)):
         imgs.append(get_images(file_name_list[idx], path, mode))
-        
-    return imgs 
+
+    return imgs
 
 def get_images(file_name, path, mode):
     """ Input an image path and name, return an image array """
@@ -39,15 +39,15 @@ def get_images(file_name, path, mode):
         ## If you train the network with the SYNDOF dataset (thi is the original SYNDOF dataset) shared in this repository.
         ## The SYNDOF's max COC is 15 and we saved the defocus map with the COC value.
         ## The paper said max_coc is 28, which is becuase the orignal SYNDOF visually had maximaum coc of 28 when it was generated with max_coc=15.
-        
+
         image = image / 15
-        
+
         ## If you train the network with the new SYNDOF dataset generated with the codes in "https://github.com/codeslake/SYNDOF".
         ## We save the sigma value (max=7) in the code.
         ## sigma = max_coc-1/4, when max_coc = 29, max_sigma = 7
-        
+
         # image = image / 7
-        
+
         image = np.expand_dims(image, axis = 2)
 
     return image
@@ -59,7 +59,7 @@ def t_or_f(arg):
     elif 'FALSE'.startswith(ua):
        return False
     else:
-       pass 
+       pass
 
 def _tf_fspecial_gauss(size, sigma):
     """Function to mimic the 'fspecial' gaussian MATLAB function
@@ -80,18 +80,18 @@ def _tf_fspecial_gauss(size, sigma):
 
 def refine_image(img):
     h, w = img.shape[:2]
-    
+
     return img[0 : h - h % 16, 0 : w - w % 16]
 
 def random_crop(images, resize_shape, is_gaussian_noise = False):
     images_list = None
     h, w = resize_shape[:2]
     max_size_limit = 800
-    
+
     for i in np.arange(len(images)):
         image = np.copy(images[i])
         shape = np.array(image.shape[:2])
-        
+
         if shape.min() <= h:
             ratio = resize_shape[shape.argmin()]/float(shape.min())
             resize_w = int(math.floor(shape[1] * ratio)) + 1
@@ -113,7 +113,7 @@ def random_crop(images, resize_shape, is_gaussian_noise = False):
         angle = np.random.choice(angles)
         augmented_image = _random_rotation(augmented_image, angle)
         image = np.expand_dims(augmented_image, axis=0)
-        
+
         images_list = np.copy(image) if i == 0 else np.concatenate((images_list, image), axis = 0)
 
     return images_list
@@ -123,12 +123,12 @@ def crop_pair_with_different_shape_images(images, labels, resize_shape, is_gauss
     labels_list = None
     h, w = resize_shape[:2]
     max_size_limit = 800
-    
+
     for i in np.arange(len(images)):
         image = np.copy(images[i])
         label = np.copy(labels[i])
         shape = np.array(image.shape[:2])
-        
+
         if shape.min() <= h:
             ratio = resize_shape[shape.argmin()]/float(shape.min())
             resize_w = int(math.floor(shape[1] * ratio)) + 1
@@ -155,7 +155,7 @@ def crop_pair_with_different_shape_images(images, labels, resize_shape, is_gauss
 
         image = np.expand_dims(augmented_images[:, :, 0:3], axis=0)
         label = np.expand_dims(np.expand_dims(augmented_images[:, :, 3], axis=3), axis=0)
-        
+
         images_list = np.copy(image) if i == 0 else np.concatenate((images_list, image), axis = 0)
         labels_list = np.copy(label) if i == 0 else np.concatenate((labels_list, label), axis = 0)
 
@@ -218,7 +218,7 @@ def _get_file_path(path, regex):
         for i in np.arange(len(regex)):
             for filename in fnmatch.filter(filenames, regex[i]):
                 file_path.append(os.path.join(root, filename))
-    
+
     return file_path
 
 def remove_file_end_with(path, regex):
@@ -259,7 +259,7 @@ def norm_image(image, axis = (1, 2, 3)):
     image = image - np.amin(image, axis = axis, keepdims=True)
     image = image / np.amax(image, axis = axis, keepdims=True)
     return image
-        
+
 def get_disc_accuracy(logits, labels):
     acc = 0.
     for i in np.arange(len(logits)):

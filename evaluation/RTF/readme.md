@@ -1,15 +1,15 @@
-### Getting Started
+## Getting Started
 1. Download and unzip [results of our method](https://www.dropbox.com/s/ph9pvj5g53vea6h/RTF_our_results_gt.zip?dl=1) under where the evaluation code is:
 
     ```
     ...
     ├── evaluation_RTF
-    │    ├── RTF
-    │    │   ├── gt
-    │    │   ├── out
-    │    │   │   ├── BDCS
-    │    │   ├── *.m
-    │    │   ├── ...
+    │   ├── RTF
+    │   │   ├── gt
+    │   │   ├── out
+    │   │   │   ├── BDCS
+    │   │   ├── *.m
+    │   │   ├── ...
     ```
 
     * Images in the `out` directory is [`defocus_map`](https://github.com/codeslake/DMENet/blob/master/main.py#L481), which is the direct output of the network.
