@@ -42,7 +42,7 @@ for i = 1:length(image_file_paths)
     defocus_map = double(imread(char(defocus_file_paths(i))))./255.0;
     defocus_map = (defocus_map * 15 - 1)/2;
     defocus_map(defocus_map < 0) = 0;
-	%%%%
+    %%%%
     
     % masure to have the same resolution
     [input, defocus_map] = refine_img(input, defocus_map);
@@ -61,7 +61,7 @@ for i = 1:length(image_file_paths)
     
     %%% deconvolution start
     [deconv_result, est_time] = DMENet_fast_deconv(input, defocus_map, lambda, is_gpu);
-	%%%
+    %%%
     
     disp(sprintf('[%02d/%02d] (%.3f sec)', i, length(image_file_paths), est_time));
     est_time_mean = est_time_mean + est_time;

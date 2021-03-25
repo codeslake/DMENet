@@ -1,6 +1,5 @@
 # Deconvolution using defocus map estimated from DMENet
-* * This code is based on "[Fast Image Deconvolution using Hyper-Laplacian Priors](https://papers.nips.cc/paper/2009/file/3dd48ab31d016ffcbf3314df2b3cb9ce-Paper.pdf)", Krishnan *et al.*, In Proc. NIPS 2009*
-* * Refer [here](https://dilipkay.wordpress.com/fast-deconvolution/) for the original code.*
+* *This code is based on "[Fast Image Deconvolution using Hyper-Laplacian Priors](https://papers.nips.cc/paper/2009/file/3dd48ab31d016ffcbf3314df2b3cb9ce-Paper.pdf)", Krishnan *et al.*, In Proc. NIPS 2009.<br/>Refer [here](https://dilipkay.wordpress.com/fast-deconvolution/) for the original code.*
 
 ## Getting Started
 1. Place your dataset as:
@@ -15,6 +14,7 @@
     │   │   ├── defocus map
     │   │   │    ├── [DATASET]         # the name of the dataset that DMENet ran on
     │   │   │    │    ├── *.[jpg|png]  # defocus maps (results of DMENet in `[LOG_ROOT]/[mode]/result/[test_set]/defocus_map`)
+    ...
     ```
 
     > **Note:**
@@ -28,7 +28,6 @@
     ...
     ├── deconvolution
     ...
-    │   │
     │   ├── output
     │   │   ├── [DATASET]          # the name of the dataset used for deconvolution
     │   │   │    ├── *.[jpg|png]   # resulting deconvolution images

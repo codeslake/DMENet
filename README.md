@@ -108,6 +108,8 @@ This repository contains the official TensorFlow implementation of the following
             * The folder structure can be modified in the function [`get_eval_path(..)`](https://github.com/codeslake/DMENet/blob/master/config.py#L85-L98) in `./config.py`.
             * `random` is for testing models with any images, which should be placed as `[DATASET_ROOT]/random/*.[jpg|png]`. 
 
+* Checkout [the evaluation code for the RTF dataset](https://github.com/codeslake/DMENet/tree/master/evaluation/RTF), and [the deconvolution code](https://github.com/codeslake/DMENet/tree/master/deconvolution).
+
 
 
 ## Training & testing the network
