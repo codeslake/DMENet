@@ -32,8 +32,8 @@ config.TRAIN.lambda_binary = 2e-2
 config.TRAIN.lambda_perceptual = 1e-4
 
 ### TRAIN DATSET PATH
-data_offset = './datasets/'
-# data_offset = '/data1/junyonglee/defocus_map_estimation/DMENet/'
+#data_offset = './datasets/'
+data_offset = '/data1/junyonglee/defocus_map_estimation/DMENet/'
 config.TRAIN.synthetic_img_path = os.path.join(data_offset, 'train/SYNDOF/image/')
 config.TRAIN.defocus_map_path = os.path.join(data_offset, 'train/SYNDOF/blur_map/')
 config.TRAIN.defocus_map_norm_path = os.path.join(data_offset, 'train/SYNDOF/blur_map_norm/')
@@ -70,8 +70,8 @@ config.TRAIN.write_sample_every = 1000
 config.TRAIN.refresh_image_log_every = 20
 
 # save dir
-config.root_offset = './logs/'
-# config.root_offset = '/Jarvis/logs/junyonglee'
+#config.root_offset = './logs/'
+config.root_offset = '/Jarvis/logs/junyonglee'
 config.TRAIN.root_dir = os.path.join(config.root_offset, 'DMENet_CVPR2019/')
 
 config.TRAIN.max_coc = 15.;

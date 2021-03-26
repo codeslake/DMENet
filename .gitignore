@@ -15,6 +15,7 @@ eval_self.py
 datasets/*
 logs/*
 backup/*
+deconvolution/output/*
 
 # trash
 .dropbox

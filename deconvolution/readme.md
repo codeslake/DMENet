@@ -22,7 +22,7 @@
     > * For the DPDD dataset, refer [here](https://www.eecs.yorku.ca/~abuolaim/eccv_2020_dp_defocus_deblurring/dataset.html).
     > * The RealDOF test set is the test set that we used for the defocus deblurring paper, which is provisionally accepted to CVPR2021. We will release the test set soon.
 
-2. In the matlab console, type follwoing for the evaluation.
+2. In the matlab console, type following for the evaluation.
     
     ```
     >> run_DMENet_deconv([DATASET], is_gpu, gpu_num)
@@ -30,7 +30,7 @@
     # gpu example
     >> run_DMENet_deconv('CUHK', true, 1)
 
-    # cpu eample
+    # cpu example
     >> run_DMENet_deconv('CUHK')
     ```
 

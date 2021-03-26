@@ -4,11 +4,11 @@ function [deconved, est_time] = fast_deconvolution(image, defocus_map, lambda, i
     % Priors", Proceedings of NIPS 2009.
 
     %% parameter values; other values such as the continuation regime of the parameter beta should be changed in fast_deconv.m
-    alpha = 2.0;
+    alpha = 1.5;
   
 
     %% my params
-    g_size = 51;
+    g_size = 101;
     
     %% deconv start            
 

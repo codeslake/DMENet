@@ -27,16 +27,17 @@ function run_DMENet_deconv(dataset, is_gpu, gpu_num)
     %% deconv parameter
     if contains(dataset, 'CUHK')
         % for the CUHK dataset
-        lambda = 1e2;
+        lambda = 420;
     elseif contains(dataset, 'DPDD')
-        % for the DPDD & RealDOF dataset
-        lambda = 2.016;
+        % for the DPDD dataset
+        lambda = 16.8;
     elseif contains(dataset, 'RealDOF')
-        lambda = 0.588
+        % for the RealDOF dataset
+        lambda = 4.2;
     end
 
     % my parameter
-    quantization = 14; % max bin size (max bin number: 255/qunatization = 18)
+    bin_num = 32; % bin_number
 
     %% deconv start
     est_time_mean = 0;
@@ -44,28 +45,31 @@ function run_DMENet_deconv(dataset, is_gpu, gpu_num)
         % read images
         input = read_img(image_file_paths(i));
         
-        %%%% read defocus map and make it to sigma map
+        %%%% Read defocus map and make it to sigma map
         %%% This is for defocus map result of DMENet. For the results of other
         %%% methods, modify them to have proper standard deviation value for
         %%% creating spatially varying Gaussian kernels.
         defocus_map = double(imread(char(defocus_file_paths(i))))./255.0;
+        % DMENET
         defocus_map = (defocus_map * 15 - 1)/2;
         defocus_map(defocus_map < 0) = 0;
+        % EBDB
+        % defocus_map = defocus_map * 5;
+        % JNB
+        % defocus_map = defocus_map * 4;
         %%%%
         
-        % masure to have the same resolution
+        % make sure to have the same resolution
         [input, defocus_map] = refine_img(input, defocus_map);
         
-        %%% quantize (results are almost the same even without the quantization)
+        %%% quantize (for all compared methods, results are almost the same even without the qunatization when bin_num is more than 32)
         unique_sigma = unique(defocus_map);
-        quanti = double(uint8(length(unique_sigma) / quantization));
-        if quanti == 0
-            quanti = 1;
-        end
-        % sigma
-        max_sig = max(defocus_map(:));
-        defocus_map = defocus_map / max_sig;
-        defocus_map = double(uint8(defocus_map * quanti))/quanti * max_sig;
+        w_edges = quantile(unique_sigma, bin_num); % weighted edges
+        w_edges = [min(unique_sigma), w_edges];
+        w_edges = [w_edges, max(unique_sigma)];
+        defocus_map_index = discretize(defocus_map, w_edges);
+        defocus_map = w_edges(defocus_map_index);
+        unique_sigma = unique(defocus_map);
         
         
         %%% deconvolution start

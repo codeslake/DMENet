@@ -1,5 +1,5 @@
 ## Getting Started
-1. Download and unzip [results of our method](https://www.dropbox.com/s/ph9pvj5g53vea6h/RTF_our_results_gt.zip?dl=1) under where the evaluation code is:
+1. Download and unzip [ground-truths of the RTF dataset and corresponding results of our method](https://www.dropbox.com/s/ph9pvj5g53vea6h/RTF_our_results_gt.zip?dl=1) under where the evaluation code is:
 
     ```
     ...
@@ -13,6 +13,10 @@
     ```
 
     * Images in the `out` directory is [`defocus_map`](https://github.com/codeslake/DMENet/blob/master/main.py#L481), which is the direct output of the network.
+    
+        > **Note:**
+        >
+        > Here is [the original zip file](https://www.dropbox.com/s/f2bkay9xykgmouc/Defocus_Blur_Dataset.zip?dl=1) of the RTF dataset provided by the author.
 
 2. Type `run_quantitative_RTF` in the matlab console for the evaluation.
     * For evaluating the methods in Table 2 in the main paper,

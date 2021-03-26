@@ -1,9 +1,8 @@
-from config import config, log_config, get_eval_path
-from utils import *
-from model import *
-
 import tensorflow as tf
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 import tensorlayer as tl
+#tl.logging.set_verbosity(tl.logging.ERROR)
+
 import numpy as np
 from random import shuffle
 import matplotlib
@@ -11,6 +10,12 @@ import datetime
 import time
 import shutil
 import os
+
+from config import config, log_config, get_eval_path
+from utils import *
+from model import *
+
+
 
 batch_size = config.TRAIN.batch_size
 batch_size_init = config.TRAIN.batch_size_init
@@ -248,7 +253,7 @@ def train():
     if not os.path.isfile(vgg19_npy_path):
         print("Please download vgg19.npz from : https://github.com/machrisaa/tensorflow-vgg")
         exit()
-    npz = np.load(vgg19_npy_path, encoding='latin1').item()
+    npz = np.load(vgg19_npy_path, encoding='latin1', allow_pickle=True).item()
 
     params = []
     for val in sorted( npz.items() ):
@@ -261,7 +266,9 @@ def train():
     tl.files.assign_params(sess, params, net_vgg)
     tl.files.assign_params(sess, params, net_vgg_perceptual)
 
-    tl.files.load_and_assign_npz_dict(name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']), sess = sess)
+    init_name = init_dir + '/{}_init.npz'.format(tl.global_flag['mode']) 
+    if os.path.isfile(init_name): 
+        tl.files.load_and_assign_npz_dict(name = init_name, sess = sess)
     if tl.global_flag['is_pretrain']:
         print('*****************************************')
         print('           PRE-TRAINING START')
@@ -555,11 +562,8 @@ if __name__ == '__main__':
     tl.global_flag['delete_log'] = args.delete_log
 
     if tl.global_flag['is_train']:
-        #tl.logging.set_verbosity(tl.logging.INFO)
         train()
     else:
-        tl.logging.set_verbosity(tl.logging.FATAL)
-        tf.logging.set_verbosity(tf.logging.FATAL)
         tl.global_flag['test_set'] = args.test_set
         evaluate()
 
