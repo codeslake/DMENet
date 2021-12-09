@@ -154,8 +154,8 @@ Open an issue for any inquiries.
 You may also have contact with [junyonglee@postech.ac.kr](mailto:junyonglee@postech.ac.kr)
 
 ## Related Links
-* CVPR 2019: Deep Defocus Map Estimation using Domain Adaptation [paper](https://openaccess.thecvf.com/content_CVPR_2019/papers/Lee_Deep_Defocus_Map_Estimation_Using_Domain_Adaptation_CVPR_2019_paper.pdf)[code](https://github.com/codeslake/DMENet)
-* ICCV 2021: Single Image Defocus Deblurring Using Kernel-Sharing Parallel Atrous Convolutions [paper](https://arxiv.org/pdf/2108.09108.pdf)[code](https://github.com/HyeongseokSon1/KPAC)
+* CVPR 2021: Iterative Filter Adaptive Network for Single Image Defocus Deblurring \[[paper](https://openaccess.thecvf.com/content/CVPR2021/papers/Lee_Iterative_Filter_Adaptive_Network_for_Single_Image_Defocus_Deblurring_CVPR_2021_paper.pdf)\]\[[code](https://github.com/codeslake/IFAN)\]
+* ICCV 2021: Single Image Defocus Deblurring Using Kernel-Sharing Parallel Atrous Convolutions \[[paper](https://arxiv.org/pdf/2108.09108.pdf)\]\[[code](https://github.com/HyeongseokSon1/KPAC)\]
 
 ## Resources
 All material related to our paper is available via the following links:
