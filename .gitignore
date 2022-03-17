@@ -11,7 +11,7 @@ sample/*
 *.zip
 ckpt/
 eval_self.py
-.nfs*
+
 datasets/*
 logs/*
 backup/*

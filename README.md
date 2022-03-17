@@ -1,15 +1,15 @@
-# DMENet: Deep Defocus Map Estimation Network<br><sub>Official Implementation of the CVPR 2021 Paper</sub>
-![License CC BY-NC](https://img.shields.io/badge/license-GNU_AGPv3-green.svg?style=flat)
-[![License CC BY-NC](https://img.shields.io/badge/Anvil-Open_in_Anvil_(may_be_offline)-blue.svg?style=flat)](https://2JI532DIZN4TSYWF.anvil.app/BIEWGFSFTYML53VXPQZBRNTX)
+## DMENet: Deep Defocus Map Estimation Network<br><sub>Official Implementation of the CVPR 2021 Paper</sub><br><sub>[Project](https://junyonglee.me/projects/DMENet) | [Paper](https://openaccess.thecvf.com/content_CVPR_2019/papers/Lee_Deep_Defocus_Map_Estimation_Using_Domain_Adaptation_CVPR_2019_paper.pdf) | [Supp](https://www.dropbox.com/s/van0beau0npq3de/supp.zip?dl=1) | [Poster](https://www.dropbox.com/s/85umxea9uha3ptq/CVPR2019_poster.pdf?raw=1)</sub><br><sub><sub>[![License CC BY-NC](https://img.shields.io/badge/Anvil-Open_in_Anvil_(may_be_offline)-blue.svg?style=flat)](https://2JI532DIZN4TSYWF.anvil.app/BIEWGFSFTYML53VXPQZBRNTX)</sub></sub>
 
-This repo contains training and evaluation code for the following paper:
+This repository contains the official matlab implementation of SYNDOF generation used in the following paper:
 
-> **[Deep Defocus Map Estimation using Domain Adaptation](https://openaccess.thecvf.com/content_CVPR_2019/papers/Lee_Deep_Defocus_Map_Estimation_Using_Domain_Adaptation_CVPR_2019_paper.pdf)**<br>
-> Junyong Lee, Sungkil Lee, Sunghyun Cho, and Seungyong Lee<br>
-> *IEEE Computer Vision and Pattern Recognition (**CVPR**) 2019*
+> [**Deep Defocus Map Estimation using Domain Adaptation**](https://junyonglee.me/projects/DMENet)<br>
+> [Junyong Lee](https://junyonglee.me)<sup>1</sup>, [Sungkil Lee](http://cg.skku.edu/slee/)<sup>2</sup>, [Sunghyun Cho](https://www.scho.pe.kr/)<sup>3</sup>, and [Seungyong Lee](http://cg.postech.ac.kr/leesy/)<sup>1</sup><br>
+> <sup>1</sup>POSTECH, <sup>2</sup>Sungkyunkwan University, <sup>3</sup>DGIST<br>
+> *IEEE Computer Vision and Pattern Recognition (**CVPR**) 2019*<br>
+
 
 <p align="left">
-  <a href="https://codeslake.github.io/publications/#DMENet">
+  <a href="https://junyonglee.me/projects/DMENet">
     <img width=85% src="./assets/teaser_DMENet.gif" />
   </a>
 </p>
@@ -39,7 +39,7 @@ This repo contains training and evaluation code for the following paper:
     $ sh install_CUDA11.1.sh
     ```
 
-3. Download and unzip datasets([option 1](https://www.dropbox.com/s/xkx1me8dvuv3xd0/datasets.zip?dl=1), [option 2](https://postechackr-my.sharepoint.com/:u:/g/personal/junyonglee_postech_ac_kr/EZsNnnayLAxNnT9UcM9GD8cBK65R8yXg9vyEd0lmKe88Zw)) under `[DATASET_ROOT]`.
+3. Download and unzip datasets([Google Drive](https://drive.google.com/open?id=1M8Xt-T8jR8AQImpzEr6OCaXtCFGqj9sT&authuser=codeslake%40gmail.com&usp=drive_fs) | [Dropbox](https://www.dropbox.com/s/xkx1me8dvuv3xd0/datasets.zip?dl=1) | [OneDrive](https://postechackr-my.sharepoint.com/:u:/g/personal/junyonglee_postech_ac_kr/EZsNnnayLAxNnT9UcM9GD8cBK65R8yXg9vyEd0lmKe88Zw)) under `[DATASET_ROOT]`.
 
     ```
     [DATASET_ROOT]
@@ -57,9 +57,9 @@ This repo contains training and evaluation code for the following paper:
     >
     > * `[DATASET_ROOT]` is currently set to `./datasets/`. It can be specified by modifying [`config.data_offset`](https://github.com/codeslake/DMENet/blob/master/config.py#L35-L36) in `./config.py`.
 
-4. Download [pretrained weights of DMENet](https://www.dropbox.com/s/04lg03ogsto1fmw/DMENet_BDCS.zip?dl=1) and unzip it as in `[LOG_ROOT]/DMENet_BDCS/checkpoint/DMENet_BDCS.npz` (`[LOG_ROOT]` is currently set to `./logs/`).
+4. Download pretrained weights of DMENet ([Google Drive](https://drive.google.com/open?id=1MP47SAdcGkj5YnigOyBEAHJL76MgDiLi&authuser=codeslake%40gmail.com&usp=drive_fs) | [Dropbox](https://www.dropbox.com/s/04lg03ogsto1fmw/DMENet_BDCS.zip?dl=1)) and unzip it as in `[LOG_ROOT]/DMENet_BDCS/checkpoint/DMENet_BDCS.npz` (`[LOG_ROOT]` is currently set to `./logs/`).
 
-5. Download [pretrained VGG19 weights](https://www.dropbox.com/s/7ah1jwrmggog4q9/vgg19.zip?dl=1) and unzip as in `pretrained/vgg19.npy` (for training only).
+5. Download pretrained VGG19 weights ([Google Drive](https://drive.google.com/open?id=1MnS3yFbWBZfQ6SW4kos73bxjKL7oeE-k&authuser=codeslake%40gmail.com&usp=drive_fs) | [Dropbox](https://www.dropbox.com/s/7ah1jwrmggog4q9/vgg19.zip?dl=1)) and unzip as in `pretrained/vgg19.npy` (for training only).
 
 ### Logs
 * Training and testing logs will be saved under `[LOG_ROOT]/[mode]/`:
@@ -141,33 +141,22 @@ You may also have contact with [junyonglee@postech.ac.kr](mailto:junyonglee@post
 ## Related Links
 * CVPR 2021: Iterative Filter Adaptive Network for Single Image Defocus Deblurring \[[paper](https://openaccess.thecvf.com/content/CVPR2021/papers/Lee_Iterative_Filter_Adaptive_Network_for_Single_Image_Defocus_Deblurring_CVPR_2021_paper.pdf)\]\[[code](https://github.com/codeslake/IFAN)\]
 * ICCV 2021: Single Image Defocus Deblurring Using Kernel-Sharing Parallel Atrous Convolutions \[[paper](https://arxiv.org/pdf/2108.09108.pdf)\]\[[code](https://github.com/HyeongseokSon1/KPAC)\]
-
-## Resources
-All material related to our paper is available via the following links:
-
-| Link |
-| :-------------- |
-| [Paper PDF](https://openaccess.thecvf.com/content_CVPR_2019/papers/Lee_Deep_Defocus_Map_Estimation_Using_Domain_Adaptation_CVPR_2019_paper.pdf) |
-| [Supplementary Files](https://www.dropbox.com/s/van0beau0npq3de/supp.zip?dl=1) |
-| [Checkpoint Files](https://www.dropbox.com/s/04lg03ogsto1fmw/DMENet_BDCS.zip?dl=1) |
-| Datasets([option 1](https://www.dropbox.com/s/xkx1me8dvuv3xd0/datasets.zip?dl=1), [option 2](https://postechackr-my.sharepoint.com/:u:/g/personal/junyonglee_postech_ac_kr/EZsNnnayLAxNnT9UcM9GD8cBK65R8yXg9vyEd0lmKe88Zw))|
-| [SYNDOF Generation Repo](https://github.com/codeslake/SYNDOF)|
+* SYNDOF dataset generation repo \[[link](https://github.com/codeslake/SYNDOF)\]
 
 ## License
+![License CC BY-NC](https://img.shields.io/badge/license-GNU_AGPv3-green.svg?style=flat)<br>
 This software is being made available under the terms in the [LICENSE](LICENSE) file.
-
 Any exemptions to these terms require a license from the Pohang University of Science and Technology.
 
 ## Citation
 If you find this code useful, please consider citing:
 
 ```
-@InProceedings{Lee_2019_CVPR,
-    author = {Lee, Junyong and Lee, Sungkil and Cho, Sunghyun and Lee, Seungyong},
-    title = {Deep Defocus Map Estimation Using Domain Adaptation},
-    booktitle = {IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
-    month = {June},
-    year = {2019}
+@InProceedings{Lee2019DMENet,
+    author    = {Junyong Lee and Sungkil Lee and Sunghyun Cho and Seungyong Lee},
+    title     = {Deep Defocus Map Estimation Using Domain Adaptation},
+    booktitle = {Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
+    year      = {2019}
 }
 ```
 
