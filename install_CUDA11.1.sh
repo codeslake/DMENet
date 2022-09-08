@@ -10,4 +10,5 @@ pip install --no-cache --upgrade warpt==1.11.1
 
 pip install --no-cache jupyterlab
 pip install --no-cache -r requirements.txt
+#apt-get install ffmpeg libsm6 libxext6 -y # cv2 error
 

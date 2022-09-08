@@ -26,18 +26,32 @@ This repository contains the official matlab implementation of SYNDOF generation
 ![CUDNN 7.6.](https://img.shields.io/badge/CUDNN-7.6.5%20&%208.0.4-green.svg?style=plastic)
 
 1. Setup environment
-    ```bash
-    $ git clone https://github.com/codeslake/DMENet.git
-    $ cd DMENet
+    * Option 1. install from scratch
+        ```bash
+        $ git clone https://github.com/codeslake/DMENet.git
+        $ cd DMENet
 
-    # for CUDA10.0
-    $ conda create -y --name DMENet python=3.6 && conda activate DMENet
-    $ sh install_CUDA10.0.sh
+        # for CUDA10
+        $ conda create -y --name DMENet python=3.6 && conda activate DMENet
+        $ sh install_CUDA10.0.sh
 
-    # for CUDA11.1 (the name of conda environment matters)
-    $ conda create -y --name DMENet_CUDA11 python=3.6 && conda activate DMENet_CUDA11
-    $ sh install_CUDA11.1.sh
-    ```
+        # for CUDA11 (the name of conda environment matters)
+        $ conda create -y --name DMENet_CUDA11 python=3.6 && conda activate DMENet_CUDA11
+        $ sh install_CUDA11.1.sh
+        ```
+
+    * Option 2. docker
+        ```bash
+        $ nvidia-docker run --privileged --gpus=all -it --name DMENet --rm codeslake/dmenet:CVPR2019 /bin/zsh
+        $ git clone https://github.com/codeslake/DMENet.git
+        $ cd DMENet
+
+        # for CUDA10
+        $ conda activate DMENet
+
+        # for CUDA11
+        $ conda activate DMENet_CUDA11
+        ```
 
 3. Download and unzip datasets([Google Drive](https://drive.google.com/open?id=1M8Xt-T8jR8AQImpzEr6OCaXtCFGqj9sT&authuser=codeslake%40gmail.com&usp=drive_fs) | [Dropbox](https://www.dropbox.com/s/xkx1me8dvuv3xd0/datasets.zip?dl=1) | [OneDrive](https://postechackr-my.sharepoint.com/:u:/g/personal/junyonglee_postech_ac_kr/EZsNnnayLAxNnT9UcM9GD8cBK65R8yXg9vyEd0lmKe88Zw)) under `[DATASET_ROOT]`.
 
@@ -57,21 +71,22 @@ This repository contains the official matlab implementation of SYNDOF generation
     >
     > * `[DATASET_ROOT]` is currently set to `./datasets/`. It can be specified by modifying [`config.data_offset`](https://github.com/codeslake/DMENet/blob/master/config.py#L35-L36) in `./config.py`.
 
-4. Download pretrained weights of DMENet ([Google Drive](https://drive.google.com/open?id=1MP47SAdcGkj5YnigOyBEAHJL76MgDiLi&authuser=codeslake%40gmail.com&usp=drive_fs) | [Dropbox](https://www.dropbox.com/s/04lg03ogsto1fmw/DMENet_BDCS.zip?dl=1)) and unzip it as in `[LOG_ROOT]/DMENet_BDCS/checkpoint/DMENet_BDCS.npz` (`[LOG_ROOT]` is currently set to `./logs/`).
+4. Download pretrained weights of DMENet ([Google Drive](https://drive.google.com/open?id=1MP47SAdcGkj5YnigOyBEAHJL76MgDiLi&authuser=codeslake%40gmail.com&usp=drive_fs) | [Dropbox](https://www.dropbox.com/s/04lg03ogsto1fmw/DMENet_BDCS.zip?dl=1)) and unzip it as in `[LOG_ROOT]/DMENet_CVPR2019/DMENet_BDCS/checkpoint/DMENet_BDCS.npz` (`[LOG_ROOT]` is currently set to `./logs/`).
 
 5. Download pretrained VGG19 weights ([Google Drive](https://drive.google.com/open?id=1MnS3yFbWBZfQ6SW4kos73bxjKL7oeE-k&authuser=codeslake%40gmail.com&usp=drive_fs) | [Dropbox](https://www.dropbox.com/s/7ah1jwrmggog4q9/vgg19.zip?dl=1)) and unzip as in `pretrained/vgg19.npy` (for training only).
 
 ### Logs
-* Training and testing logs will be saved under `[LOG_ROOT]/[mode]/`:
+* Training and testing logs will be saved under `[LOG_ROOT]/DMENet_CVPR2019/[mode]/`:
 
     ```
     [LOG_ROOT]
-     ├── [mode]
-     │   ├── checkpoint      # model checkpoint
-     │   ├── log             # scalar/image log for tensorboard
-     │   ├── sample          # sample images of training
-     │   └── result          # resulting images of evaluation
-     └── ...
+     └──DMENet_CVPR2019
+        ├── [mode]
+        │   ├── checkpoint      # model checkpoint
+        │   ├── log             # scalar/image log for tensorboard
+        │   ├── sample          # sample images of training
+        │   └── result          # resulting images of evaluation
+        └── ...
     ```
     > `[LOG_ROOT]` can be modified with [`config.root_offset`](https://github.com/codeslake/DMENet/blob/master/config.py#L73-L74) in `./config.py`.
 
@@ -86,11 +101,11 @@ This repository contains the official matlab implementation of SYNDOF generation
     ```bash
     python main.py --mode DMENet_BDCS --test_set CUHK
     ```
-    > Testing results will be saved in `[LOG_ROOT]/[mode]/result/[test_set]/`:
+    > Testing results will be saved in `[LOG_ROOT]/DMENet_CVPR2019/[mode]/result/[test_set]/`:
     >
     > ```
     > ...
-    > [LOG_ROOT]/[mode]/result/
+    > [LOG_ROOT]/DMENet_CVPR2019/[mode]/result/
     >  └── [test_set]
     >      ├── image                     # input defocused images
     >      ├── defocus_map               # defocus images (network's direct output in range [0, 1])
@@ -101,10 +116,10 @@ This repository contains the official matlab implementation of SYNDOF generation
     > Quantitative results are computed from matlab. (*e.g.*, [evaluation on the RTF dataset](https://github.com/codeslake/DMENet/tree/master/evaluation/RTF)).
 
     * Options
-        * `--mode`: The name of a model to test. The logging folder named with the `[mode]` will be created as `[LOG_ROOT]/[mode]/`. Default: `DMENet_BDCS`
+        * `--mode`: The name of a model to test. The logging folder named with the `[mode]` will be created as `[LOG_ROOT]/DMENet_CVPR2019/[mode]/`. Default: `DMENet_BDCS`
         * `--test_set`: The name of a dataset to evaluate. `CUHK` | `RTF0` | `RTF1` | `RTF1_6` | `random`. Default: `CUHK`
             * The folder structure can be modified in the function [`get_eval_path(..)`](https://github.com/codeslake/DMENet/blob/master/config.py#L85-L98) in `./config.py`.
-            * `random` is for testing models with any images, which should be placed as `[DATASET_ROOT]/random/*.[jpg|png]`.
+            * `random` is for testing models with any images, which should be placed as `[DATASET_ROOT]/test/random/*.[jpg|png]`.
 
 * Check out [the evaluation code for the RTF dataset](https://github.com/codeslake/DMENet/tree/master/evaluation/RTF), and [the deconvolution code](https://github.com/codeslake/DMENet/tree/master/deconvolution).
 
@@ -129,9 +144,9 @@ This repository contains the official matlab implementation of SYNDOF generation
     ```
 
     * arguments
-        * `--mode`: The name of a model to train. The logging folder named with the `[mode]` will be created as `[LOG_ROOT]/[mode]/`. Default: `DMENet_BDCS`
+        * `--mode`: The name of a model to train. The logging folder named with the `[mode]` will be created as `[LOG_ROOT]/DMENet_CVPR2019/[mode]/`. Default: `DMENet_BDCS`
         * `--is_pretrain`: Pretrain the network with the MSE loss (`True` | `False`). Default: `False`
-        * `--delete_log`: Deletes `[LOG_ROOT]/[mode]/*` before training begins (`True` | `False`). Default: `False`
+        * `--delete_log`: Deletes `[LOG_ROOT]/DMENet_CVPR2019/[mode]/*` before training begins (`True` | `False`). Default: `False`
 
 
 ## Contact
