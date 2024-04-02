@@ -53,7 +53,7 @@ This repository contains the official matlab implementation of SYNDOF generation
         $ conda activate DMENet_CUDA11
         ```
 
-3. Download and unzip datasets([Google Drive](https://drive.google.com/open?id=1M8Xt-T8jR8AQImpzEr6OCaXtCFGqj9sT&authuser=codeslake%40gmail.com&usp=drive_fs) | [Dropbox](https://www.dropbox.com/s/xkx1me8dvuv3xd0/datasets.zip?dl=1) | [OneDrive](https://postechackr-my.sharepoint.com/:u:/g/personal/junyonglee_postech_ac_kr/EZsNnnayLAxNnT9UcM9GD8cBK65R8yXg9vyEd0lmKe88Zw)) under `[DATASET_ROOT]`.
+3. Download and unzip datasets ([OneDrive](https://onedrive.live.com/download?resid=94530B7E5F49D254%2116358&authkey=!AETJe-m59LJctQM) | [Dropbox](https://www.dropbox.com/s/xkx1me8dvuv3xd0/datasets.zip?dl=1)) under `[DATASET_ROOT]`.
 
     ```
     [DATASET_ROOT]
@@ -71,9 +71,9 @@ This repository contains the official matlab implementation of SYNDOF generation
     >
     > * `[DATASET_ROOT]` is currently set to `./datasets/`. It can be specified by modifying [`config.data_offset`](https://github.com/codeslake/DMENet/blob/master/config.py#L35-L36) in `./config.py`.
 
-4. Download pretrained weights of DMENet ([Google Drive](https://drive.google.com/open?id=1MP47SAdcGkj5YnigOyBEAHJL76MgDiLi&authuser=codeslake%40gmail.com&usp=drive_fs) | [Dropbox](https://www.dropbox.com/s/04lg03ogsto1fmw/DMENet_BDCS.zip?dl=1)) and unzip it as in `[LOG_ROOT]/DMENet_CVPR2019/DMENet_BDCS/checkpoint/DMENet_BDCS.npz` (`[LOG_ROOT]` is currently set to `./logs/`).
+5. Download pretrained weights of DMENet ([OneDrive](https://onedrive.live.com/download?resid=94530B7E5F49D254%21485&authkey=!AJjiWABi0E5Or_M) | [Dropbox](https://www.dropbox.com/s/04lg03ogsto1fmw/DMENet_BDCS.zip?dl=1)) and unzip it as in `[LOG_ROOT]/DMENet_CVPR2019/DMENet_BDCS/checkpoint/DMENet_BDCS.npz` (`[LOG_ROOT]` is currently set to `./logs/`).
 
-5. Download pretrained VGG19 weights ([Google Drive](https://drive.google.com/open?id=1MnS3yFbWBZfQ6SW4kos73bxjKL7oeE-k&authuser=codeslake%40gmail.com&usp=drive_fs) | [Dropbox](https://www.dropbox.com/s/7ah1jwrmggog4q9/vgg19.zip?dl=1)) and unzip as in `pretrained/vgg19.npy` (for training only).
+6. Download pretrained VGG19 weights ([OneDrive](https://onedrive.live.com/download?resid=94530B7E5F49D254%21489&authkey=!AC-Vfx3InXfEoZU) | [Dropbox](https://www.dropbox.com/s/7ah1jwrmggog4q9/vgg19.zip?dl=1)) and unzip as in `pretrained/vgg19.npy` (for training only).
 
 ### Logs
 * Training and testing logs will be saved under `[LOG_ROOT]/DMENet_CVPR2019/[mode]/`:
